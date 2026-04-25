@@ -18,6 +18,7 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 
 from browser_use import Agent, ChatOpenAI
+from betauto.market_dictionary.resolver import resolve_pick_market_aliases
 
 
 # ============================================================
@@ -59,6 +60,12 @@ class Pick(BaseModel):
     kickoff_time_local: Optional[str] = None
     market: str
     pick: str
+    market_canonical_id: Optional[str] = None
+    selection_canonical_id: Optional[str] = None
+    market_aliases: list[str] = Field(default_factory=list)
+    selection_aliases: list[str] = Field(default_factory=list)
+    dictionary_match_status: Optional[str] = None
+    dictionary_notes: list[str] = Field(default_factory=list)
     expected_odds_min: float
     expected_odds_max: float
     confidence_score: int
@@ -90,6 +97,11 @@ class VerifiedPick(BaseModel):
     event: str
     market: str
     pick: str
+    market_canonical_id: Optional[str] = None
+    selection_canonical_id: Optional[str] = None
+    matched_market_alias: Optional[str] = None
+    matched_selection_alias: Optional[str] = None
+    dictionary_match_status: Optional[str] = None
 
     found_on_unibet: bool
     added_to_betslip: bool = False
@@ -204,6 +216,21 @@ def save_json(path: Path, data: Any) -> None:
         json.dumps(data, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+
+
+def enrich_picks_with_market_dictionary(picks_payload: dict[str, Any]) -> dict[str, Any]:
+    enriched_payload = dict(picks_payload)
+    raw_picks = picks_payload.get("picks", [])
+    enriched_picks: list[dict[str, Any]] = []
+
+    for pick in raw_picks:
+        if isinstance(pick, dict):
+            enriched_picks.append(resolve_pick_market_aliases(pick))
+        else:
+            enriched_picks.append(pick)
+
+    enriched_payload["picks"] = enriched_picks
+    return enriched_payload
 
 
 # ============================================================
@@ -343,11 +370,17 @@ Pour chaque pick, tu dois suivre cet ordre strict :
    - remplir unibet_event_label avec le libellé exact trouvé sur Unibet.
 
 5. Accéder au marché demandé :
+   - utiliser d'abord market_canonical_id et market_aliases ;
+   - considérer le marché trouvé si un des market_aliases est visible ;
    - trouver le marché demandé ;
    - ouvrir le détail du match si nécessaire ;
    - remplir unibet_market_label avec le libellé exact trouvé.
 
 6. Trouver la sélection demandée :
+   - utiliser d'abord selection_canonical_id et selection_aliases ;
+   - considérer la sélection trouvée si un des selection_aliases est visible ;
+   - ne pas interpréter librement si des aliases sont présents ;
+   - utiliser market et pick texte uniquement en fallback ;
    - identifier le libellé exact de la sélection ;
    - remplir unibet_pick_label.
 
@@ -381,6 +414,17 @@ Pour chaque pick, tu dois suivre cet ordre strict :
    - cote lue ;
    - clic sélection ;
    - contrôle panier.
+   - tentatives aliases marché/sélection si nécessaire.
+
+RÈGLE D'ARRÊT POUR ALIASES
+
+- Si le match est trouvé mais que le marché ou la sélection restent introuvables après 2 tentatives basées sur les aliases :
+  - found_on_unibet = true ;
+  - added_to_betslip = false ;
+  - unibet_odds = null ;
+  - odds_coherent = false ;
+  - reason doit expliquer clairement "marché introuvable malgré aliases" ou "sélection introuvable malgré aliases" ;
+  - passer immédiatement au pick suivant.
 
 RÈGLES GLOBALES
 
@@ -521,6 +565,7 @@ async def run_pipeline(job_id: str, force_regenerate: bool) -> None:
                 "Analyse GPT terminée. JSON généré et sauvegardé.",
             )
 
+        picks = enrich_picks_with_market_dictionary(picks)
         JOBS[job_id]["picks"] = picks
         save_json(get_run_dir(job_id) / "picks.json", picks)
 

@@ -61,6 +61,21 @@ Tu peux uniquement proposer les marchés suivants :
 - Under 4.5 goals
 - Both teams to score
 
+MARCHÉS CANONIQUES PRIORITAIRES AUTORISÉS
+
+Pour chaque pick, tu dois utiliser market_canonical_id uniquement parmi :
+
+- match_winner
+- double_chance
+- both_teams_to_score
+- goals_over_under
+- over_1_5_goals
+- over_2_5_goals
+- under_3_5_goals
+- under_4_5_goals
+- draw_no_bet (uniquement si présent dans le dictionnaire interne)
+- home_away (uniquement si présent dans le dictionnaire interne)
+
 MARCHÉS INTERDITS
 
 Tu ne dois pas proposer :
@@ -149,6 +164,8 @@ Tu dois retourner exactement cette structure :
       "kickoff_time_local": "YYYY-MM-DDTHH:MM:SS+02:00",
       "market": "1N2",
       "pick": "Nom exact de la sélection",
+      "market_canonical_id": "match_winner",
+      "selection_canonical_id": "home",
       "expected_odds_min": 1.4,
       "expected_odds_max": 1.8,
       "confidence_score": 70,
@@ -208,6 +225,8 @@ Pour chaque pick :
 - kickoff_time_local : string ISO datetime
 - market : string parmi les marchés autorisés
 - pick : string
+- market_canonical_id : string (obligatoire, depuis le dictionnaire interne)
+- selection_canonical_id : string (obligatoire, depuis le dictionnaire interne)
 - expected_odds_min : number
 - expected_odds_max : number
 - confidence_score : number entre 0 et 100
@@ -216,6 +235,33 @@ Pour chaque pick :
 - key_factors : array de strings
 - main_risks : array de strings
 - source_urls : array de strings
+
+RÈGLES CANONIQUES OBLIGATOIRES
+
+- market_canonical_id doit venir du dictionnaire interne.
+- selection_canonical_id doit venir du dictionnaire interne.
+- Tu ne dois jamais inventer d’identifiant canonique.
+- Si le mapping canonique n’est pas sûr, tu ne dois pas sélectionner ce pick.
+- Les champs market et pick restent obligatoires pour la lisibilité humaine.
+
+Exemples de selection_canonical_id attendus :
+
+- Pour match_winner :
+  - home
+  - draw
+  - away
+- Pour double_chance :
+  - home_or_draw
+  - draw_or_away
+  - home_or_away
+- Pour both_teams_to_score :
+  - yes
+  - no
+- Pour goals_over_under :
+  - over_1_5
+  - over_2_5
+  - under_3_5
+  - under_4_5
 
 CONTRAINTES SUR LES COTES
 
