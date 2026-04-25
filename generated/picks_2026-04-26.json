@@ -1,0 +1,87 @@
+{
+  "generated_at": "2026-04-25T12:00:00+00:00",
+  "target_date": "2026-04-26",
+  "competitions_analyzed": [
+    "Ligue 1",
+    "Premier League",
+    "La Liga"
+  ],
+  "combo_target_odds_range": {
+    "min": 2.8,
+    "max": 3.5
+  },
+  "max_matches": 5,
+  "strategy_summary": "Sélection de deux à trois matchs robustes dans les ligues avec enjeux identifiables, en privilégiant les marchés simples (1N2, Both teams to score) avec cotes raisonnables et forte confiance.",
+  "picks": [
+    {
+      "pick_id": "pick_001",
+      "competition": "Ligue 1",
+      "event": "Marseille vs Nice",
+      "home_team": "Marseille",
+      "away_team": "Nice",
+      "kickoff_time_local": "2026-04-26T20:45:00+02:00",
+      "market": "Double chance",
+      "pick": "Nice ou Nul",
+      "expected_odds_min": 1.8,
+      "expected_odds_max": 2.1,
+      "confidence_score": 70,
+      "risk_level": "medium",
+      "analysis_summary": "Nice a montré de la solidité dernièrement et Marseille peut être sous pression après performances inégales.",
+      "key_factors": [
+        "Nice en forme récente",
+        "Marseille irrégulier",
+        "motivation possible de Nice"
+      ],
+      "main_risks": [
+        "Marseille à domicile",
+        "Nice peut aussi être irrégulier"
+      ],
+      "source_urls": [
+        "https://www.theguardian.com/football/fixtures/2026/Apr/26"
+      ]
+    },
+    {
+      "pick_id": "pick_002",
+      "competition": "La Liga",
+      "event": "Getafe vs Barcelona",
+      "home_team": "Getafe",
+      "away_team": "Barcelona",
+      "kickoff_time_local": "2026-04-26T16:30:00+02:00",
+      "market": "1N2",
+      "pick": "Barcelona",
+      "expected_odds_min": 1.4,
+      "expected_odds_max": 1.6,
+      "confidence_score": 75,
+      "risk_level": "low",
+      "analysis_summary": "Barça favori clair en déplacement contre Getafe, dynamique supérieure.",
+      "key_factors": [
+        "Qualité individuelle supérieure",
+        "Forme globale meilleure",
+        "Enjeu de haut de tableau pour Barcelone"
+      ],
+      "main_risks": [
+        "Possible rotation",
+        "Getafe motivé à domicile"
+      ],
+      "source_urls": [
+        "https://www.soccerbase.com/matches/results.sd?date=2026-04-26"
+      ]
+    }
+  ],
+  "estimated_combo_odds": 2.31,
+  "global_confidence_score": 72,
+  "combo_risk_level": "medium",
+  "rejected_matches": [
+    {
+      "event": "Le Havre vs Metz",
+      "reason": "Match sans enjeu clair et incertitude sur forme récente"
+    },
+    {
+      "event": "Paris FC vs Lille",
+      "reason": "Rotation probable et incertitude sur composition équipe"
+    }
+  ],
+  "notes": [
+    "Aucun match de Premier League ne semblait offrir un arbitrage satisfaisant en probabilité/rendement pour un combiné robuste."
+  ]
+}

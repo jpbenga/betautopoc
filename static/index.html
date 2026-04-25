@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BetAuto POC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <p class="text-sm text-cyan-400 font-semibold">BetAuto POC</p>
+      <h1 class="text-3xl md:text-5xl font-bold mt-2">
+        Analyse GPT + Vérification Unibet
+      </h1>
+      <p class="text-slate-400 mt-4 max-w-3xl">
+        Lance le process, suis les étapes en temps réel, lis les logs, consulte le JSON généré
+        et visualise la comparaison des cotes Unibet.
+      </p>
+    </header>
+
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <h2 class="text-xl font-semibold mb-4">Contrôle</h2>
+
+        <label class="flex gap-3 items-start text-sm text-slate-300 mb-5">
+          <input id="force" type="checkbox" class="mt-1">
+          <span>
+            Forcer la régénération GPT même si un JSON valide existe déjà pour la date cible.
+          </span>
+        </label>
+
+        <div class="flex flex-wrap gap-3">
+          <button id="runBtn"
+            class="px-5 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition">
+            Lancer le process
+          </button>
+
+          <button id="clearCacheBtn"
+            class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold transition">
+            Vider le cache JSON
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <h2 class="text-xl font-semibold mb-4">État global</h2>
+        <div id="globalStatus" class="text-slate-400">Aucun process lancé.</div>
+        <div id="jobMeta" class="text-xs text-slate-500 mt-4"></div>
+      </div>
+    </section>
+
+    <section id="steps" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Analyse GPT & combiné</h2>
+          <a id="picksDownload" href="#" target="_blank" class="hidden text-sm text-cyan-300 hover:underline">
+            Télécharger picks.json
+          </a>
+        </div>
+        <div id="picksPanel" class="text-slate-400">En attente.</div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Vérification Unibet</h2>
+          <a id="verificationDownload" href="#" target="_blank" class="hidden text-sm text-cyan-300 hover:underline">
+            Télécharger unibet_verification.json
+          </a>
+        </div>
+        <div id="verificationPanel" class="text-slate-400">En attente.</div>
+      </div>
+    </section>
+
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">Journal de logs</h2>
+        <button id="clearLogsBtn" class="text-sm text-slate-400 hover:text-slate-200">
+          Effacer l’affichage
+        </button>
+      </div>
+      <div id="logs"
+        class="bg-black/50 rounded-xl p-4 font-mono text-xs text-slate-300 space-y-2 max-h-96 overflow-auto">
+        Aucun log.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let currentJobId = null;
+    let pollTimer = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    const stepOrder = ["cache", "analysis", "unibet"];
+
+    const stepFallbackLabels = {
+      cache: "Cache JSON",
+      analysis: "Analyse GPT",
+      unibet: "Vérification Unibet"
+    };
+
+    function spinner() {
+      return `
+        <span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+      `;
+    }
+
+    function badge(status) {
+      const classes = {
+        pending: "bg-slate-800 text-slate-400 border-slate-700",
+        running: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+        done: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+        skipped: "bg-sky-500/10 text-sky-300 border-sky-500/30",
+        error: "bg-red-500/10 text-red-300 border-red-500/30"
+      };
+
+      const label = {
+        pending: "En attente",
+        running: "En cours",
+        done: "Terminé",
+        skipped: "Ignoré",
+        error: "Erreur"
+      };
+
+      return `
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold ${classes[status] || classes.pending}">
+          ${status === "running" ? spinner() : ""}
+          ${label[status] || status}
+        </span>
+      `;
+    }
+
+    function setRunning(isRunning) {
+      $("runBtn").disabled = isRunning;
+      $("runBtn").classList.toggle("opacity-50", isRunning);
+      $("runBtn").classList.toggle("cursor-not-allowed", isRunning);
+    }
+
+    function renderSteps(steps) {
+      if (!steps) {
+        $("steps").innerHTML = "";
+        return;
+      }
+
+      $("steps").innerHTML = stepOrder.map((key) => {
+        const step = steps[key] || {};
+        const status = step.status || "pending";
+
+        const borderClass =
+          status === "running" ? "border-amber-500/40 bg-amber-500/10" :
+            status === "done" ? "border-emerald-500/40 bg-emerald-500/10" :
+              status === "skipped" ? "border-sky-500/40 bg-sky-500/10" :
+                status === "error" ? "border-red-500/40 bg-red-500/10" :
+                  "border-slate-800 bg-slate-900";
+
+        return `
+          <div class="rounded-2xl border ${borderClass} p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-bold">${step.label || stepFallbackLabels[key]}</h3>
+                <p class="text-sm text-slate-400 mt-2">${step.message || "En attente."}</p>
+              </div>
+              ${badge(status)}
+            </div>
+            <p class="text-xs text-slate-500 mt-4">${step.updated_at || ""}</p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderLogs(logs) {
+      if (!logs || logs.length === 0) {
+        $("logs").innerHTML = "Aucun log.";
+        return;
+      }
+
+      $("logs").innerHTML = logs.map((entry) => {
+        if (typeof entry === "string") {
+          return `<div>${entry}</div>`;
+        }
+
+        return `
+          <div>
+            <span class="text-slate-500">${entry.at || ""}</span>
+            <span class="text-slate-200">${entry.message || JSON.stringify(entry)}</span>
+          </div>
+        `;
+      }).join("");
+
+      $("logs").scrollTop = $("logs").scrollHeight;
+    }
+
+    function renderPicks(picks) {
+      if (!picks) {
+        $("picksPanel").innerHTML = "En attente.";
+        return;
+      }
+
+      const picksList = picks.picks || [];
+
+      if (picksList.length === 0) {
+        $("picksPanel").innerHTML = `
+          <div class="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+            <p class="font-semibold text-slate-200">Aucun pick généré</p>
+            <pre class="text-xs text-slate-400 mt-3 whitespace-pre-wrap">${JSON.stringify(picks.notes || [], null, 2)}</pre>
+          </div>
+        `;
+        return;
+      }
+
+      const cards = picksList.map((p) => `
+        <div class="rounded-xl border border-slate-700 bg-slate-950/60 p-4 mb-4">
+          <div class="flex justify-between gap-4">
+            <div>
+              <p class="text-xs text-cyan-400 font-semibold">${p.competition || ""}</p>
+              <h3 class="font-bold text-lg mt-1">${p.event || ""}</h3>
+              <p class="text-sm text-slate-300 mt-1">
+                ${p.market || ""} — <span class="font-semibold">${p.pick || ""}</span>
+              </p>
+            </div>
+            <div class="text-right shrink-0">
+              <p class="text-xs text-slate-500">Confiance</p>
+              <p class="text-2xl font-bold">${p.confidence_score ?? "N/A"}/100</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
+            <div class="bg-slate-900 rounded-lg p-3">
+              <p class="text-xs text-slate-500">Cote min attendue</p>
+              <p class="font-bold">${p.expected_odds_min ?? "N/A"}</p>
+            </div>
+            <div class="bg-slate-900 rounded-lg p-3">
+              <p class="text-xs text-slate-500">Cote max attendue</p>
+              <p class="font-bold">${p.expected_odds_max ?? "N/A"}</p>
+            </div>
+          </div>
+
+          ${p.analysis_summary ? `<p class="text-sm text-slate-300 mt-4">${p.analysis_summary}</p>` : ""}
+
+          ${(p.key_factors || []).length ? `
+            <div class="mt-4">
+              <p class="text-xs text-slate-500 uppercase tracking-wide">Facteurs clés</p>
+              <ul class="list-disc pl-5 text-sm text-slate-300 mt-1">
+                ${p.key_factors.map(x => `<li>${x}</li>`).join("")}
+              </ul>
+            </div>
+          ` : ""}
+
+          ${(p.main_risks || []).length ? `
+            <div class="mt-4">
+              <p class="text-xs text-slate-500 uppercase tracking-wide">Risques</p>
+              <ul class="list-disc pl-5 text-sm text-slate-300 mt-1">
+                ${p.main_risks.map(x => `<li>${x}</li>`).join("")}
+              </ul>
+            </div>
+          ` : ""}
+        </div>
+      `).join("");
+
+      $("picksPanel").innerHTML = `
+        <div class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4 mb-4">
+          <p class="text-sm text-cyan-200">${picks.strategy_summary || "Combiné généré"}</p>
+          <div class="grid grid-cols-3 gap-3 mt-4 text-center">
+            <div>
+              <p class="text-xs text-slate-400">Cote estimée</p>
+              <p class="font-bold text-xl">${picks.estimated_combo_odds ?? "N/A"}</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Confiance globale</p>
+              <p class="font-bold text-xl">${picks.global_confidence_score ?? "N/A"}</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Risque</p>
+              <p class="font-bold text-xl">${picks.combo_risk_level || "N/A"}</p>
+            </div>
+          </div>
+        </div>
+        ${cards}
+      `;
+    }
+
+    function renderVerification(v) {
+      if (!v) {
+        $("verificationPanel").innerHTML = "En attente.";
+        return;
+      }
+
+      const checked = v.picks_checked || [];
+
+      const cards = checked.map((p) => {
+        const ok = !!p.odds_coherent;
+        const color = ok ? "text-emerald-400" : "text-red-400";
+
+        return `
+          <div class="rounded-xl border border-slate-700 bg-slate-950/60 p-4 mb-4">
+            <div class="flex justify-between gap-4">
+              <div>
+                <p class="text-xs text-cyan-400 font-semibold">${p.competition || ""}</p>
+                <h3 class="font-bold">${p.event || ""}</h3>
+                <p class="text-sm text-slate-300 mt-1">${p.market || ""} — ${p.pick || ""}</p>
+              </div>
+              <div class="text-right shrink-0">
+                <p class="text-xs text-slate-500">Cote Unibet</p>
+                <p class="text-2xl font-bold ${color}">${p.unibet_odds ?? "N/A"}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
+              <div class="bg-slate-900 rounded-lg p-3">
+                <p class="text-xs text-slate-500">Trouvé sur Unibet</p>
+                <p class="font-bold">${p.found_on_unibet ? "Oui" : "Non"}</p>
+              </div>
+              <div class="bg-slate-900 rounded-lg p-3">
+                <p class="text-xs text-slate-500">Cote cohérente</p>
+                <p class="font-bold ${color}">${ok ? "Oui" : "Non"}</p>
+              </div>
+            </div>
+
+            <p class="text-sm text-slate-400 mt-4">${p.reason || ""}</p>
+          </div>
+        `;
+      }).join("");
+
+      const steps = (v.navigation_steps || []).map(s => `<li>${s}</li>`).join("");
+
+      $("verificationPanel").innerHTML = `
+        <div class="rounded-xl border border-slate-700 bg-slate-950/60 p-4 mb-4">
+          <p class="text-xs text-slate-500">Statut</p>
+          <p class="font-bold">${v.status || "N/A"}</p>
+
+          <div class="grid grid-cols-2 gap-3 mt-4 text-center">
+            <div>
+              <p class="text-xs text-slate-400">Cote combiné Unibet</p>
+              <p class="font-bold text-xl">${v.unibet_combo_odds ?? "N/A"}</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Dans la cible 2.80–3.50</p>
+              <p class="font-bold text-xl">${v.combo_in_target_range ? "Oui" : "Non"}</p>
+            </div>
+          </div>
+
+          ${v.browser_summary ? `<p class="text-sm text-slate-300 mt-4">${v.browser_summary}</p>` : ""}
+        </div>
+
+        <div class="mb-4">
+          <p class="text-xs text-slate-500 uppercase tracking-wide mb-2">Étapes Browser Use</p>
+          <ul class="list-disc pl-5 text-sm text-slate-300">
+            ${steps || "<li>Aucune étape retournée.</li>"}
+          </ul>
+        </div>
+
+        ${cards || `<p class="text-slate-400">Aucun pick vérifié.</p>`}
+      `;
+    }
+
+    function updateDownloads(job) {
+      if (!currentJobId) return;
+
+      if (job.picks) {
+        $("picksDownload").href = `/api/job/${currentJobId}/file/picks.json`;
+        $("picksDownload").classList.remove("hidden");
+      }
+
+      if (job.verification) {
+        $("verificationDownload").href = `/api/job/${currentJobId}/file/unibet_verification.json`;
+        $("verificationDownload").classList.remove("hidden");
+      }
+    }
+
+    async function pollJob() {
+      if (!currentJobId) return;
+
+      const res = await fetch(`/api/job/${currentJobId}`);
+      const job = await res.json();
+
+      $("jobMeta").innerHTML = `
+        <div>Job ID : <span class="text-slate-300">${job.job_id || currentJobId}</span></div>
+        <div>Date cible : <span class="text-slate-300">${job.target_date || "-"}</span></div>
+        <div>Créé : <span class="text-slate-300">${job.created_at || "-"}</span></div>
+      `;
+
+      renderSteps(job.steps);
+      renderLogs(job.logs);
+      renderPicks(job.picks);
+      renderVerification(job.verification);
+      updateDownloads(job);
+
+      if (job.status === "running") {
+        $("globalStatus").innerHTML = `
+          <div class="flex items-center gap-2 text-amber-300">
+            ${spinner()}
+            Process en cours...
+          </div>
+        `;
+        return;
+      }
+
+      if (job.status === "done") {
+        $("globalStatus").innerHTML = `<div class="text-emerald-400 font-bold">Process terminé.</div>`;
+        clearInterval(pollTimer);
+        pollTimer = null;
+        setRunning(false);
+        return;
+      }
+
+      if (job.status === "error") {
+        $("globalStatus").innerHTML = `
+          <div class="text-red-400 font-bold">Erreur : ${job.error || "Erreur inconnue"}</div>
+        `;
+        clearInterval(pollTimer);
+        pollTimer = null;
+        setRunning(false);
+      }
+    }
+
+    $("runBtn").addEventListener("click", async () => {
+      setRunning(true);
+
+      $("globalStatus").innerHTML = `
+        <div class="flex items-center gap-2 text-amber-300">
+          ${spinner()}
+          Démarrage...
+        </div>
+      `;
+
+      $("picksPanel").innerHTML = "En attente.";
+      $("verificationPanel").innerHTML = "En attente.";
+      $("logs").innerHTML = "Démarrage du process...";
+      $("picksDownload").classList.add("hidden");
+      $("verificationDownload").classList.add("hidden");
+
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          force: $("force").checked
+        })
+      });
+
+      const data = await res.json();
+      currentJobId = data.job_id;
+
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(pollJob, 1500);
+
+      await pollJob();
+    });
+
+    $("clearCacheBtn").addEventListener("click", async () => {
+      const res = await fetch("/api/cache/clear", { method: "POST" });
+      const data = await res.json();
+      alert(`Cache vidé : ${data.removed} fichier(s) supprimé(s).`);
+    });
+
+    $("clearLogsBtn").addEventListener("click", () => {
+      $("logs").innerHTML = "Affichage local effacé. Les logs restent disponibles côté job.";
+    });
+
+    renderSteps({
+      cache: { label: "Cache JSON", status: "pending", message: "En attente." },
+      analysis: { label: "Analyse GPT", status: "pending", message: "En attente." },
+      unibet: { label: "Vérification Unibet", status: "pending", message: "En attente." }
+    });
+  </script>
+</body>
+
+</html>
