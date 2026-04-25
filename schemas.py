@@ -62,6 +62,7 @@ class UnibetPickVerification(BaseModel):
     market: str
     pick: str
     found_on_unibet: bool
+    added_to_betslip: bool = False
     unibet_event_label: str | None = None
     unibet_market_label: str | None = None
     unibet_pick_label: str | None = None

@@ -10,7 +10,8 @@ Ce POC correspond au besoin suivant :
 5. Browser Use va sur Unibet.
 6. Browser Use retrouve les rencontres.
 7. Browser Use lit les cotes Unibet publiques au moment de la recherche.
-8. Browser Use produit un JSON de vérification.
+8. Browser Use ajoute les sélections dans le panier sans valider le pari.
+9. Browser Use produit un JSON de vérification.
 ```
 
 L'interface HTML avec Tailwind CDN permet de :
@@ -32,8 +33,7 @@ L'interface HTML avec Tailwind CDN permet de :
 - Pas de mock de cote.
 - Pas de connexion à un compte.
 - Pas de mot de passe.
-- Pas de préparation de pari.
-- Pas de validation de coupon.
+- Pas de validation de coupon (mise non confirmée).
 
 Les fichiers JSON sont créés uniquement au moment de l'exécution dans :
 

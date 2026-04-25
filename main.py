@@ -92,6 +92,7 @@ class VerifiedPick(BaseModel):
     pick: str
 
     found_on_unibet: bool
+    added_to_betslip: bool = False
     unibet_event_label: Optional[str] = None
     unibet_market_label: Optional[str] = None
     unibet_pick_label: Optional[str] = None
@@ -278,11 +279,12 @@ def generate_picks_with_openai(job_id: str, target_date: str) -> dict[str, Any]:
 
 def build_unibet_task(picks: dict[str, Any]) -> str:
     return f"""
-Tu es un agent de vérification de cotes.
+Tu es un agent expert en automatisation de paris sportifs sur Unibet France.
 
 OBJECTIF
 
-Vérifier sur Unibet France les picks contenus dans le JSON ci-dessous.
+1. Vérifier les cotes pour les picks fournis.
+2. Cliquer sur chaque sélection pour l'ajouter au coupon (panier) de paris.
 
 SITE
 
@@ -294,9 +296,9 @@ CONTRAINTES ABSOLUES
 - Ne pas se connecter.
 - Ne pas demander d’identifiants.
 - Ne pas créer de compte.
-- Ne pas cliquer sur un bouton de mise.
-- Ne pas valider de coupon.
-- Lire uniquement les rencontres, marchés, sélections et cotes affichées.
+- Ne pas cliquer sur "Placer le pari".
+- Ne pas cliquer sur "Valider le panier".
+- S'arrêter une fois que tous les picks sont dans le panier.
 
 JSON DES PICKS À VÉRIFIER
 
@@ -354,25 +356,36 @@ Pour chaque pick, tu dois suivre cet ordre strict :
    - stocker uniquement un nombre dans unibet_odds ;
    - ne jamais inventer de cote.
 
-8. Comparer avec expected_odds_min :
+8. ACTION DE PARI (préparation ticket, sans validation) :
+   - cliquer physiquement sur la case de cote correspondant à la sélection ;
+   - vérifier un changement visuel (case sélectionnée) ;
+   - vérifier que le compteur du panier augmente ou que la sélection apparaît dans le panier ;
+   - added_to_betslip = true uniquement si la vérification panier est positive ;
+   - added_to_betslip = false sinon.
+
+9. Comparer avec expected_odds_min :
    - odds_coherent = true si unibet_odds >= expected_odds_min ;
    - odds_coherent = false si unibet_odds < expected_odds_min.
 
-9. Compléter reason :
-   - expliquer brièvement ce qui a été trouvé ou non trouvé.
+10. Compléter reason :
+   - expliquer brièvement ce qui a été trouvé ou non trouvé ;
+   - indiquer explicitement si l'ajout au panier a réussi.
 
-10. Ajouter les grandes étapes dans navigation_steps :
+11. Ajouter les grandes étapes dans navigation_steps :
    - ouverture du site ;
    - gestion cookies ;
    - modal fermée ;
    - recherche du match ;
    - match trouvé ou introuvable ;
    - marché trouvé ou introuvable ;
-   - cote lue.
+   - cote lue ;
+   - clic sélection ;
+   - contrôle panier.
 
 RÈGLES GLOBALES
 
 - found_on_unibet = false si le match est introuvable.
+- added_to_betslip = false si le match, le marché, la sélection ou la vérification panier échoue.
 - unibet_odds doit être un nombre ou null.
 - odds_coherent = true uniquement si une cote réelle a été lue et qu’elle est >= expected_odds_min.
 - odds_coherent = false dans tous les autres cas.
@@ -396,49 +409,6 @@ CALCUL GLOBAL
   - null si unibet_combo_odds = null.
 
 SORTIE
-
-Retourne uniquement une sortie structurée conforme au schéma demandé.
-"""
-    return f"""
-Tu es un agent de vérification de cotes.
-
-Objectif :
-Vérifier sur Unibet France les picks contenus dans le JSON ci-dessous.
-
-Site :
-https://www.unibet.fr/
-
-Contraintes absolues :
-- Utiliser uniquement les pages publiques.
-- Ne pas se connecter.
-- Ne pas demander d’identifiants.
-- Ne pas créer de compte.
-- Ne pas cliquer sur un bouton de mise.
-- Ne pas valider de coupon.
-- Lire uniquement les rencontres, marchés, sélections et cotes affichées.
-
-JSON des picks à vérifier :
-
-{json.dumps(picks, ensure_ascii=False, indent=2)}
-
-Pour chaque pick :
-1. Retrouver la compétition si possible.
-2. Retrouver le match.
-3. Retrouver le marché demandé.
-4. Retrouver la sélection demandée.
-5. Lire la cote Unibet affichée.
-6. Comparer la cote Unibet avec expected_odds_min.
-7. Déterminer si la cote est cohérente.
-8. Renseigner une explication courte dans reason.
-9. Ajouter les grandes étapes réalisées dans navigation_steps.
-
-Règles :
-- found_on_unibet = false si le match est introuvable.
-- odds_coherent = true si unibet_odds >= expected_odds_min.
-- odds_coherent = false si unibet_odds < expected_odds_min.
-- confidence = "low" si tu n’es pas sûr de la correspondance.
-- Calcule unibet_combo_odds en multipliant les cotes retrouvées et cohérentes.
-- combo_in_target_range = true si unibet_combo_odds est entre 2.80 et 3.50.
 
 Retourne uniquement une sortie structurée conforme au schéma demandé.
 """
