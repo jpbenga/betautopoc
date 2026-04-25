@@ -1,0 +1,1884 @@
+{
+  "generated_at": "2026-04-25T17:17:32+00:00",
+  "markets": [
+    {
+      "api_bet_id": 42,
+      "api_bet_name": "Second Half Exact Goals Number",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 43,
+      "api_bet_name": "Home Team Score a Goal",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 44,
+      "api_bet_name": "Away Team Score a Goal",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 45,
+      "api_bet_name": "Corners Over Under",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over 10.5",
+        "Over 11.5",
+        "Over 12.5",
+        "Over 13.5",
+        "Over 14.5",
+        "Over 6.5",
+        "Over 7.5",
+        "Over 8.5",
+        "Over 9.5",
+        "Under 10.5",
+        "Under 11.5",
+        "Under 12.5",
+        "Under 13.5",
+        "Under 14.5",
+        "Under 6.5",
+        "Under 7.5",
+        "Under 8.5",
+        "Under 9.5"
+      ]
+    },
+    {
+      "api_bet_id": 46,
+      "api_bet_name": "Exact Goals Number - First Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 47,
+      "api_bet_name": "Winning Margin",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 48,
+      "api_bet_name": "To Score In Both Halves By Teams",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 49,
+      "api_bet_name": "Total Goals/Both Teams To Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 50,
+      "api_bet_name": "Goal Line",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 51,
+      "api_bet_name": "Halftime Result/Total Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 52,
+      "api_bet_name": "Halftime Result/Both Teams Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 53,
+      "api_bet_name": "Away win both halves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 54,
+      "api_bet_name": "First 10 min Winner",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 55,
+      "api_bet_name": "Corners 1x2",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Away",
+        "Draw",
+        "Home"
+      ]
+    },
+    {
+      "api_bet_id": 56,
+      "api_bet_name": "Corners Asian Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 57,
+      "api_bet_name": "Home Corners Over/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over 2.5",
+        "Over 3.5",
+        "Over 4.5",
+        "Over 5.5",
+        "Over 6.5",
+        "Over 7.5",
+        "Over 8.5",
+        "Over 9.5",
+        "Under 2.5",
+        "Under 3.5",
+        "Under 4.5",
+        "Under 5.5",
+        "Under 6.5",
+        "Under 7.5",
+        "Under 8.5",
+        "Under 9.5"
+      ]
+    },
+    {
+      "api_bet_id": 58,
+      "api_bet_name": "Away Corners Over/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over 2.5",
+        "Over 3.5",
+        "Over 4.5",
+        "Over 5.5",
+        "Over 6.5",
+        "Over 7.5",
+        "Over 8.5",
+        "Over 9.5",
+        "Under 2.5",
+        "Under 3.5",
+        "Under 4.5",
+        "Under 5.5",
+        "Under 6.5",
+        "Under 7.5",
+        "Under 8.5",
+        "Under 9.5"
+      ]
+    },
+    {
+      "api_bet_id": 59,
+      "api_bet_name": "Own Goal",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 60,
+      "api_bet_name": "Away Odd/Even",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 61,
+      "api_bet_name": "To Qualify",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 62,
+      "api_bet_name": "Correct Score - Second Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 63,
+      "api_bet_name": "Odd/Even - Second Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 72,
+      "api_bet_name": "Goal Line (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 73,
+      "api_bet_name": "Both Teams to Score 1st Half - 2nd Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 74,
+      "api_bet_name": "10 Over/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 75,
+      "api_bet_name": "Last Corner",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 76,
+      "api_bet_name": "First Corner",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 77,
+      "api_bet_name": "Total Corners (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over 2.5",
+        "Over 3.5",
+        "Over 4.5",
+        "Over 5.5",
+        "Over 6.5",
+        "Over 7.5",
+        "Under 2.5",
+        "Under 3.5",
+        "Under 4.5",
+        "Under 5.5",
+        "Under 6.5",
+        "Under 7.5"
+      ]
+    },
+    {
+      "api_bet_id": 78,
+      "api_bet_name": "RTG_H1",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 79,
+      "api_bet_name": "Cards European Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 80,
+      "api_bet_name": "Cards Over/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over 2.5",
+        "Over 3.5",
+        "Over 4.5",
+        "Under 2.5",
+        "Under 3.5",
+        "Under 4.5"
+      ]
+    },
+    {
+      "api_bet_id": 81,
+      "api_bet_name": "Cards Asian Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 82,
+      "api_bet_name": "Home Team Total Cards",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 83,
+      "api_bet_name": "Away Team Total Cards",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 84,
+      "api_bet_name": "Total Corners (3 way) (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 85,
+      "api_bet_name": "Total Corners (3 way)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 86,
+      "api_bet_name": "RCARD",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 87,
+      "api_bet_name": "Total ShotOnGoal",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 88,
+      "api_bet_name": "Home Total ShotOnGoal",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 89,
+      "api_bet_name": "Away Total ShotOnGoal",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 91,
+      "api_bet_name": "Total Goals (3 way)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 92,
+      "api_bet_name": "Anytime Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 93,
+      "api_bet_name": "First Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 94,
+      "api_bet_name": "Last Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 95,
+      "api_bet_name": "To Score Two or More Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 96,
+      "api_bet_name": "Last Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 97,
+      "api_bet_name": "First Goal Method",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 99,
+      "api_bet_name": "To Score A Penalty",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 100,
+      "api_bet_name": "To Miss A Penalty",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 102,
+      "api_bet_name": "Player to be booked",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 103,
+      "api_bet_name": "Player to be Sent Off",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 104,
+      "api_bet_name": "Asian Handicap (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 105,
+      "api_bet_name": "Home Team Total Goals(1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over 0.5",
+        "Over 1.5",
+        "Under 0.5",
+        "Under 1.5"
+      ]
+    },
+    {
+      "api_bet_id": 106,
+      "api_bet_name": "Away Team Total Goals(1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over 0.5",
+        "Over 1.5",
+        "Under 0.5",
+        "Under 1.5"
+      ]
+    },
+    {
+      "api_bet_id": 107,
+      "api_bet_name": "Home Team Total Goals(2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 108,
+      "api_bet_name": "Away Team Total Goals(2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 109,
+      "api_bet_name": "Draw No Bet (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Away",
+        "Home"
+      ]
+    },
+    {
+      "api_bet_id": 110,
+      "api_bet_name": "Scoring Draw",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 111,
+      "api_bet_name": "Home team will score in both halves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 112,
+      "api_bet_name": "Away team will score in both halves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 113,
+      "api_bet_name": "Both Teams To Score in Both Halves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 114,
+      "api_bet_name": "Home Team Score a Goal (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 115,
+      "api_bet_name": "Home Team Score a Goal (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 116,
+      "api_bet_name": "Away Team Score a Goal (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 117,
+      "api_bet_name": "Away Team Score a Goal (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 118,
+      "api_bet_name": "Home Win/Over",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 119,
+      "api_bet_name": "Home Win/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 120,
+      "api_bet_name": "Away Win/Over",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 121,
+      "api_bet_name": "Away Win/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 122,
+      "api_bet_name": "Home team will win either half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 123,
+      "api_bet_name": "Away team will win either half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 124,
+      "api_bet_name": "Home Come From Behind and Win",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 125,
+      "api_bet_name": "Corners Asian Handicap (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 126,
+      "api_bet_name": "Corners Asian Handicap (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 127,
+      "api_bet_name": "Total Corners (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 128,
+      "api_bet_name": "Total Corners (3 way) (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 129,
+      "api_bet_name": "Away Come From Behind and Win",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 130,
+      "api_bet_name": "Corners 1x2 (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 131,
+      "api_bet_name": "Corners 1x2 (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 132,
+      "api_bet_name": "Home Total Corners (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 133,
+      "api_bet_name": "Home Total Corners (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 134,
+      "api_bet_name": "Away Total Corners (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 135,
+      "api_bet_name": "Away Total Corners (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 136,
+      "api_bet_name": "1x2 - 15 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 137,
+      "api_bet_name": "1x2 - 60 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 138,
+      "api_bet_name": "1x2 - 75 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 139,
+      "api_bet_name": "1x2 - 30 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 140,
+      "api_bet_name": "DC - 30 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 141,
+      "api_bet_name": "DC - 15 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 142,
+      "api_bet_name": "DC - 60 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 143,
+      "api_bet_name": "DC - 75 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 144,
+      "api_bet_name": "Goal in 1-15 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 145,
+      "api_bet_name": "Goal in 16-30 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 146,
+      "api_bet_name": "Goal in 31-45 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 147,
+      "api_bet_name": "Goal in 46-60 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 148,
+      "api_bet_name": "Goal in 61-75 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 149,
+      "api_bet_name": "Goal in 76-90 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 150,
+      "api_bet_name": "Home Team Yellow Cards",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 151,
+      "api_bet_name": "Away Team Yellow Cards",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 152,
+      "api_bet_name": "Yellow Asian Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 153,
+      "api_bet_name": "Yellow Over/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 154,
+      "api_bet_name": "Yellow Double Chance",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 155,
+      "api_bet_name": "Yellow Over/Under (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 156,
+      "api_bet_name": "Yellow Over/Under (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 157,
+      "api_bet_name": "Yellow Odd/Even",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 158,
+      "api_bet_name": "Yellow Cards 1x2",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 159,
+      "api_bet_name": "Yellow Asian Handicap (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 160,
+      "api_bet_name": "Yellow Asian Handicap (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 161,
+      "api_bet_name": "Yellow Cards 1x2 (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 162,
+      "api_bet_name": "Yellow Cards 1x2 (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 163,
+      "api_bet_name": "Penalty Awarded",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 164,
+      "api_bet_name": "Offsides Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 165,
+      "api_bet_name": "Offsides 1x2",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 166,
+      "api_bet_name": "Offsides Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 167,
+      "api_bet_name": "Offsides Home Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 168,
+      "api_bet_name": "Offsides Away Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 169,
+      "api_bet_name": "Offsides Double Chance",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 170,
+      "api_bet_name": "Fouls. Away Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 171,
+      "api_bet_name": "Fouls. Home Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 172,
+      "api_bet_name": "Fouls. Double Chance",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 173,
+      "api_bet_name": "Fouls. Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 174,
+      "api_bet_name": "Fouls. Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 175,
+      "api_bet_name": "Fouls. 1x2",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 176,
+      "api_bet_name": "ShotOnTarget 1x2",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 177,
+      "api_bet_name": "ShotOnTarget Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 178,
+      "api_bet_name": "ShotOnTarget Double Chance",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 179,
+      "api_bet_name": "First Team to Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 180,
+      "api_bet_name": "Last Team to Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 181,
+      "api_bet_name": "European Handicap (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 182,
+      "api_bet_name": "Draw No Bet (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Away",
+        "Home"
+      ]
+    },
+    {
+      "api_bet_id": 183,
+      "api_bet_name": "Double Chance/Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 184,
+      "api_bet_name": "To Score in Both Halves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 185,
+      "api_bet_name": "First Team to Score (3 way) 1st Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 186,
+      "api_bet_name": "Total Goals Number By Ranges",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 187,
+      "api_bet_name": "Total Goals By Ranges (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 188,
+      "api_bet_name": "Clean Sheet",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 189,
+      "api_bet_name": "To Advance Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 190,
+      "api_bet_name": "Home Exact Goals Number (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 191,
+      "api_bet_name": "Away Exact Goals Number (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 192,
+      "api_bet_name": "Home Highest Scoring Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 193,
+      "api_bet_name": "Away Highest Scoring Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 194,
+      "api_bet_name": "Result/Total Goals (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 195,
+      "api_bet_name": "Either Team Wins By 1 Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 196,
+      "api_bet_name": "Either Team Wins By 2 Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 197,
+      "api_bet_name": "Over/Under 15m-30m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 198,
+      "api_bet_name": "Over/Under 30m-45m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 199,
+      "api_bet_name": "Home Win To Nill (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 200,
+      "api_bet_name": "Home Win To Nill (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 201,
+      "api_bet_name": "To Score In 1st Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 202,
+      "api_bet_name": "To Score In 2nd Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 203,
+      "api_bet_name": "Yellow Cards. Odd/Even (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 204,
+      "api_bet_name": "Yellow Cards. Odd/Even (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 205,
+      "api_bet_name": "First Team to Score (3 way) 2nd Half",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 206,
+      "api_bet_name": "Home No Bet",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 207,
+      "api_bet_name": "Away No Bet",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 208,
+      "api_bet_name": "Corners. First Corner (3 way)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 209,
+      "api_bet_name": "Home Come From Behind and Draw",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 210,
+      "api_bet_name": "Away Come From Behind and Draw",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 211,
+      "api_bet_name": "Total Shots",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over",
+        "Under"
+      ]
+    },
+    {
+      "api_bet_id": 212,
+      "api_bet_name": "Player Assists",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 213,
+      "api_bet_name": "Player Triples",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 214,
+      "api_bet_name": "Player Points",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 215,
+      "api_bet_name": "Player Singles",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 216,
+      "api_bet_name": "Multi Touchdown Scorer (2 or More)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 217,
+      "api_bet_name": "Multi Touchdown Scorer (3 or More)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 218,
+      "api_bet_name": "Away Anytime Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 219,
+      "api_bet_name": "Away First Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 220,
+      "api_bet_name": "Shots. Away Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 221,
+      "api_bet_name": "Shots. Home Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 222,
+      "api_bet_name": "To Win From Behind",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 223,
+      "api_bet_name": "Number of Goals In Match (Range)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 224,
+      "api_bet_name": "Game Decided After Penalties",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 225,
+      "api_bet_name": "Game Decided in Extra Time",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 226,
+      "api_bet_name": "Away Last Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 227,
+      "api_bet_name": "Goal Method Header",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 228,
+      "api_bet_name": "Home Goal Method Header",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 229,
+      "api_bet_name": "Goal Method Outside the Box",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 230,
+      "api_bet_name": "Home Goal Method Outside the Box",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 231,
+      "api_bet_name": "Home Anytime Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 232,
+      "api_bet_name": "Home First Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 233,
+      "api_bet_name": "Home Last Goal Scorer",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 234,
+      "api_bet_name": "Home To Score Three or More Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 235,
+      "api_bet_name": "Away To Score Three or More Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 236,
+      "api_bet_name": "Away To Score Two or More Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 237,
+      "api_bet_name": "Home To Score Two or More Goals",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 238,
+      "api_bet_name": "Home Team Goalscorers First",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 239,
+      "api_bet_name": "Corners. European Handicap",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 240,
+      "api_bet_name": "Home Player Shots",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 241,
+      "api_bet_name": "Away Player Shots",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 242,
+      "api_bet_name": "Player Shots On Target",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 243,
+      "api_bet_name": "Home Shots On Target",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 244,
+      "api_bet_name": "Away Shots On Target",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 245,
+      "api_bet_name": "Away Goal Method Header",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 246,
+      "api_bet_name": "Away Goal Method Outside the Box",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 247,
+      "api_bet_name": "Corners Race To",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 248,
+      "api_bet_name": "Time Of 1st Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 249,
+      "api_bet_name": "Multicorners",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 250,
+      "api_bet_name": "First Card Received (3 way)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 251,
+      "api_bet_name": "Player to be booked",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 252,
+      "api_bet_name": "Both Teams to Receive a Card",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 253,
+      "api_bet_name": "Time Of 1st Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 254,
+      "api_bet_name": "Team Performances (Range)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 255,
+      "api_bet_name": "Home Player Assists",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 256,
+      "api_bet_name": "Away Player Assists",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 257,
+      "api_bet_name": "Player to Score or Assist",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 258,
+      "api_bet_name": "Home Player to Score or Assist",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 259,
+      "api_bet_name": "Away Player to Score or Assist",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 260,
+      "api_bet_name": "Team Time Of 1st Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 261,
+      "api_bet_name": "Total Goal Minutes (Range)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 262,
+      "api_bet_name": "Late Goal (Range)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 263,
+      "api_bet_name": "Early Goal (Range)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 264,
+      "api_bet_name": "Player Shots On Target Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 265,
+      "api_bet_name": "Player Shots Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 266,
+      "api_bet_name": "Player Fouls Committed",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 267,
+      "api_bet_name": "Goalkeeper Saves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 268,
+      "api_bet_name": "Home Goalkeeper Saves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 269,
+      "api_bet_name": "Home Player Shots On Target Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 270,
+      "api_bet_name": "Home Player Shots Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 271,
+      "api_bet_name": "Home Player Fouls Committed",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 272,
+      "api_bet_name": "Home Player Tackles",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 273,
+      "api_bet_name": "Home Player Passes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 274,
+      "api_bet_name": "Away Goalkeeper Saves",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 275,
+      "api_bet_name": "Away Player Shots On Target Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 276,
+      "api_bet_name": "Away Player Shots Total",
+      "reason": "No automatic canonical mapping found",
+      "values": [
+        "Over",
+        "Under"
+      ]
+    },
+    {
+      "api_bet_id": 277,
+      "api_bet_name": "Away Player Fouls Committed",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 278,
+      "api_bet_name": "Away Player Tackles",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 279,
+      "api_bet_name": "Away Player Passes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 280,
+      "api_bet_name": "First Set Piece 5 Minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 281,
+      "api_bet_name": "Total Tackles",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 282,
+      "api_bet_name": "Double Chance/Both Teams To Score",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 283,
+      "api_bet_name": "Away Win To Nill (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 284,
+      "api_bet_name": "Away Win To Nill (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 285,
+      "api_bet_name": "Team To Score (Goals)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 286,
+      "api_bet_name": "Team Goalscorers First",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 287,
+      "api_bet_name": "Team Goalscorers Last",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 288,
+      "api_bet_name": "Home Team Goalscorers Last",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 289,
+      "api_bet_name": "Away Team Goalscorers First",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 290,
+      "api_bet_name": "Away Team Goalscorers Last",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 291,
+      "api_bet_name": "Time of First Goal Brackets (Range)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 292,
+      "api_bet_name": "Over/Under between 0 and 10m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 293,
+      "api_bet_name": "Double Chance 0-15m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 294,
+      "api_bet_name": "Double Chance 15-30m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 295,
+      "api_bet_name": "Corners. Total (Range)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 296,
+      "api_bet_name": "Double Chance 30-45m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 297,
+      "api_bet_name": "Corners. total between 0 and 10m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 298,
+      "api_bet_name": "Method of Victory",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 299,
+      "api_bet_name": "Cards over/under between 0 and 10 m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 300,
+      "api_bet_name": "Both Teams to Receive 2+ Cards",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 301,
+      "api_bet_name": "Tackles. Away Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 302,
+      "api_bet_name": "Tackles. Home Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 303,
+      "api_bet_name": "Over/Under between 0 and 10 m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 304,
+      "api_bet_name": "Over/Under between  0 and 10 m",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 305,
+      "api_bet_name": "Race to the 2nd goal?",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 306,
+      "api_bet_name": "Race to the 3rd goal?",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 307,
+      "api_bet_name": "Corners. Double Chance",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 308,
+      "api_bet_name": "Race To",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 309,
+      "api_bet_name": "Yellow Cards. Home Total (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 310,
+      "api_bet_name": "Yellow Cards Away Total (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 311,
+      "api_bet_name": "Which team will score the 1st goal?",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 312,
+      "api_bet_name": "1x2 - 20 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 313,
+      "api_bet_name": "Offsides Odd/Even",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 314,
+      "api_bet_name": "Fouls Odd/Even",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 315,
+      "api_bet_name": "Saves Total",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 316,
+      "api_bet_name": "Saves 1x2",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 317,
+      "api_bet_name": "Saves Asian H",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 318,
+      "api_bet_name": "Saves O/U Home",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 319,
+      "api_bet_name": "Saves O/U Away",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 320,
+      "api_bet_name": "Saves Double Chance",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 321,
+      "api_bet_name": "Penalty Awarded (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 322,
+      "api_bet_name": "Penalty Awarded (2nd Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 323,
+      "api_bet_name": "Saves Odd/Even",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 324,
+      "api_bet_name": "Corner in 1-15 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 325,
+      "api_bet_name": "Corner in 16-30 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 326,
+      "api_bet_name": "Corner in 31-45 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 327,
+      "api_bet_name": "Corner in 45-60 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 328,
+      "api_bet_name": "Corner in 60-75 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 329,
+      "api_bet_name": "Corner in 75-90 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 330,
+      "api_bet_name": "Home Not lose/Over",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 331,
+      "api_bet_name": "Home Not lose/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 332,
+      "api_bet_name": "Away Not lose/Over",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 333,
+      "api_bet_name": "Away Not lose/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 334,
+      "api_bet_name": "1x2 - 70 minutes",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 335,
+      "api_bet_name": "Red Cards Over/Under",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 336,
+      "api_bet_name": "Goal Line",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 337,
+      "api_bet_name": "Asian Handicap (Sets)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 338,
+      "api_bet_name": "Corners. Odd/Even",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 339,
+      "api_bet_name": "Corners. Double Chance",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 340,
+      "api_bet_name": "Shots.1x2",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 341,
+      "api_bet_name": null,
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 342,
+      "api_bet_name": "Red Card In The Match (1st Half)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 343,
+      "api_bet_name": "Fouls. Odd/Even",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 344,
+      "api_bet_name": "Odd/Even (1st Set)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 345,
+      "api_bet_name": "Set Betting",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 346,
+      "api_bet_name": "Extra Point (1st Set)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 347,
+      "api_bet_name": "Home Winning Margin (1st Set)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    },
+    {
+      "api_bet_id": 348,
+      "api_bet_name": "Away Winning Margin (1st Set)",
+      "reason": "No automatic canonical mapping found",
+      "values": []
+    }
+  ],
+  "source_files": [
+    "api_football_exploration_20260425_182608.json",
+    "api_football_bookmakers.json"
+  ]
+}

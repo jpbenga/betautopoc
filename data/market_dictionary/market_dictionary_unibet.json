@@ -1,0 +1,3453 @@
+{
+  "bookmaker": {
+    "id": 16,
+    "name": "Unibet"
+  },
+  "generated_at": "2026-04-25T17:17:32+00:00",
+  "markets": [
+    {
+      "api_football": {
+        "bet_id": 1,
+        "bet_name": "Match Winner"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Match Winner",
+      "browser_use_aliases": [
+        "Match Winner",
+        "Match winner"
+      ],
+      "canonical_market_id": "match_winner",
+      "canonical_market_name": "Match winner",
+      "category": "main_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Home"
+          ],
+          "bookmaker_values": [
+            "Home"
+          ],
+          "browser_use_aliases": [
+            "Home"
+          ],
+          "canonical_selection_id": "home",
+          "canonical_selection_name": "Home"
+        },
+        {
+          "api_values": [
+            "Draw"
+          ],
+          "bookmaker_values": [
+            "Draw"
+          ],
+          "browser_use_aliases": [
+            "Draw"
+          ],
+          "canonical_selection_id": "draw",
+          "canonical_selection_name": "Draw"
+        },
+        {
+          "api_values": [
+            "Away"
+          ],
+          "bookmaker_values": [
+            "Away"
+          ],
+          "browser_use_aliases": [
+            "Away"
+          ],
+          "canonical_selection_id": "away",
+          "canonical_selection_name": "Away"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 2,
+        "bet_name": "Home/Away"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Home/Away",
+      "browser_use_aliases": [
+        "Home away",
+        "Home/Away"
+      ],
+      "canonical_market_id": "home_away",
+      "canonical_market_name": "Home away",
+      "category": "main_market",
+      "notes": [
+        "Selection mapping inferred from raw API labels."
+      ],
+      "requires_manual_review": true,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Away"
+          ],
+          "bookmaker_values": [
+            "Away"
+          ],
+          "browser_use_aliases": [
+            "Away"
+          ],
+          "canonical_selection_id": "away",
+          "canonical_selection_name": "Away"
+        },
+        {
+          "api_values": [
+            "Home"
+          ],
+          "bookmaker_values": [
+            "Home"
+          ],
+          "browser_use_aliases": [
+            "Home"
+          ],
+          "canonical_selection_id": "home",
+          "canonical_selection_name": "Home"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 3,
+        "bet_name": "Second Half Winner"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Second Half Winner",
+      "browser_use_aliases": [
+        "Second Half Winner",
+        "Second half winner"
+      ],
+      "canonical_market_id": "second_half_winner",
+      "canonical_market_name": "Second half winner",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Home"
+          ],
+          "bookmaker_values": [
+            "Home"
+          ],
+          "browser_use_aliases": [
+            "Home"
+          ],
+          "canonical_selection_id": "home",
+          "canonical_selection_name": "Home"
+        },
+        {
+          "api_values": [
+            "Draw"
+          ],
+          "bookmaker_values": [
+            "Draw"
+          ],
+          "browser_use_aliases": [
+            "Draw"
+          ],
+          "canonical_selection_id": "draw",
+          "canonical_selection_name": "Draw"
+        },
+        {
+          "api_values": [
+            "Away"
+          ],
+          "bookmaker_values": [
+            "Away"
+          ],
+          "browser_use_aliases": [
+            "Away"
+          ],
+          "canonical_selection_id": "away",
+          "canonical_selection_name": "Away"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 4,
+        "bet_name": "Asian Handicap"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Asian Handicap",
+      "browser_use_aliases": [
+        "Asian Handicap",
+        "Asian handicap"
+      ],
+      "canonical_market_id": "asian_handicap",
+      "canonical_market_name": "Asian handicap",
+      "category": "handicap_market",
+      "notes": [
+        "Selection mapping inferred from raw API labels."
+      ],
+      "requires_manual_review": true,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Away +0.5"
+          ],
+          "bookmaker_values": [
+            "Away +0.5"
+          ],
+          "browser_use_aliases": [
+            "Away +0.5"
+          ],
+          "canonical_selection_id": "away_0_5",
+          "canonical_selection_name": "Away +0.5"
+        },
+        {
+          "api_values": [
+            "Away +1.5"
+          ],
+          "bookmaker_values": [
+            "Away +1.5"
+          ],
+          "browser_use_aliases": [
+            "Away +1.5"
+          ],
+          "canonical_selection_id": "away_1_5",
+          "canonical_selection_name": "Away +1.5"
+        },
+        {
+          "api_values": [
+            "Away -0.5"
+          ],
+          "bookmaker_values": [
+            "Away -0.5"
+          ],
+          "browser_use_aliases": [
+            "Away -0.5"
+          ],
+          "canonical_selection_id": "away_0_5",
+          "canonical_selection_name": "Away -0.5"
+        },
+        {
+          "api_values": [
+            "Away -1.5"
+          ],
+          "bookmaker_values": [
+            "Away -1.5"
+          ],
+          "browser_use_aliases": [
+            "Away -1.5"
+          ],
+          "canonical_selection_id": "away_1_5",
+          "canonical_selection_name": "Away -1.5"
+        },
+        {
+          "api_values": [
+            "Home +0.5"
+          ],
+          "bookmaker_values": [
+            "Home +0.5"
+          ],
+          "browser_use_aliases": [
+            "Home +0.5"
+          ],
+          "canonical_selection_id": "home_0_5",
+          "canonical_selection_name": "Home +0.5"
+        },
+        {
+          "api_values": [
+            "Home +1.5"
+          ],
+          "bookmaker_values": [
+            "Home +1.5"
+          ],
+          "browser_use_aliases": [
+            "Home +1.5"
+          ],
+          "canonical_selection_id": "home_1_5",
+          "canonical_selection_name": "Home +1.5"
+        },
+        {
+          "api_values": [
+            "Home -0.5"
+          ],
+          "bookmaker_values": [
+            "Home -0.5"
+          ],
+          "browser_use_aliases": [
+            "Home -0.5"
+          ],
+          "canonical_selection_id": "home_0_5",
+          "canonical_selection_name": "Home -0.5"
+        },
+        {
+          "api_values": [
+            "Home -1.5"
+          ],
+          "bookmaker_values": [
+            "Home -1.5"
+          ],
+          "browser_use_aliases": [
+            "Home -1.5"
+          ],
+          "canonical_selection_id": "home_1_5",
+          "canonical_selection_name": "Home -1.5"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 5,
+        "bet_name": "Goals Over/Under"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Goals Over/Under",
+      "browser_use_aliases": [
+        "Goals Over/Under",
+        "Goals over under"
+      ],
+      "canonical_market_id": "goals_over_under",
+      "canonical_market_name": "Goals over under",
+      "category": "main_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Over 0.5"
+          ],
+          "bookmaker_values": [
+            "Over 0.5"
+          ],
+          "browser_use_aliases": [
+            "Over 0.5"
+          ],
+          "canonical_selection_id": "over_0_5",
+          "canonical_selection_name": "Over 0.5"
+        },
+        {
+          "api_values": [
+            "Over 1.5"
+          ],
+          "bookmaker_values": [
+            "Over 1.5"
+          ],
+          "browser_use_aliases": [
+            "Over 1.5"
+          ],
+          "canonical_selection_id": "over_1_5",
+          "canonical_selection_name": "Over 1.5"
+        },
+        {
+          "api_values": [
+            "Over 2.0"
+          ],
+          "bookmaker_values": [
+            "Over 2.0"
+          ],
+          "browser_use_aliases": [
+            "Over 2.0"
+          ],
+          "canonical_selection_id": "over_2_0",
+          "canonical_selection_name": "Over 2.0"
+        },
+        {
+          "api_values": [
+            "Over 2.25"
+          ],
+          "bookmaker_values": [
+            "Over 2.25"
+          ],
+          "browser_use_aliases": [
+            "Over 2.25"
+          ],
+          "canonical_selection_id": "over_2_25",
+          "canonical_selection_name": "Over 2.25"
+        },
+        {
+          "api_values": [
+            "Over 2.5"
+          ],
+          "bookmaker_values": [
+            "Over 2.5"
+          ],
+          "browser_use_aliases": [
+            "Over 2.5"
+          ],
+          "canonical_selection_id": "over_2_5",
+          "canonical_selection_name": "Over 2.5"
+        },
+        {
+          "api_values": [
+            "Over 2.75"
+          ],
+          "bookmaker_values": [
+            "Over 2.75"
+          ],
+          "browser_use_aliases": [
+            "Over 2.75"
+          ],
+          "canonical_selection_id": "over_2_75",
+          "canonical_selection_name": "Over 2.75"
+        },
+        {
+          "api_values": [
+            "Over 3.0"
+          ],
+          "bookmaker_values": [
+            "Over 3.0"
+          ],
+          "browser_use_aliases": [
+            "Over 3.0"
+          ],
+          "canonical_selection_id": "over_3_0",
+          "canonical_selection_name": "Over 3.0"
+        },
+        {
+          "api_values": [
+            "Over 3.25"
+          ],
+          "bookmaker_values": [
+            "Over 3.25"
+          ],
+          "browser_use_aliases": [
+            "Over 3.25"
+          ],
+          "canonical_selection_id": "over_3_25",
+          "canonical_selection_name": "Over 3.25"
+        },
+        {
+          "api_values": [
+            "Over 3.5"
+          ],
+          "bookmaker_values": [
+            "Over 3.5"
+          ],
+          "browser_use_aliases": [
+            "Over 3.5"
+          ],
+          "canonical_selection_id": "over_3_5",
+          "canonical_selection_name": "Over 3.5"
+        },
+        {
+          "api_values": [
+            "Over 4.5"
+          ],
+          "bookmaker_values": [
+            "Over 4.5"
+          ],
+          "browser_use_aliases": [
+            "Over 4.5"
+          ],
+          "canonical_selection_id": "over_4_5",
+          "canonical_selection_name": "Over 4.5"
+        },
+        {
+          "api_values": [
+            "Over 5.5"
+          ],
+          "bookmaker_values": [
+            "Over 5.5"
+          ],
+          "browser_use_aliases": [
+            "Over 5.5"
+          ],
+          "canonical_selection_id": "over_5_5",
+          "canonical_selection_name": "Over 5.5"
+        },
+        {
+          "api_values": [
+            "Under 0.5"
+          ],
+          "bookmaker_values": [
+            "Under 0.5"
+          ],
+          "browser_use_aliases": [
+            "Under 0.5"
+          ],
+          "canonical_selection_id": "under_0_5",
+          "canonical_selection_name": "Under 0.5"
+        },
+        {
+          "api_values": [
+            "Under 1.5"
+          ],
+          "bookmaker_values": [
+            "Under 1.5"
+          ],
+          "browser_use_aliases": [
+            "Under 1.5"
+          ],
+          "canonical_selection_id": "under_1_5",
+          "canonical_selection_name": "Under 1.5"
+        },
+        {
+          "api_values": [
+            "Under 2.0"
+          ],
+          "bookmaker_values": [
+            "Under 2.0"
+          ],
+          "browser_use_aliases": [
+            "Under 2.0"
+          ],
+          "canonical_selection_id": "under_2_0",
+          "canonical_selection_name": "Under 2.0"
+        },
+        {
+          "api_values": [
+            "Under 2.25"
+          ],
+          "bookmaker_values": [
+            "Under 2.25"
+          ],
+          "browser_use_aliases": [
+            "Under 2.25"
+          ],
+          "canonical_selection_id": "under_2_25",
+          "canonical_selection_name": "Under 2.25"
+        },
+        {
+          "api_values": [
+            "Under 2.5"
+          ],
+          "bookmaker_values": [
+            "Under 2.5"
+          ],
+          "browser_use_aliases": [
+            "Under 2.5"
+          ],
+          "canonical_selection_id": "under_2_5",
+          "canonical_selection_name": "Under 2.5"
+        },
+        {
+          "api_values": [
+            "Under 2.75"
+          ],
+          "bookmaker_values": [
+            "Under 2.75"
+          ],
+          "browser_use_aliases": [
+            "Under 2.75"
+          ],
+          "canonical_selection_id": "under_2_75",
+          "canonical_selection_name": "Under 2.75"
+        },
+        {
+          "api_values": [
+            "Under 3.0"
+          ],
+          "bookmaker_values": [
+            "Under 3.0"
+          ],
+          "browser_use_aliases": [
+            "Under 3.0"
+          ],
+          "canonical_selection_id": "under_3_0",
+          "canonical_selection_name": "Under 3.0"
+        },
+        {
+          "api_values": [
+            "Under 3.25"
+          ],
+          "bookmaker_values": [
+            "Under 3.25"
+          ],
+          "browser_use_aliases": [
+            "Under 3.25"
+          ],
+          "canonical_selection_id": "under_3_25",
+          "canonical_selection_name": "Under 3.25"
+        },
+        {
+          "api_values": [
+            "Under 3.5"
+          ],
+          "bookmaker_values": [
+            "Under 3.5"
+          ],
+          "browser_use_aliases": [
+            "Under 3.5"
+          ],
+          "canonical_selection_id": "under_3_5",
+          "canonical_selection_name": "Under 3.5"
+        },
+        {
+          "api_values": [
+            "Under 4.5"
+          ],
+          "bookmaker_values": [
+            "Under 4.5"
+          ],
+          "browser_use_aliases": [
+            "Under 4.5"
+          ],
+          "canonical_selection_id": "under_4_5",
+          "canonical_selection_name": "Under 4.5"
+        },
+        {
+          "api_values": [
+            "Under 5.5"
+          ],
+          "bookmaker_values": [
+            "Under 5.5"
+          ],
+          "browser_use_aliases": [
+            "Under 5.5"
+          ],
+          "canonical_selection_id": "under_5_5",
+          "canonical_selection_name": "Under 5.5"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 6,
+        "bet_name": "Goals Over/Under First Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Goals Over/Under First Half",
+      "browser_use_aliases": [
+        "Goals Over/Under First Half",
+        "Goals over under first half"
+      ],
+      "canonical_market_id": "goals_over_under_first_half",
+      "canonical_market_name": "Goals over under first half",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Over 0.5"
+          ],
+          "bookmaker_values": [
+            "Over 0.5"
+          ],
+          "browser_use_aliases": [
+            "Over 0.5"
+          ],
+          "canonical_selection_id": "over_0_5",
+          "canonical_selection_name": "Over 0.5"
+        },
+        {
+          "api_values": [
+            "Over 0.75"
+          ],
+          "bookmaker_values": [
+            "Over 0.75"
+          ],
+          "browser_use_aliases": [
+            "Over 0.75"
+          ],
+          "canonical_selection_id": "over_0_75",
+          "canonical_selection_name": "Over 0.75"
+        },
+        {
+          "api_values": [
+            "Over 1.0"
+          ],
+          "bookmaker_values": [
+            "Over 1.0"
+          ],
+          "browser_use_aliases": [
+            "Over 1.0"
+          ],
+          "canonical_selection_id": "over_1_0",
+          "canonical_selection_name": "Over 1.0"
+        },
+        {
+          "api_values": [
+            "Over 1.25"
+          ],
+          "bookmaker_values": [
+            "Over 1.25"
+          ],
+          "browser_use_aliases": [
+            "Over 1.25"
+          ],
+          "canonical_selection_id": "over_1_25",
+          "canonical_selection_name": "Over 1.25"
+        },
+        {
+          "api_values": [
+            "Over 1.5"
+          ],
+          "bookmaker_values": [
+            "Over 1.5"
+          ],
+          "browser_use_aliases": [
+            "Over 1.5"
+          ],
+          "canonical_selection_id": "over_1_5",
+          "canonical_selection_name": "Over 1.5"
+        },
+        {
+          "api_values": [
+            "Over 1.75"
+          ],
+          "bookmaker_values": [
+            "Over 1.75"
+          ],
+          "browser_use_aliases": [
+            "Over 1.75"
+          ],
+          "canonical_selection_id": "over_1_75",
+          "canonical_selection_name": "Over 1.75"
+        },
+        {
+          "api_values": [
+            "Over 2.5"
+          ],
+          "bookmaker_values": [
+            "Over 2.5"
+          ],
+          "browser_use_aliases": [
+            "Over 2.5"
+          ],
+          "canonical_selection_id": "over_2_5",
+          "canonical_selection_name": "Over 2.5"
+        },
+        {
+          "api_values": [
+            "Under 0.5"
+          ],
+          "bookmaker_values": [
+            "Under 0.5"
+          ],
+          "browser_use_aliases": [
+            "Under 0.5"
+          ],
+          "canonical_selection_id": "under_0_5",
+          "canonical_selection_name": "Under 0.5"
+        },
+        {
+          "api_values": [
+            "Under 0.75"
+          ],
+          "bookmaker_values": [
+            "Under 0.75"
+          ],
+          "browser_use_aliases": [
+            "Under 0.75"
+          ],
+          "canonical_selection_id": "under_0_75",
+          "canonical_selection_name": "Under 0.75"
+        },
+        {
+          "api_values": [
+            "Under 1.0"
+          ],
+          "bookmaker_values": [
+            "Under 1.0"
+          ],
+          "browser_use_aliases": [
+            "Under 1.0"
+          ],
+          "canonical_selection_id": "under_1_0",
+          "canonical_selection_name": "Under 1.0"
+        },
+        {
+          "api_values": [
+            "Under 1.25"
+          ],
+          "bookmaker_values": [
+            "Under 1.25"
+          ],
+          "browser_use_aliases": [
+            "Under 1.25"
+          ],
+          "canonical_selection_id": "under_1_25",
+          "canonical_selection_name": "Under 1.25"
+        },
+        {
+          "api_values": [
+            "Under 1.5"
+          ],
+          "bookmaker_values": [
+            "Under 1.5"
+          ],
+          "browser_use_aliases": [
+            "Under 1.5"
+          ],
+          "canonical_selection_id": "under_1_5",
+          "canonical_selection_name": "Under 1.5"
+        },
+        {
+          "api_values": [
+            "Under 1.75"
+          ],
+          "bookmaker_values": [
+            "Under 1.75"
+          ],
+          "browser_use_aliases": [
+            "Under 1.75"
+          ],
+          "canonical_selection_id": "under_1_75",
+          "canonical_selection_name": "Under 1.75"
+        },
+        {
+          "api_values": [
+            "Under 2.5"
+          ],
+          "bookmaker_values": [
+            "Under 2.5"
+          ],
+          "browser_use_aliases": [
+            "Under 2.5"
+          ],
+          "canonical_selection_id": "under_2_5",
+          "canonical_selection_name": "Under 2.5"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 7,
+        "bet_name": "HT/FT Double"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "HT/FT Double",
+      "browser_use_aliases": [
+        "HT/FT Double",
+        "Ht ft double"
+      ],
+      "canonical_market_id": "ht_ft_double",
+      "canonical_market_name": "Ht ft double",
+      "category": "combo_market",
+      "notes": [
+        "Selection mapping inferred from raw API labels."
+      ],
+      "requires_manual_review": true,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Away/Away"
+          ],
+          "bookmaker_values": [
+            "Away/Away"
+          ],
+          "browser_use_aliases": [
+            "Away/Away"
+          ],
+          "canonical_selection_id": "away_away",
+          "canonical_selection_name": "Away/Away"
+        },
+        {
+          "api_values": [
+            "Away/Draw"
+          ],
+          "bookmaker_values": [
+            "Away/Draw"
+          ],
+          "browser_use_aliases": [
+            "Away/Draw"
+          ],
+          "canonical_selection_id": "away_draw",
+          "canonical_selection_name": "Away/Draw"
+        },
+        {
+          "api_values": [
+            "Away/Home"
+          ],
+          "bookmaker_values": [
+            "Away/Home"
+          ],
+          "browser_use_aliases": [
+            "Away/Home"
+          ],
+          "canonical_selection_id": "away_home",
+          "canonical_selection_name": "Away/Home"
+        },
+        {
+          "api_values": [
+            "Draw/Away"
+          ],
+          "bookmaker_values": [
+            "Draw/Away"
+          ],
+          "browser_use_aliases": [
+            "Draw/Away"
+          ],
+          "canonical_selection_id": "draw_or_away",
+          "canonical_selection_name": "Draw/Away"
+        },
+        {
+          "api_values": [
+            "Draw/Draw"
+          ],
+          "bookmaker_values": [
+            "Draw/Draw"
+          ],
+          "browser_use_aliases": [
+            "Draw/Draw"
+          ],
+          "canonical_selection_id": "draw_draw",
+          "canonical_selection_name": "Draw/Draw"
+        },
+        {
+          "api_values": [
+            "Draw/Home"
+          ],
+          "bookmaker_values": [
+            "Draw/Home"
+          ],
+          "browser_use_aliases": [
+            "Draw/Home"
+          ],
+          "canonical_selection_id": "draw_home",
+          "canonical_selection_name": "Draw/Home"
+        },
+        {
+          "api_values": [
+            "Home/Away"
+          ],
+          "bookmaker_values": [
+            "Home/Away"
+          ],
+          "browser_use_aliases": [
+            "Home/Away"
+          ],
+          "canonical_selection_id": "home_or_away",
+          "canonical_selection_name": "Home/Away"
+        },
+        {
+          "api_values": [
+            "Home/Draw"
+          ],
+          "bookmaker_values": [
+            "Home/Draw"
+          ],
+          "browser_use_aliases": [
+            "Home/Draw"
+          ],
+          "canonical_selection_id": "home_or_draw",
+          "canonical_selection_name": "Home/Draw"
+        },
+        {
+          "api_values": [
+            "Home/Home"
+          ],
+          "bookmaker_values": [
+            "Home/Home"
+          ],
+          "browser_use_aliases": [
+            "Home/Home"
+          ],
+          "canonical_selection_id": "home_home",
+          "canonical_selection_name": "Home/Home"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 8,
+        "bet_name": "Both Teams Score"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Both Teams Score",
+      "browser_use_aliases": [
+        "Both Teams Score",
+        "Both teams to score"
+      ],
+      "canonical_market_id": "both_teams_to_score",
+      "canonical_market_name": "Both teams to score",
+      "category": "main_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Yes",
+            "Oui"
+          ],
+          "bookmaker_values": [
+            "Yes",
+            "Oui"
+          ],
+          "browser_use_aliases": [
+            "Yes",
+            "Oui"
+          ],
+          "canonical_selection_id": "yes",
+          "canonical_selection_name": "Yes"
+        },
+        {
+          "api_values": [
+            "No",
+            "Non"
+          ],
+          "bookmaker_values": [
+            "No",
+            "Non"
+          ],
+          "browser_use_aliases": [
+            "No",
+            "Non"
+          ],
+          "canonical_selection_id": "no",
+          "canonical_selection_name": "No"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 9,
+        "bet_name": "Handicap Result"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Handicap Result",
+      "browser_use_aliases": [
+        "Handicap Result",
+        "Handicap result"
+      ],
+      "canonical_market_id": "handicap_result",
+      "canonical_market_name": "Handicap result",
+      "category": "handicap_market",
+      "notes": [
+        "Selection mapping inferred from raw API labels."
+      ],
+      "requires_manual_review": true,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Away +1"
+          ],
+          "bookmaker_values": [
+            "Away +1"
+          ],
+          "browser_use_aliases": [
+            "Away +1"
+          ],
+          "canonical_selection_id": "away_1",
+          "canonical_selection_name": "Away +1"
+        },
+        {
+          "api_values": [
+            "Away +2"
+          ],
+          "bookmaker_values": [
+            "Away +2"
+          ],
+          "browser_use_aliases": [
+            "Away +2"
+          ],
+          "canonical_selection_id": "away_2",
+          "canonical_selection_name": "Away +2"
+        },
+        {
+          "api_values": [
+            "Away -1"
+          ],
+          "bookmaker_values": [
+            "Away -1"
+          ],
+          "browser_use_aliases": [
+            "Away -1"
+          ],
+          "canonical_selection_id": "away_1",
+          "canonical_selection_name": "Away -1"
+        },
+        {
+          "api_values": [
+            "Away -2"
+          ],
+          "bookmaker_values": [
+            "Away -2"
+          ],
+          "browser_use_aliases": [
+            "Away -2"
+          ],
+          "canonical_selection_id": "away_2",
+          "canonical_selection_name": "Away -2"
+        },
+        {
+          "api_values": [
+            "Draw +1"
+          ],
+          "bookmaker_values": [
+            "Draw +1"
+          ],
+          "browser_use_aliases": [
+            "Draw +1"
+          ],
+          "canonical_selection_id": "draw_1",
+          "canonical_selection_name": "Draw +1"
+        },
+        {
+          "api_values": [
+            "Draw +2"
+          ],
+          "bookmaker_values": [
+            "Draw +2"
+          ],
+          "browser_use_aliases": [
+            "Draw +2"
+          ],
+          "canonical_selection_id": "draw_2",
+          "canonical_selection_name": "Draw +2"
+        },
+        {
+          "api_values": [
+            "Draw -1"
+          ],
+          "bookmaker_values": [
+            "Draw -1"
+          ],
+          "browser_use_aliases": [
+            "Draw -1"
+          ],
+          "canonical_selection_id": "draw_1",
+          "canonical_selection_name": "Draw -1"
+        },
+        {
+          "api_values": [
+            "Draw -2"
+          ],
+          "bookmaker_values": [
+            "Draw -2"
+          ],
+          "browser_use_aliases": [
+            "Draw -2"
+          ],
+          "canonical_selection_id": "draw_2",
+          "canonical_selection_name": "Draw -2"
+        },
+        {
+          "api_values": [
+            "Home +1"
+          ],
+          "bookmaker_values": [
+            "Home +1"
+          ],
+          "browser_use_aliases": [
+            "Home +1"
+          ],
+          "canonical_selection_id": "home_1",
+          "canonical_selection_name": "Home +1"
+        },
+        {
+          "api_values": [
+            "Home +2"
+          ],
+          "bookmaker_values": [
+            "Home +2"
+          ],
+          "browser_use_aliases": [
+            "Home +2"
+          ],
+          "canonical_selection_id": "home_2",
+          "canonical_selection_name": "Home +2"
+        },
+        {
+          "api_values": [
+            "Home -1"
+          ],
+          "bookmaker_values": [
+            "Home -1"
+          ],
+          "browser_use_aliases": [
+            "Home -1"
+          ],
+          "canonical_selection_id": "home_1",
+          "canonical_selection_name": "Home -1"
+        },
+        {
+          "api_values": [
+            "Home -2"
+          ],
+          "bookmaker_values": [
+            "Home -2"
+          ],
+          "browser_use_aliases": [
+            "Home -2"
+          ],
+          "canonical_selection_id": "home_2",
+          "canonical_selection_name": "Home -2"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 10,
+        "bet_name": "Exact Score"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Exact Score",
+      "browser_use_aliases": [
+        "Exact Score",
+        "Exact score"
+      ],
+      "canonical_market_id": "exact_score",
+      "canonical_market_name": "Exact score",
+      "category": "score_market",
+      "notes": [
+        "Selection mapping inferred from raw API labels."
+      ],
+      "requires_manual_review": true,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "0:0"
+          ],
+          "bookmaker_values": [
+            "0:0"
+          ],
+          "browser_use_aliases": [
+            "0:0"
+          ],
+          "canonical_selection_id": "0_0",
+          "canonical_selection_name": "0:0"
+        },
+        {
+          "api_values": [
+            "0:1"
+          ],
+          "bookmaker_values": [
+            "0:1"
+          ],
+          "browser_use_aliases": [
+            "0:1"
+          ],
+          "canonical_selection_id": "0_1",
+          "canonical_selection_name": "0:1"
+        },
+        {
+          "api_values": [
+            "0:2"
+          ],
+          "bookmaker_values": [
+            "0:2"
+          ],
+          "browser_use_aliases": [
+            "0:2"
+          ],
+          "canonical_selection_id": "0_2",
+          "canonical_selection_name": "0:2"
+        },
+        {
+          "api_values": [
+            "0:3"
+          ],
+          "bookmaker_values": [
+            "0:3"
+          ],
+          "browser_use_aliases": [
+            "0:3"
+          ],
+          "canonical_selection_id": "0_3",
+          "canonical_selection_name": "0:3"
+        },
+        {
+          "api_values": [
+            "0:4"
+          ],
+          "bookmaker_values": [
+            "0:4"
+          ],
+          "browser_use_aliases": [
+            "0:4"
+          ],
+          "canonical_selection_id": "0_4",
+          "canonical_selection_name": "0:4"
+        },
+        {
+          "api_values": [
+            "0:5"
+          ],
+          "bookmaker_values": [
+            "0:5"
+          ],
+          "browser_use_aliases": [
+            "0:5"
+          ],
+          "canonical_selection_id": "0_5",
+          "canonical_selection_name": "0:5"
+        },
+        {
+          "api_values": [
+            "1:0"
+          ],
+          "bookmaker_values": [
+            "1:0"
+          ],
+          "browser_use_aliases": [
+            "1:0"
+          ],
+          "canonical_selection_id": "1_0",
+          "canonical_selection_name": "1:0"
+        },
+        {
+          "api_values": [
+            "1:1"
+          ],
+          "bookmaker_values": [
+            "1:1"
+          ],
+          "browser_use_aliases": [
+            "1:1"
+          ],
+          "canonical_selection_id": "1_1",
+          "canonical_selection_name": "1:1"
+        },
+        {
+          "api_values": [
+            "1:2"
+          ],
+          "bookmaker_values": [
+            "1:2"
+          ],
+          "browser_use_aliases": [
+            "1:2"
+          ],
+          "canonical_selection_id": "1_2",
+          "canonical_selection_name": "1:2"
+        },
+        {
+          "api_values": [
+            "1:3"
+          ],
+          "bookmaker_values": [
+            "1:3"
+          ],
+          "browser_use_aliases": [
+            "1:3"
+          ],
+          "canonical_selection_id": "1_3",
+          "canonical_selection_name": "1:3"
+        },
+        {
+          "api_values": [
+            "1:4"
+          ],
+          "bookmaker_values": [
+            "1:4"
+          ],
+          "browser_use_aliases": [
+            "1:4"
+          ],
+          "canonical_selection_id": "1_4",
+          "canonical_selection_name": "1:4"
+        },
+        {
+          "api_values": [
+            "1:5"
+          ],
+          "bookmaker_values": [
+            "1:5"
+          ],
+          "browser_use_aliases": [
+            "1:5"
+          ],
+          "canonical_selection_id": "1_5",
+          "canonical_selection_name": "1:5"
+        },
+        {
+          "api_values": [
+            "2:0"
+          ],
+          "bookmaker_values": [
+            "2:0"
+          ],
+          "browser_use_aliases": [
+            "2:0"
+          ],
+          "canonical_selection_id": "2_0",
+          "canonical_selection_name": "2:0"
+        },
+        {
+          "api_values": [
+            "2:1"
+          ],
+          "bookmaker_values": [
+            "2:1"
+          ],
+          "browser_use_aliases": [
+            "2:1"
+          ],
+          "canonical_selection_id": "2_1",
+          "canonical_selection_name": "2:1"
+        },
+        {
+          "api_values": [
+            "2:2"
+          ],
+          "bookmaker_values": [
+            "2:2"
+          ],
+          "browser_use_aliases": [
+            "2:2"
+          ],
+          "canonical_selection_id": "2_2",
+          "canonical_selection_name": "2:2"
+        },
+        {
+          "api_values": [
+            "2:3"
+          ],
+          "bookmaker_values": [
+            "2:3"
+          ],
+          "browser_use_aliases": [
+            "2:3"
+          ],
+          "canonical_selection_id": "2_3",
+          "canonical_selection_name": "2:3"
+        },
+        {
+          "api_values": [
+            "2:4"
+          ],
+          "bookmaker_values": [
+            "2:4"
+          ],
+          "browser_use_aliases": [
+            "2:4"
+          ],
+          "canonical_selection_id": "2_4",
+          "canonical_selection_name": "2:4"
+        },
+        {
+          "api_values": [
+            "2:5"
+          ],
+          "bookmaker_values": [
+            "2:5"
+          ],
+          "browser_use_aliases": [
+            "2:5"
+          ],
+          "canonical_selection_id": "2_5",
+          "canonical_selection_name": "2:5"
+        },
+        {
+          "api_values": [
+            "3:0"
+          ],
+          "bookmaker_values": [
+            "3:0"
+          ],
+          "browser_use_aliases": [
+            "3:0"
+          ],
+          "canonical_selection_id": "3_0",
+          "canonical_selection_name": "3:0"
+        },
+        {
+          "api_values": [
+            "3:1"
+          ],
+          "bookmaker_values": [
+            "3:1"
+          ],
+          "browser_use_aliases": [
+            "3:1"
+          ],
+          "canonical_selection_id": "3_1",
+          "canonical_selection_name": "3:1"
+        },
+        {
+          "api_values": [
+            "3:2"
+          ],
+          "bookmaker_values": [
+            "3:2"
+          ],
+          "browser_use_aliases": [
+            "3:2"
+          ],
+          "canonical_selection_id": "3_2",
+          "canonical_selection_name": "3:2"
+        },
+        {
+          "api_values": [
+            "3:3"
+          ],
+          "bookmaker_values": [
+            "3:3"
+          ],
+          "browser_use_aliases": [
+            "3:3"
+          ],
+          "canonical_selection_id": "3_3",
+          "canonical_selection_name": "3:3"
+        },
+        {
+          "api_values": [
+            "3:4"
+          ],
+          "bookmaker_values": [
+            "3:4"
+          ],
+          "browser_use_aliases": [
+            "3:4"
+          ],
+          "canonical_selection_id": "3_4",
+          "canonical_selection_name": "3:4"
+        },
+        {
+          "api_values": [
+            "4:0"
+          ],
+          "bookmaker_values": [
+            "4:0"
+          ],
+          "browser_use_aliases": [
+            "4:0"
+          ],
+          "canonical_selection_id": "4_0",
+          "canonical_selection_name": "4:0"
+        },
+        {
+          "api_values": [
+            "4:1"
+          ],
+          "bookmaker_values": [
+            "4:1"
+          ],
+          "browser_use_aliases": [
+            "4:1"
+          ],
+          "canonical_selection_id": "4_1",
+          "canonical_selection_name": "4:1"
+        },
+        {
+          "api_values": [
+            "4:2"
+          ],
+          "bookmaker_values": [
+            "4:2"
+          ],
+          "browser_use_aliases": [
+            "4:2"
+          ],
+          "canonical_selection_id": "4_2",
+          "canonical_selection_name": "4:2"
+        },
+        {
+          "api_values": [
+            "4:3"
+          ],
+          "bookmaker_values": [
+            "4:3"
+          ],
+          "browser_use_aliases": [
+            "4:3"
+          ],
+          "canonical_selection_id": "4_3",
+          "canonical_selection_name": "4:3"
+        },
+        {
+          "api_values": [
+            "5:0"
+          ],
+          "bookmaker_values": [
+            "5:0"
+          ],
+          "browser_use_aliases": [
+            "5:0"
+          ],
+          "canonical_selection_id": "5_0",
+          "canonical_selection_name": "5:0"
+        },
+        {
+          "api_values": [
+            "5:1"
+          ],
+          "bookmaker_values": [
+            "5:1"
+          ],
+          "browser_use_aliases": [
+            "5:1"
+          ],
+          "canonical_selection_id": "5_1",
+          "canonical_selection_name": "5:1"
+        },
+        {
+          "api_values": [
+            "5:2"
+          ],
+          "bookmaker_values": [
+            "5:2"
+          ],
+          "browser_use_aliases": [
+            "5:2"
+          ],
+          "canonical_selection_id": "5_2",
+          "canonical_selection_name": "5:2"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 11,
+        "bet_name": "Highest Scoring Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Highest Scoring Half",
+      "browser_use_aliases": [
+        "Highest Scoring Half",
+        "Highest scoring half"
+      ],
+      "canonical_market_id": "highest_scoring_half",
+      "canonical_market_name": "Highest scoring half",
+      "category": "combo_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 12,
+        "bet_name": "Double Chance"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Double Chance",
+      "browser_use_aliases": [
+        "Double Chance",
+        "Double chance",
+        "1N",
+        "N2",
+        "12",
+        "1 / N",
+        "N / 2",
+        "1 / 2"
+      ],
+      "canonical_market_id": "double_chance",
+      "canonical_market_name": "Double chance",
+      "category": "main_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Home/Draw",
+            "1X"
+          ],
+          "bookmaker_values": [
+            "Home/Draw",
+            "1X",
+            "1 / N",
+            "1N"
+          ],
+          "browser_use_aliases": [
+            "1X",
+            "1N",
+            "1 / N",
+            "Home or Draw"
+          ],
+          "canonical_selection_id": "home_or_draw",
+          "canonical_selection_name": "Home or draw"
+        },
+        {
+          "api_values": [
+            "Draw/Away",
+            "X2"
+          ],
+          "bookmaker_values": [
+            "Draw/Away",
+            "X2",
+            "N / 2",
+            "N2"
+          ],
+          "browser_use_aliases": [
+            "X2",
+            "N2",
+            "N / 2",
+            "Draw or Away"
+          ],
+          "canonical_selection_id": "draw_or_away",
+          "canonical_selection_name": "Draw or away"
+        },
+        {
+          "api_values": [
+            "Home/Away",
+            "12"
+          ],
+          "bookmaker_values": [
+            "Home/Away",
+            "12",
+            "1 / 2"
+          ],
+          "browser_use_aliases": [
+            "12",
+            "1 / 2",
+            "Home or Away"
+          ],
+          "canonical_selection_id": "home_or_away",
+          "canonical_selection_name": "Home or away"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 13,
+        "bet_name": "First Half Winner"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "First Half Winner",
+      "browser_use_aliases": [
+        "First Half Winner",
+        "First half winner"
+      ],
+      "canonical_market_id": "first_half_winner",
+      "canonical_market_name": "First half winner",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Home"
+          ],
+          "bookmaker_values": [
+            "Home"
+          ],
+          "browser_use_aliases": [
+            "Home"
+          ],
+          "canonical_selection_id": "home",
+          "canonical_selection_name": "Home"
+        },
+        {
+          "api_values": [
+            "Draw"
+          ],
+          "bookmaker_values": [
+            "Draw"
+          ],
+          "browser_use_aliases": [
+            "Draw"
+          ],
+          "canonical_selection_id": "draw",
+          "canonical_selection_name": "Draw"
+        },
+        {
+          "api_values": [
+            "Away"
+          ],
+          "bookmaker_values": [
+            "Away"
+          ],
+          "browser_use_aliases": [
+            "Away"
+          ],
+          "canonical_selection_id": "away",
+          "canonical_selection_name": "Away"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 14,
+        "bet_name": "Team To Score First"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Team To Score First",
+      "browser_use_aliases": [
+        "Team To Score First",
+        "Team to score first"
+      ],
+      "canonical_market_id": "team_to_score_first",
+      "canonical_market_name": "Team to score first",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 15,
+        "bet_name": "Team To Score Last"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Team To Score Last",
+      "browser_use_aliases": [
+        "Team To Score Last",
+        "Team to score last"
+      ],
+      "canonical_market_id": "team_to_score_last",
+      "canonical_market_name": "Team to score last",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 16,
+        "bet_name": "Total - Home"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Total - Home",
+      "browser_use_aliases": [
+        "Total - Home",
+        "Total home"
+      ],
+      "canonical_market_id": "total_home",
+      "canonical_market_name": "Total home",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Over 0.5"
+          ],
+          "bookmaker_values": [
+            "Over 0.5"
+          ],
+          "browser_use_aliases": [
+            "Over 0.5"
+          ],
+          "canonical_selection_id": "over_0_5",
+          "canonical_selection_name": "Over 0.5"
+        },
+        {
+          "api_values": [
+            "Over 1.5"
+          ],
+          "bookmaker_values": [
+            "Over 1.5"
+          ],
+          "browser_use_aliases": [
+            "Over 1.5"
+          ],
+          "canonical_selection_id": "over_1_5",
+          "canonical_selection_name": "Over 1.5"
+        },
+        {
+          "api_values": [
+            "Over 2.5"
+          ],
+          "bookmaker_values": [
+            "Over 2.5"
+          ],
+          "browser_use_aliases": [
+            "Over 2.5"
+          ],
+          "canonical_selection_id": "over_2_5",
+          "canonical_selection_name": "Over 2.5"
+        },
+        {
+          "api_values": [
+            "Over 3.5"
+          ],
+          "bookmaker_values": [
+            "Over 3.5"
+          ],
+          "browser_use_aliases": [
+            "Over 3.5"
+          ],
+          "canonical_selection_id": "over_3_5",
+          "canonical_selection_name": "Over 3.5"
+        },
+        {
+          "api_values": [
+            "Under 0.5"
+          ],
+          "bookmaker_values": [
+            "Under 0.5"
+          ],
+          "browser_use_aliases": [
+            "Under 0.5"
+          ],
+          "canonical_selection_id": "under_0_5",
+          "canonical_selection_name": "Under 0.5"
+        },
+        {
+          "api_values": [
+            "Under 1.5"
+          ],
+          "bookmaker_values": [
+            "Under 1.5"
+          ],
+          "browser_use_aliases": [
+            "Under 1.5"
+          ],
+          "canonical_selection_id": "under_1_5",
+          "canonical_selection_name": "Under 1.5"
+        },
+        {
+          "api_values": [
+            "Under 2.5"
+          ],
+          "bookmaker_values": [
+            "Under 2.5"
+          ],
+          "browser_use_aliases": [
+            "Under 2.5"
+          ],
+          "canonical_selection_id": "under_2_5",
+          "canonical_selection_name": "Under 2.5"
+        },
+        {
+          "api_values": [
+            "Under 3.5"
+          ],
+          "bookmaker_values": [
+            "Under 3.5"
+          ],
+          "browser_use_aliases": [
+            "Under 3.5"
+          ],
+          "canonical_selection_id": "under_3_5",
+          "canonical_selection_name": "Under 3.5"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 17,
+        "bet_name": "Total - Away"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Total - Away",
+      "browser_use_aliases": [
+        "Total - Away",
+        "Total away"
+      ],
+      "canonical_market_id": "total_away",
+      "canonical_market_name": "Total away",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Over 0.5"
+          ],
+          "bookmaker_values": [
+            "Over 0.5"
+          ],
+          "browser_use_aliases": [
+            "Over 0.5"
+          ],
+          "canonical_selection_id": "over_0_5",
+          "canonical_selection_name": "Over 0.5"
+        },
+        {
+          "api_values": [
+            "Over 1.5"
+          ],
+          "bookmaker_values": [
+            "Over 1.5"
+          ],
+          "browser_use_aliases": [
+            "Over 1.5"
+          ],
+          "canonical_selection_id": "over_1_5",
+          "canonical_selection_name": "Over 1.5"
+        },
+        {
+          "api_values": [
+            "Over 2.5"
+          ],
+          "bookmaker_values": [
+            "Over 2.5"
+          ],
+          "browser_use_aliases": [
+            "Over 2.5"
+          ],
+          "canonical_selection_id": "over_2_5",
+          "canonical_selection_name": "Over 2.5"
+        },
+        {
+          "api_values": [
+            "Over 3.5"
+          ],
+          "bookmaker_values": [
+            "Over 3.5"
+          ],
+          "browser_use_aliases": [
+            "Over 3.5"
+          ],
+          "canonical_selection_id": "over_3_5",
+          "canonical_selection_name": "Over 3.5"
+        },
+        {
+          "api_values": [
+            "Under 0.5"
+          ],
+          "bookmaker_values": [
+            "Under 0.5"
+          ],
+          "browser_use_aliases": [
+            "Under 0.5"
+          ],
+          "canonical_selection_id": "under_0_5",
+          "canonical_selection_name": "Under 0.5"
+        },
+        {
+          "api_values": [
+            "Under 1.5"
+          ],
+          "bookmaker_values": [
+            "Under 1.5"
+          ],
+          "browser_use_aliases": [
+            "Under 1.5"
+          ],
+          "canonical_selection_id": "under_1_5",
+          "canonical_selection_name": "Under 1.5"
+        },
+        {
+          "api_values": [
+            "Under 2.5"
+          ],
+          "bookmaker_values": [
+            "Under 2.5"
+          ],
+          "browser_use_aliases": [
+            "Under 2.5"
+          ],
+          "canonical_selection_id": "under_2_5",
+          "canonical_selection_name": "Under 2.5"
+        },
+        {
+          "api_values": [
+            "Under 3.5"
+          ],
+          "bookmaker_values": [
+            "Under 3.5"
+          ],
+          "browser_use_aliases": [
+            "Under 3.5"
+          ],
+          "canonical_selection_id": "under_3_5",
+          "canonical_selection_name": "Under 3.5"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 18,
+        "bet_name": "Handicap Result - First Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Handicap Result - First Half",
+      "browser_use_aliases": [
+        "Handicap Result - First Half",
+        "Handicap result first half"
+      ],
+      "canonical_market_id": "handicap_result_first_half",
+      "canonical_market_name": "Handicap result first half",
+      "category": "handicap_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 19,
+        "bet_name": "Asian Handicap First Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Asian Handicap First Half",
+      "browser_use_aliases": [
+        "Asian Handicap First Half",
+        "Asian handicap first half"
+      ],
+      "canonical_market_id": "asian_handicap_first_half",
+      "canonical_market_name": "Asian handicap first half",
+      "category": "handicap_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 20,
+        "bet_name": "Double Chance - First Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Double Chance - First Half",
+      "browser_use_aliases": [
+        "Double Chance",
+        "Double chance",
+        "1N",
+        "N2",
+        "12",
+        "1 / N",
+        "N / 2",
+        "1 / 2"
+      ],
+      "canonical_market_id": "double_chance_first_half",
+      "canonical_market_name": "Double chance first half",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Home/Draw",
+            "1X"
+          ],
+          "bookmaker_values": [
+            "Home/Draw",
+            "1X",
+            "1 / N",
+            "1N"
+          ],
+          "browser_use_aliases": [
+            "1X",
+            "1N",
+            "1 / N",
+            "Home or Draw"
+          ],
+          "canonical_selection_id": "home_or_draw",
+          "canonical_selection_name": "Home or draw"
+        },
+        {
+          "api_values": [
+            "Draw/Away",
+            "X2"
+          ],
+          "bookmaker_values": [
+            "Draw/Away",
+            "X2",
+            "N / 2",
+            "N2"
+          ],
+          "browser_use_aliases": [
+            "X2",
+            "N2",
+            "N / 2",
+            "Draw or Away"
+          ],
+          "canonical_selection_id": "draw_or_away",
+          "canonical_selection_name": "Draw or away"
+        },
+        {
+          "api_values": [
+            "Home/Away",
+            "12"
+          ],
+          "bookmaker_values": [
+            "Home/Away",
+            "12",
+            "1 / 2"
+          ],
+          "browser_use_aliases": [
+            "12",
+            "1 / 2",
+            "Home or Away"
+          ],
+          "canonical_selection_id": "home_or_away",
+          "canonical_selection_name": "Home or away"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 21,
+        "bet_name": "Odd/Even"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Odd/Even",
+      "browser_use_aliases": [
+        "Odd even",
+        "Odd/Even"
+      ],
+      "canonical_market_id": "odd_even",
+      "canonical_market_name": "Odd even",
+      "category": "other",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Odd"
+          ],
+          "bookmaker_values": [
+            "Odd"
+          ],
+          "browser_use_aliases": [
+            "Odd"
+          ],
+          "canonical_selection_id": "odd",
+          "canonical_selection_name": "Odd"
+        },
+        {
+          "api_values": [
+            "Even"
+          ],
+          "bookmaker_values": [
+            "Even"
+          ],
+          "browser_use_aliases": [
+            "Even"
+          ],
+          "canonical_selection_id": "even",
+          "canonical_selection_name": "Even"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 22,
+        "bet_name": "Odd/Even - First Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Odd/Even - First Half",
+      "browser_use_aliases": [
+        "Odd even first half",
+        "Odd/Even - First Half"
+      ],
+      "canonical_market_id": "odd_even_first_half",
+      "canonical_market_name": "Odd even first half",
+      "category": "other",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Odd"
+          ],
+          "bookmaker_values": [
+            "Odd"
+          ],
+          "browser_use_aliases": [
+            "Odd"
+          ],
+          "canonical_selection_id": "odd",
+          "canonical_selection_name": "Odd"
+        },
+        {
+          "api_values": [
+            "Even"
+          ],
+          "bookmaker_values": [
+            "Even"
+          ],
+          "browser_use_aliases": [
+            "Even"
+          ],
+          "canonical_selection_id": "even",
+          "canonical_selection_name": "Even"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 23,
+        "bet_name": "Home Odd/Even"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Home Odd/Even",
+      "browser_use_aliases": [
+        "Home Odd/Even",
+        "Home odd even"
+      ],
+      "canonical_market_id": "home_odd_even",
+      "canonical_market_name": "Home odd even",
+      "category": "other",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Odd"
+          ],
+          "bookmaker_values": [
+            "Odd"
+          ],
+          "browser_use_aliases": [
+            "Odd"
+          ],
+          "canonical_selection_id": "odd",
+          "canonical_selection_name": "Odd"
+        },
+        {
+          "api_values": [
+            "Even"
+          ],
+          "bookmaker_values": [
+            "Even"
+          ],
+          "browser_use_aliases": [
+            "Even"
+          ],
+          "canonical_selection_id": "even",
+          "canonical_selection_name": "Even"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 24,
+        "bet_name": "Results/Both Teams Score"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Results/Both Teams Score",
+      "browser_use_aliases": [
+        "Result both teams score",
+        "Results/Both Teams Score"
+      ],
+      "canonical_market_id": "result_both_teams_score",
+      "canonical_market_name": "Result both teams score",
+      "category": "combo_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 25,
+        "bet_name": "Result/Total Goals"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Result/Total Goals",
+      "browser_use_aliases": [
+        "Result total goals",
+        "Result/Total Goals"
+      ],
+      "canonical_market_id": "result_total_goals",
+      "canonical_market_name": "Result total goals",
+      "category": "combo_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 26,
+        "bet_name": "Goals Over/Under - Second Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Goals Over/Under - Second Half",
+      "browser_use_aliases": [
+        "Goals Over/Under - Second Half",
+        "Goals over under second half"
+      ],
+      "canonical_market_id": "goals_over_under_second_half",
+      "canonical_market_name": "Goals over under second half",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Over 0.5"
+          ],
+          "bookmaker_values": [
+            "Over 0.5"
+          ],
+          "browser_use_aliases": [
+            "Over 0.5"
+          ],
+          "canonical_selection_id": "over_0_5",
+          "canonical_selection_name": "Over 0.5"
+        },
+        {
+          "api_values": [
+            "Over 1.5"
+          ],
+          "bookmaker_values": [
+            "Over 1.5"
+          ],
+          "browser_use_aliases": [
+            "Over 1.5"
+          ],
+          "canonical_selection_id": "over_1_5",
+          "canonical_selection_name": "Over 1.5"
+        },
+        {
+          "api_values": [
+            "Over 2.5"
+          ],
+          "bookmaker_values": [
+            "Over 2.5"
+          ],
+          "browser_use_aliases": [
+            "Over 2.5"
+          ],
+          "canonical_selection_id": "over_2_5",
+          "canonical_selection_name": "Over 2.5"
+        },
+        {
+          "api_values": [
+            "Under 0.5"
+          ],
+          "bookmaker_values": [
+            "Under 0.5"
+          ],
+          "browser_use_aliases": [
+            "Under 0.5"
+          ],
+          "canonical_selection_id": "under_0_5",
+          "canonical_selection_name": "Under 0.5"
+        },
+        {
+          "api_values": [
+            "Under 1.5"
+          ],
+          "bookmaker_values": [
+            "Under 1.5"
+          ],
+          "browser_use_aliases": [
+            "Under 1.5"
+          ],
+          "canonical_selection_id": "under_1_5",
+          "canonical_selection_name": "Under 1.5"
+        },
+        {
+          "api_values": [
+            "Under 2.5"
+          ],
+          "bookmaker_values": [
+            "Under 2.5"
+          ],
+          "browser_use_aliases": [
+            "Under 2.5"
+          ],
+          "canonical_selection_id": "under_2_5",
+          "canonical_selection_name": "Under 2.5"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 27,
+        "bet_name": "Clean Sheet - Home"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Clean Sheet - Home",
+      "browser_use_aliases": [
+        "Clean Sheet - Home",
+        "Clean sheet home"
+      ],
+      "canonical_market_id": "clean_sheet_home",
+      "canonical_market_name": "Clean sheet home",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Yes",
+            "Oui"
+          ],
+          "bookmaker_values": [
+            "Yes",
+            "Oui"
+          ],
+          "browser_use_aliases": [
+            "Yes",
+            "Oui"
+          ],
+          "canonical_selection_id": "yes",
+          "canonical_selection_name": "Yes"
+        },
+        {
+          "api_values": [
+            "No",
+            "Non"
+          ],
+          "bookmaker_values": [
+            "No",
+            "Non"
+          ],
+          "browser_use_aliases": [
+            "No",
+            "Non"
+          ],
+          "canonical_selection_id": "no",
+          "canonical_selection_name": "No"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 28,
+        "bet_name": "Clean Sheet - Away"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Clean Sheet - Away",
+      "browser_use_aliases": [
+        "Clean Sheet - Away",
+        "Clean sheet away"
+      ],
+      "canonical_market_id": "clean_sheet_away",
+      "canonical_market_name": "Clean sheet away",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Yes",
+            "Oui"
+          ],
+          "bookmaker_values": [
+            "Yes",
+            "Oui"
+          ],
+          "browser_use_aliases": [
+            "Yes",
+            "Oui"
+          ],
+          "canonical_selection_id": "yes",
+          "canonical_selection_name": "Yes"
+        },
+        {
+          "api_values": [
+            "No",
+            "Non"
+          ],
+          "bookmaker_values": [
+            "No",
+            "Non"
+          ],
+          "browser_use_aliases": [
+            "No",
+            "Non"
+          ],
+          "canonical_selection_id": "no",
+          "canonical_selection_name": "No"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 29,
+        "bet_name": "Win to Nil - Home"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Win to Nil - Home",
+      "browser_use_aliases": [
+        "Win to Nil - Home",
+        "Win to nil home"
+      ],
+      "canonical_market_id": "win_to_nil_home",
+      "canonical_market_name": "Win to nil home",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 30,
+        "bet_name": "Win to Nil - Away"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Win to Nil - Away",
+      "browser_use_aliases": [
+        "Win to Nil - Away",
+        "Win to nil away"
+      ],
+      "canonical_market_id": "win_to_nil_away",
+      "canonical_market_name": "Win to nil away",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 31,
+        "bet_name": "Correct Score - First Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Correct Score - First Half",
+      "browser_use_aliases": [
+        "Correct Score - First Half",
+        "Correct score first half"
+      ],
+      "canonical_market_id": "correct_score_first_half",
+      "canonical_market_name": "Correct score first half",
+      "category": "score_market",
+      "notes": [
+        "Selection mapping inferred from raw API labels."
+      ],
+      "requires_manual_review": true,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "0:0"
+          ],
+          "bookmaker_values": [
+            "0:0"
+          ],
+          "browser_use_aliases": [
+            "0:0"
+          ],
+          "canonical_selection_id": "0_0",
+          "canonical_selection_name": "0:0"
+        },
+        {
+          "api_values": [
+            "0:1"
+          ],
+          "bookmaker_values": [
+            "0:1"
+          ],
+          "browser_use_aliases": [
+            "0:1"
+          ],
+          "canonical_selection_id": "0_1",
+          "canonical_selection_name": "0:1"
+        },
+        {
+          "api_values": [
+            "0:2"
+          ],
+          "bookmaker_values": [
+            "0:2"
+          ],
+          "browser_use_aliases": [
+            "0:2"
+          ],
+          "canonical_selection_id": "0_2",
+          "canonical_selection_name": "0:2"
+        },
+        {
+          "api_values": [
+            "1:0"
+          ],
+          "bookmaker_values": [
+            "1:0"
+          ],
+          "browser_use_aliases": [
+            "1:0"
+          ],
+          "canonical_selection_id": "1_0",
+          "canonical_selection_name": "1:0"
+        },
+        {
+          "api_values": [
+            "1:1"
+          ],
+          "bookmaker_values": [
+            "1:1"
+          ],
+          "browser_use_aliases": [
+            "1:1"
+          ],
+          "canonical_selection_id": "1_1",
+          "canonical_selection_name": "1:1"
+        },
+        {
+          "api_values": [
+            "1:2"
+          ],
+          "bookmaker_values": [
+            "1:2"
+          ],
+          "browser_use_aliases": [
+            "1:2"
+          ],
+          "canonical_selection_id": "1_2",
+          "canonical_selection_name": "1:2"
+        },
+        {
+          "api_values": [
+            "2:0"
+          ],
+          "bookmaker_values": [
+            "2:0"
+          ],
+          "browser_use_aliases": [
+            "2:0"
+          ],
+          "canonical_selection_id": "2_0",
+          "canonical_selection_name": "2:0"
+        },
+        {
+          "api_values": [
+            "2:1"
+          ],
+          "bookmaker_values": [
+            "2:1"
+          ],
+          "browser_use_aliases": [
+            "2:1"
+          ],
+          "canonical_selection_id": "2_1",
+          "canonical_selection_name": "2:1"
+        },
+        {
+          "api_values": [
+            "2:2"
+          ],
+          "bookmaker_values": [
+            "2:2"
+          ],
+          "browser_use_aliases": [
+            "2:2"
+          ],
+          "canonical_selection_id": "2_2",
+          "canonical_selection_name": "2:2"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 32,
+        "bet_name": "Win Both Halves"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Win Both Halves",
+      "browser_use_aliases": [
+        "Win Both Halves",
+        "Win both halves"
+      ],
+      "canonical_market_id": "win_both_halves",
+      "canonical_market_name": "Win both halves",
+      "category": "combo_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 33,
+        "bet_name": "Double Chance - Second Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Double Chance - Second Half",
+      "browser_use_aliases": [
+        "Double Chance",
+        "Double chance",
+        "1N",
+        "N2",
+        "12",
+        "1 / N",
+        "N / 2",
+        "1 / 2"
+      ],
+      "canonical_market_id": "double_chance_second_half",
+      "canonical_market_name": "Double chance second half",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Home/Draw",
+            "1X"
+          ],
+          "bookmaker_values": [
+            "Home/Draw",
+            "1X",
+            "1 / N",
+            "1N"
+          ],
+          "browser_use_aliases": [
+            "1X",
+            "1N",
+            "1 / N",
+            "Home or Draw"
+          ],
+          "canonical_selection_id": "home_or_draw",
+          "canonical_selection_name": "Home or draw"
+        },
+        {
+          "api_values": [
+            "Draw/Away",
+            "X2"
+          ],
+          "bookmaker_values": [
+            "Draw/Away",
+            "X2",
+            "N / 2",
+            "N2"
+          ],
+          "browser_use_aliases": [
+            "X2",
+            "N2",
+            "N / 2",
+            "Draw or Away"
+          ],
+          "canonical_selection_id": "draw_or_away",
+          "canonical_selection_name": "Draw or away"
+        },
+        {
+          "api_values": [
+            "Home/Away",
+            "12"
+          ],
+          "bookmaker_values": [
+            "Home/Away",
+            "12",
+            "1 / 2"
+          ],
+          "browser_use_aliases": [
+            "12",
+            "1 / 2",
+            "Home or Away"
+          ],
+          "canonical_selection_id": "home_or_away",
+          "canonical_selection_name": "Home or away"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 34,
+        "bet_name": "Both Teams Score - First Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Both Teams Score - First Half",
+      "browser_use_aliases": [
+        "Both Teams Score - First Half",
+        "Both teams score first half"
+      ],
+      "canonical_market_id": "both_teams_score_first_half",
+      "canonical_market_name": "Both teams score first half",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Yes",
+            "Oui"
+          ],
+          "bookmaker_values": [
+            "Yes",
+            "Oui"
+          ],
+          "browser_use_aliases": [
+            "Yes",
+            "Oui"
+          ],
+          "canonical_selection_id": "yes",
+          "canonical_selection_name": "Yes"
+        },
+        {
+          "api_values": [
+            "No",
+            "Non"
+          ],
+          "bookmaker_values": [
+            "No",
+            "Non"
+          ],
+          "browser_use_aliases": [
+            "No",
+            "Non"
+          ],
+          "canonical_selection_id": "no",
+          "canonical_selection_name": "No"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 35,
+        "bet_name": "Both Teams To Score - Second Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Both Teams To Score - Second Half",
+      "browser_use_aliases": [
+        "Both Teams To Score - Second Half",
+        "Both teams score second half"
+      ],
+      "canonical_market_id": "both_teams_score_second_half",
+      "canonical_market_name": "Both teams score second half",
+      "category": "period_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [
+        {
+          "api_values": [
+            "Yes",
+            "Oui"
+          ],
+          "bookmaker_values": [
+            "Yes",
+            "Oui"
+          ],
+          "browser_use_aliases": [
+            "Yes",
+            "Oui"
+          ],
+          "canonical_selection_id": "yes",
+          "canonical_selection_name": "Yes"
+        },
+        {
+          "api_values": [
+            "No",
+            "Non"
+          ],
+          "bookmaker_values": [
+            "No",
+            "Non"
+          ],
+          "browser_use_aliases": [
+            "No",
+            "Non"
+          ],
+          "canonical_selection_id": "no",
+          "canonical_selection_name": "No"
+        }
+      ],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 36,
+        "bet_name": "Win To Nil"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Win To Nil",
+      "browser_use_aliases": [
+        "Win To Nil",
+        "Win to nil"
+      ],
+      "canonical_market_id": "win_to_nil",
+      "canonical_market_name": "Win to nil",
+      "category": "team_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 37,
+        "bet_name": "Home win both halves"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Home win both halves",
+      "browser_use_aliases": [
+        "Home win both halves"
+      ],
+      "canonical_market_id": "home_win_both_halves",
+      "canonical_market_name": "Home win both halves",
+      "category": "combo_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 38,
+        "bet_name": "Exact Goals Number"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Exact Goals Number",
+      "browser_use_aliases": [
+        "Exact Goals Number",
+        "Exact goals number"
+      ],
+      "canonical_market_id": "exact_goals_number",
+      "canonical_market_name": "Exact goals number",
+      "category": "score_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 39,
+        "bet_name": "To Win Either Half"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "To Win Either Half",
+      "browser_use_aliases": [
+        "To Win Either Half",
+        "To win either half"
+      ],
+      "canonical_market_id": "to_win_either_half",
+      "canonical_market_name": "To win either half",
+      "category": "combo_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 40,
+        "bet_name": "Home Team Exact Goals Number"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Home Team Exact Goals Number",
+      "browser_use_aliases": [
+        "Home Team Exact Goals Number",
+        "Home team exact goals number"
+      ],
+      "canonical_market_id": "home_team_exact_goals_number",
+      "canonical_market_name": "Home team exact goals number",
+      "category": "score_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    },
+    {
+      "api_football": {
+        "bet_id": 41,
+        "bet_name": "Away Team Exact Goals Number"
+      },
+      "bookmaker": {
+        "id": 16,
+        "name": "Unibet"
+      },
+      "bookmaker_market_label": "Away Team Exact Goals Number",
+      "browser_use_aliases": [
+        "Away Team Exact Goals Number",
+        "Away team exact goals number"
+      ],
+      "canonical_market_id": "away_team_exact_goals_number",
+      "canonical_market_name": "Away team exact goals number",
+      "category": "score_market",
+      "notes": [],
+      "requires_manual_review": false,
+      "selection_mapping": [],
+      "source": {
+        "fixture_id": 1379303,
+        "fixture_label": "Fulham vs Aston Villa",
+        "from_file": "api_football_exploration_20260425_182608.json"
+      },
+      "supported_by_api_football": true,
+      "supported_by_betclic": null,
+      "supported_by_unibet": true
+    }
+  ],
+  "source_files": [
+    "api_football_exploration_20260425_182608.json",
+    "api_football_bookmakers.json"
+  ],
+  "summary": {
+    "mapped_markets_count": 41,
+    "unmapped_markets_count": 296
+  }
+}
