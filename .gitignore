@@ -1,7 +1,43 @@
-.env
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
 .venv/
-runs/*
-!runs/.gitkeep
-*.log
+venv/
+env/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime generated files
+runs/
+generated/
 data/analysis_context/
+data/tmp/
+tmp/
+
+# API exploration outputs
+api_football_exploration_*.json
+api_football_bookmakers.json
+
+# Logs
+*.log
+logs/
+
+# Browser / Playwright
+.playwright/
+browser_data/
+storage_state.json
