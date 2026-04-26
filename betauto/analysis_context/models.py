@@ -12,6 +12,11 @@ class ApiCallLog:
     success: bool = False
     error: str | None = None
     response_items: int | None = None
+    duration_seconds: float | None = None
+    retry_count: int = 0
+    requests_remaining: int | None = None
+    requests_limit: int | None = None
+    quota_reset: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

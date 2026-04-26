@@ -7,6 +7,8 @@ from typing import Any
 from dotenv import load_dotenv
 import requests
 
+from betauto.api_clients.errors import ExternalApiError
+
 from .api_football_client import ApiFootballClient
 from .models import AnalysisContext, MatchContext, QuantitativeContext
 from .normalizer import (
@@ -47,7 +49,7 @@ class AnalysisContextBuilder:
     def _safe_call(self, fn: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
         try:
             return fn(*args, **kwargs)
-        except requests.RequestException:
+        except (requests.RequestException, ExternalApiError):
             return {"response": []}
         except ValueError:
             return {"response": []}

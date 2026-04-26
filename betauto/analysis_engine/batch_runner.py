@@ -35,22 +35,41 @@ def _estimate_cost_usd(input_tokens: int, output_tokens: int) -> float:
     return ((input_tokens / 1_000_000) * input_per_1m) + ((output_tokens / 1_000_000) * output_per_1m)
 
 
-def run_analysis_batch_with_stats(context_file: str, llm) -> tuple[list[dict], dict[str, Any]]:
+def run_analysis_batch_with_stats(
+    context_file: str,
+    llm,
+    *,
+    max_matches: int | None = None,
+    sleep_between_matches: float | None = None,
+    continue_on_error: bool = True,
+) -> tuple[list[dict], dict[str, Any]]:
     context_path = Path(context_file)
     payload = json.loads(context_path.read_text(encoding="utf-8"))
     matches: list[dict[str, Any]] = payload.get("matches", [])
+
+    env_max_matches = os.getenv("OPENAI_BATCH_MAX_MATCHES")
+    if max_matches is None and env_max_matches:
+        max_matches = int(env_max_matches)
+    if max_matches and max_matches > 0:
+        matches = matches[:max_matches]
+
+    if sleep_between_matches is None:
+        sleep_between_matches = float(os.getenv("OPENAI_SLEEP_BETWEEN_MATCHES_SECONDS", "5"))
 
     start = time.perf_counter()
     results: list[dict[str, Any]] = []
     stats = BatchRunStats(total_matches=len(matches))
 
-    for match in matches:
+    for index, match in enumerate(matches, start=1):
         fixture_id = match.get("fixture_id")
+        logger.info("[analysis_batch] [%s/%s] analyzing fixture_id=%s", index, len(matches), fixture_id)
+        match_start = time.perf_counter()
+
         analysis_result = analyze_match(match, llm)
         results.append(analysis_result)
 
         status = analysis_result.get("status", "failed")
-        usage = analysis_result.get("llm_usage", {}) or {}
+        usage = analysis_result.get("llm_usage") or analysis_result.get("token_usage") or {}
         input_tokens = int(usage.get("input_tokens", 0) or 0)
         output_tokens = int(usage.get("output_tokens", 0) or 0)
         total_tokens = int(usage.get("total_tokens", 0) or 0)
@@ -67,6 +86,12 @@ def run_analysis_batch_with_stats(context_file: str, llm) -> tuple[list[dict], d
             stats.success_count += 1
         else:
             stats.failed_count += 1
+            if not continue_on_error:
+                logger.error("[analysis_batch] stopping on error fixture_id=%s", fixture_id)
+
+        match_elapsed = round(time.perf_counter() - match_start, 3)
+        retry_count = int(analysis_result.get("retry_count", 0) or 0)
+        prompt_size_chars = int(analysis_result.get("prompt_size_chars", 0) or 0)
 
         stats.per_match_status.append(
             {
@@ -76,9 +101,26 @@ def run_analysis_batch_with_stats(context_file: str, llm) -> tuple[list[dict], d
                 "output_tokens": output_tokens,
                 "total_tokens": total_tokens,
                 "estimated_cost_usd": round(estimated_cost, 8),
+                "duration_seconds": match_elapsed,
+                "retry_count": retry_count,
+                "prompt_size_chars": prompt_size_chars,
             }
         )
-        logger.info("fixture_id=%s status=%s", fixture_id, status)
+        logger.info(
+            "[analysis_batch] fixture_id=%s status=%s duration=%.3fs cost=%.8f retries=%s",
+            fixture_id,
+            status,
+            match_elapsed,
+            round(estimated_cost, 8),
+            retry_count,
+        )
+
+        if status != "success" and not continue_on_error:
+            break
+
+        if index < len(matches) and sleep_between_matches > 0:
+            logger.info("[analysis_batch] sleeping %.2fs before next match", sleep_between_matches)
+            time.sleep(sleep_between_matches)
 
     stats.elapsed_seconds = round(time.perf_counter() - start, 3)
     stats.estimated_cost_usd = round(stats.estimated_cost_usd, 8)

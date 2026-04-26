@@ -29,6 +29,24 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Override model name (default from OPENAI_ANALYSIS_MODEL).",
     )
+    parser.add_argument(
+        "--max-matches",
+        type=int,
+        default=None,
+        help="Limit number of matches to analyze.",
+    )
+    parser.add_argument(
+        "--sleep-between-matches",
+        type=float,
+        default=None,
+        help="Seconds to wait between two match analyses.",
+    )
+    parser.add_argument(
+        "--continue-on-error",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Continue batch even if one match fails (default: true).",
+    )
     return parser.parse_args()
 
 
@@ -47,7 +65,13 @@ def main() -> None:
     client = OpenAI(api_key=api_key)
     client.analysis_model = model
 
-    results, stats = run_analysis_batch_with_stats(context_file=args.context_file, llm=client)
+    results, stats = run_analysis_batch_with_stats(
+        context_file=args.context_file,
+        llm=client,
+        max_matches=args.max_matches,
+        sleep_between_matches=args.sleep_between_matches,
+        continue_on_error=args.continue_on_error,
+    )
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

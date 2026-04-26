@@ -28,4 +28,8 @@ class MatchAnalysisResult(BaseModel):
     analysis: MatchAnalysis
     error: str | None = None
     llm_usage: dict[str, int] = Field(default_factory=dict)
+    token_usage: dict[str, int] = Field(default_factory=dict)
     estimated_cost_usd: float | None = None
+    duration_seconds: float | None = None
+    retry_count: int | None = None
+    prompt_size_chars: int | None = None
