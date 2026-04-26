@@ -10,6 +10,7 @@ from betauto.selection_engine import (
     load_selection_config_from_env_and_cli,
     resolve_output_dir,
     resolve_selection_model,
+    resolve_strategy_config,
     select_combo,
 )
 
@@ -26,12 +27,24 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Directory where selection files will be exported (default: SELECTION_OUTPUT_DIR or data/selection_results).",
     )
+    parser.add_argument(
+        "--strategy-file",
+        default=None,
+        help=(
+            "Path to business strategy JSON file (priority: CLI overrides > strategy > legacy env/defaults). "
+            "If omitted, uses BETAUTO_STRATEGY_FILE or config/strategies/default.json."
+        ),
+    )
     parser.add_argument("--combo-min-odds", type=float, default=None)
     parser.add_argument("--combo-max-odds", type=float, default=None)
     parser.add_argument("--max-picks", type=int, default=None)
     parser.add_argument("--min-pick-confidence", type=int, default=None)
     parser.add_argument("--min-global-match-confidence", type=int, default=None)
-    parser.add_argument("--model", default=None, help="Override selection model (default: SELECTION_ENGINE_MODEL or OPENAI_ANALYSIS_MODEL).")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Override selection model (default: SELECTION_ENGINE_MODEL or OPENAI_ANALYSIS_MODEL).",
+    )
     return parser.parse_args()
 
 
@@ -49,6 +62,7 @@ def main() -> None:
 
     load_dotenv()
 
+    strategy_config = resolve_strategy_config(args)
     config = load_selection_config_from_env_and_cli(args)
     output_dir = resolve_output_dir(args)
 
@@ -74,6 +88,7 @@ def main() -> None:
     dated_path, latest_path = export_selection_result(selection_result, output_dir=output_dir)
 
     print(f"Input file: {args.input_file}")
+    print(f"Strategy: {strategy_config.strategy_id}")
     print(f"Combo target: {config.combo_min_odds:.2f} - {config.combo_max_odds:.2f}")
     print(f"Max picks: {config.max_picks}")
     print(f"Picks selected: {len(selection_result.get('picks', []))}")

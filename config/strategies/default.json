@@ -1,0 +1,97 @@
+{
+  "strategy_id": "default_football_balanced",
+  "name": "Football équilibré - combinés prudents",
+  "description": "Stratégie par défaut orientée football, marchés robustes et combinés à variance contrôlée.",
+  "enabled": true,
+  "scope": {
+    "sports": [
+      "football"
+    ],
+    "allow_multi_sport": false,
+    "allow_multi_league": true,
+    "leagues": [
+      {
+        "id": 39,
+        "name": "Premier League",
+        "country": "England",
+        "enabled": true
+      },
+      {
+        "id": 61,
+        "name": "Ligue 1",
+        "country": "France",
+        "enabled": true
+      },
+      {
+        "id": 140,
+        "name": "La Liga",
+        "country": "Spain",
+        "enabled": true
+      }
+    ]
+  },
+  "ticket_policy": {
+    "allow_single": true,
+    "allow_combo": true,
+    "preferred_ticket_type": "combo",
+    "min_picks": 2,
+    "max_picks": 5,
+    "target_odds": {
+      "enabled": true,
+      "min": 2.8,
+      "max": 3.5
+    }
+  },
+  "market_policy": {
+    "mode": "allowlist",
+    "allowed_markets": [
+      "match_winner",
+      "home_away",
+      "double_chance",
+      "both_teams_to_score",
+      "goals_over_under",
+      "over_1_5_goals",
+      "over_2_5_goals",
+      "under_3_5_goals",
+      "under_4_5_goals"
+    ],
+    "excluded_markets": [
+      "exact_score",
+      "cards",
+      "corners",
+      "player_props"
+    ],
+    "allow_exotic_markets": false
+  },
+  "confidence_policy": {
+    "min_match_analysis_confidence": 65,
+    "min_pick_confidence": 65,
+    "min_combo_confidence": 65
+  },
+  "risk_policy": {
+    "risk_appetite": "medium",
+    "max_pick_risk": "medium",
+    "max_combo_risk": "medium"
+  },
+  "analysis_policy": {
+    "one_prompt_per_match": true,
+    "use_api_football": true,
+    "use_qualitative_context": true,
+    "require_odds_available": true,
+    "avoid_insufficient_data": true,
+    "min_data_quality": "medium"
+  },
+  "execution_policy": {
+    "platform": "unibet",
+    "prepare_betslip": true,
+    "requires_human_validation": true,
+    "allow_real_bet_submission": false
+  },
+  "bankroll_policy": {
+    "enabled": false,
+    "staking_method": "manual",
+    "max_stake_percent_per_ticket": null,
+    "daily_loss_limit_percent": null,
+    "weekly_loss_limit_percent": null
+  }
+}
