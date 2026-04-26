@@ -64,9 +64,12 @@ def main() -> None:
     client = OpenAI(api_key=api_key)
     client.analysis_model = model
 
-    selection_result = select_combo(match_analyses=input_payload, config=config, llm=client)
-    selection_result["input_file"] = str(args.input_file)
-    selection_result["selection_config"] = config.model_dump()
+    selection_result = select_combo(
+        match_analyses=input_payload,
+        config=config,
+        llm=client,
+        input_file=str(args.input_file),
+    )
 
     dated_path, latest_path = export_selection_result(selection_result, output_dir=output_dir)
 
