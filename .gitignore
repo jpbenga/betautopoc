@@ -41,3 +41,4 @@ logs/
 .playwright/
 browser_data/
 storage_state.json
+data/analysis_results/
