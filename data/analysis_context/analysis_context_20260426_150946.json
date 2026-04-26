@@ -1,0 +1,39 @@
+{
+  "api_calls": [
+    {
+      "endpoint": "fixtures",
+      "error": null,
+      "params": {
+        "date": "2026-04-26",
+        "league": 39,
+        "season": 2025
+      },
+      "response_items": 0,
+      "status_code": 200,
+      "success": true
+    },
+    {
+      "endpoint": "standings",
+      "error": null,
+      "params": {
+        "league": 39,
+        "season": 2025
+      },
+      "response_items": 1,
+      "status_code": 200,
+      "success": true
+    }
+  ],
+  "generated_at": "2026-04-26T15:09:46+00:00",
+  "league": {
+    "id": 39,
+    "name": "Premier League",
+    "season": 2025
+  },
+  "matches": [],
+  "source": {
+    "api_football": true,
+    "qualitative_sources": false
+  },
+  "target_date": "2026-04-26"
+}
