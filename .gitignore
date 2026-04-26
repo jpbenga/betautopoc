@@ -42,3 +42,4 @@ logs/
 browser_data/
 storage_state.json
 data/analysis_results/
+data/selection_results/
