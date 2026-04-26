@@ -69,6 +69,23 @@ class AnalysisPolicy(BaseModel):
     min_data_quality: DataQuality = "medium"
 
 
+class OddsSourcePolicy(BaseModel):
+    bookmaker_id: int | None = None
+    bookmaker_name: str | None = None
+
+
+class RefreshPolicy(BaseModel):
+    use_cache: bool = True
+    force_refresh: bool = False
+
+
+class DataPolicy(BaseModel):
+    provider: str
+    season: int
+    odds_source: OddsSourcePolicy = Field(default_factory=OddsSourcePolicy)
+    refresh_policy: RefreshPolicy = Field(default_factory=RefreshPolicy)
+
+
 class ExecutionPolicy(BaseModel):
     platform: str = "unibet"
     prepare_betslip: bool = True
@@ -95,6 +112,7 @@ class StrategyDefinition(BaseModel):
     confidence_policy: ConfidencePolicy
     risk_policy: RiskPolicy
     analysis_policy: AnalysisPolicy
+    data_policy: DataPolicy
     execution_policy: ExecutionPolicy
     bankroll_policy: BankrollPolicy = Field(default_factory=BankrollPolicy)
 
@@ -133,6 +151,12 @@ class ResolvedStrategyConfig(BaseModel):
     require_odds_available: bool
     avoid_insufficient_data: bool
     min_data_quality: DataQuality
+    data_provider: str
+    season: int
+    bookmaker_id: int | None = None
+    bookmaker_name: str | None = None
+    use_cache: bool
+    force_refresh: bool
     execution_platform: str
     prepare_betslip: bool
     requires_human_validation: bool

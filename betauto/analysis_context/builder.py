@@ -39,9 +39,11 @@ class AnalysisContextBuilder:
         load_dotenv()
         self.api_key = api_key or os.getenv("API_FOOTBALL_KEY", "")
         self.base_url = base_url or os.getenv("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io")
-        self.league_id = league_id or int(os.getenv("API_FOOTBALL_LEAGUE_ID", "39"))
-        self.season = season or int(os.getenv("API_FOOTBALL_SEASON", "2025"))
-        self.bookmaker_id = bookmaker_id or int(os.getenv("API_FOOTBALL_BOOKMAKER_ID", "16"))
+        self.league_id = league_id if league_id is not None else int(os.getenv("API_FOOTBALL_LEAGUE_ID", "39"))
+        self.season = season if season is not None else int(os.getenv("API_FOOTBALL_SEASON", "2025"))
+        self.bookmaker_id = (
+            bookmaker_id if bookmaker_id is not None else int(os.getenv("API_FOOTBALL_BOOKMAKER_ID", "16"))
+        )
         self.bookmaker_name = bookmaker_name or os.getenv("API_FOOTBALL_BOOKMAKER_NAME", "Unibet")
 
         self.client = ApiFootballClient(api_key=self.api_key, base_url=self.base_url)

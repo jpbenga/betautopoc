@@ -81,6 +81,18 @@
     "avoid_insufficient_data": true,
     "min_data_quality": "medium"
   },
+  "data_policy": {
+    "provider": "api_football",
+    "season": 2025,
+    "odds_source": {
+      "bookmaker_id": 16,
+      "bookmaker_name": "Unibet"
+    },
+    "refresh_policy": {
+      "use_cache": true,
+      "force_refresh": false
+    }
+  },
   "execution_policy": {
     "platform": "unibet",
     "prepare_betslip": true,

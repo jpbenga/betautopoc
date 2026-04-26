@@ -38,6 +38,18 @@ def _collect_issues(strategy: StrategyDefinition) -> tuple[list[str], list[str]]
     if strategy.market_policy.mode == "allowlist" and not strategy.market_policy.allowed_markets:
         errors.append("market_policy.allowed_markets ne peut pas être vide en mode allowlist.")
 
+    if not strategy.data_policy.provider.strip():
+        errors.append("data_policy.provider ne peut pas être vide.")
+
+    if strategy.data_policy.season < 2000:
+        errors.append("data_policy.season doit être >= 2000.")
+
+    odds_source = strategy.data_policy.odds_source
+    if odds_source.bookmaker_id is None and not (odds_source.bookmaker_name or "").strip():
+        errors.append("data_policy.odds_source doit contenir bookmaker_id ou bookmaker_name.")
+    if odds_source.bookmaker_id is None:
+        warnings.append("data_policy.odds_source.bookmaker_id absent; le matching des cotes peut être moins fiable.")
+
     if RISK_ORDER[strategy.risk_policy.max_combo_risk] < RISK_ORDER[strategy.risk_policy.max_pick_risk]:
         warnings.append(
             "max_combo_risk est plus strict que max_pick_risk; vérifier la cohérence de la politique de risque."

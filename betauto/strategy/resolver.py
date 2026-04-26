@@ -10,6 +10,7 @@ def resolve_strategy(strategy: StrategyDefinition) -> ResolvedStrategyConfig:
 
     enabled_leagues = [league for league in strategy.scope.leagues if league.enabled]
     target_odds = strategy.ticket_policy.target_odds
+    data_policy = strategy.data_policy
 
     return ResolvedStrategyConfig(
         strategy_id=strategy.strategy_id,
@@ -38,6 +39,12 @@ def resolve_strategy(strategy: StrategyDefinition) -> ResolvedStrategyConfig:
         require_odds_available=strategy.analysis_policy.require_odds_available,
         avoid_insufficient_data=strategy.analysis_policy.avoid_insufficient_data,
         min_data_quality=strategy.analysis_policy.min_data_quality,
+        data_provider=data_policy.provider,
+        season=data_policy.season,
+        bookmaker_id=data_policy.odds_source.bookmaker_id,
+        bookmaker_name=data_policy.odds_source.bookmaker_name,
+        use_cache=data_policy.refresh_policy.use_cache,
+        force_refresh=data_policy.refresh_policy.force_refresh,
         execution_platform=strategy.execution_policy.platform,
         prepare_betslip=strategy.execution_policy.prepare_betslip,
         requires_human_validation=strategy.execution_policy.requires_human_validation,

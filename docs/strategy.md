@@ -19,7 +19,7 @@ Strategy JSON
 
 ## Modèles
 
-- `StrategyDefinition` : représentation métier complète de la stratégie (scope, ticket policy, market policy, confidence, risk, analysis, execution, bankroll).
+- `StrategyDefinition` : représentation métier complète de la stratégie (scope, ticket policy, market policy, confidence, risk, analysis, **data_policy**, execution, bankroll).
 - `ResolvedStrategyConfig` : configuration runtime aplatie, directement consommable par les moteurs.
 
 Exemples de champs runtime :
@@ -30,6 +30,9 @@ Exemples de champs runtime :
 - `min_global_match_confidence`
 - `allowed_markets` / `excluded_markets`
 - `execution_platform`
+- `season`
+- `bookmaker_id` / `bookmaker_name`
+- `data_provider`
 
 ## Chargement et résolution
 
@@ -57,6 +60,33 @@ Pour le Selection Engine, la priorité est :
 3. **Legacy env/default fallback** (pour compatibilité)
 
 > Les variables métier dans `.env` sont considérées comme héritées. Préférer les fichiers de stratégie.
+
+## Priorité de configuration (Analysis Context)
+
+Pour `scripts/build_analysis_context.py`, la priorité est :
+
+1. **CLI overrides** (`--league-id`, `--season`, `--bookmaker-id`)
+2. **Strategy** (`scope.leagues` + `data_policy`)
+3. **Legacy env/default fallback**
+
+`data_policy` remplace les valeurs métier API-Football historiquement portées dans `.env`.
+
+Exemple :
+
+```json
+"data_policy": {
+  "provider": "api_football",
+  "season": 2025,
+  "odds_source": {
+    "bookmaker_id": 16,
+    "bookmaker_name": "Unibet"
+  },
+  "refresh_policy": {
+    "use_cache": true,
+    "force_refresh": false
+  }
+}
+```
 
 ## Exemple de stratégie
 

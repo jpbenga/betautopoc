@@ -11,20 +11,24 @@ La brique `analysis_context` prépare un contexte structuré et compact pour l'a
 API-Football fournit les faits mesurables. L'analyse IA doit ensuite interpréter ces faits dans un contexte plus large (psychologique, médiatique, météo, enchaînement des matchs, etc.). Cette brique n'est donc qu'une couche de préparation de données.
 
 ## Générer un contexte
-1. Définir les variables d'environnement:
+1. Définir les variables d'environnement techniques:
    - `API_FOOTBALL_KEY` (obligatoire)
    - `API_FOOTBALL_BASE_URL` (défaut: `https://v3.football.api-sports.io`)
-   - `API_FOOTBALL_LEAGUE_ID` (défaut: `39`)
-   - `API_FOOTBALL_SEASON` (défaut: `2025`)
-   - `API_FOOTBALL_BOOKMAKER_ID` (défaut: `16`)
-   - `API_FOOTBALL_BOOKMAKER_NAME` (défaut: `Unibet`)
+   - `BETAUTO_STRATEGY_FILE` (défaut: `config/strategies/default.json`)
    - `ANALYSIS_CONTEXT_DATE` (optionnel)
    - `ANALYSIS_CONTEXT_OUTPUT_DIR` (défaut: `data/analysis_context`)
+   - Variables legacy de fallback (si la stratégie ne fournit pas la donnée): `API_FOOTBALL_LEAGUE_ID`, `API_FOOTBALL_SEASON`, `API_FOOTBALL_BOOKMAKER_ID`, `API_FOOTBALL_BOOKMAKER_NAME`
 2. Lancer:
 
 ```bash
-python scripts/build_analysis_context.py --date 2026-04-26
+PYTHONPATH=. python scripts/build_analysis_context.py --strategy-file config/strategies/default.json --date 2026-04-26
 ```
+
+Priorité de résolution: **CLI > Strategy > env fallback**.
+
+Comportement multi-ligues:
+- par défaut, le script prend la première ligue active de la stratégie;
+- `--all-leagues` traite toutes les ligues actives et exporte dans des sous-dossiers `league_<id>/`.
 
 ## Sorties
 - `analysis_context_YYYYMMDD_HHMMSS.json`
