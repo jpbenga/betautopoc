@@ -1,46 +1,41 @@
 # Python
 __pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# Virtual environments
-.venv/
-venv/
-env/
-
-# Secrets
+*.pyc
 .env
-.env.*
-!.env.example
+.venv/
 
-# OS / IDE
-.DS_Store
-.idea/
-.vscode/
-
-# Runtime generated files
-runs/
-generated/
-data/analysis_context/
-data/tmp/
-tmp/
-
-# API exploration outputs
-api_football_exploration_*.json
-api_football_bookmakers.json
+# Data
+data/
+!data/.gitkeep
 
 # Logs
 *.log
-logs/
 
-# Browser / Playwright
-.playwright/
-browser_data/
-storage_state.json
-data/analysis_results/
-data/selection_results/
-data/orchestrator_runs/
+# OS
+.DS_Store
+
+# Angular / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+frontend/.cache/
+frontend/.vite/
+frontend/.parcel-cache/
+
+# Package managers
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# Optional: keep lock file (recommended)
+# frontend/package-lock.json
+
+# Images / binaries (optionnel selon besoin)
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.ico
