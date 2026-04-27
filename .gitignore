@@ -43,3 +43,24 @@ browser_data/
 storage_state.json
 data/analysis_results/
 data/selection_results/
+
+# Angular / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+frontend/.cache/
+frontend/.vite/
+frontend/.parcel-cache/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# OS / binary artifacts
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.ico

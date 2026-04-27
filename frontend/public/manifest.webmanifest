@@ -1,0 +1,24 @@
+{
+  "name": "BetAuto",
+  "short_name": "BetAuto",
+  "theme_color": "#0f172a",
+  "background_color": "#020617",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "description": "BetAuto operations dashboard frontend",
+  "icons": [
+    {
+      "src": "icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-any.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
