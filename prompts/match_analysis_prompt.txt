@@ -44,6 +44,7 @@ Contraintes supplémentaires:
 - confidence et global_confidence: entier entre 0 et 100.
 - data_quality: une valeur parmi "high", "medium", "low".
 - predicted_markets: liste de marchés individuels pertinents; liste vide autorisée si données insuffisantes.
+{{STRATEGY_CONSTRAINTS}}
 
 INPUT_MATCH_JSON:
 {{MATCH_CONTEXT_JSON}}
