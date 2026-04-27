@@ -1,0 +1,1 @@
+"""BetAuto backend application package."""

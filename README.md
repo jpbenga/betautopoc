@@ -90,6 +90,14 @@ OPENAI_API_KEY=...
 
 ## Lancement
 
+Nouvelle entrée backend recommandée :
+
+```bash
+uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Compatibilité legacy conservée :
+
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
