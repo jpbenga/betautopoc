@@ -24,24 +24,146 @@ def _load_prompt() -> str:
     return PROMPT_PATH.read_text(encoding="utf-8")
 
 
-def _extract_json_from_text(text: str) -> dict[str, Any]:
-    payload = (text or "").strip()
+class SelectionJsonParseError(ValueError):
+    """Erreur levée quand aucune stratégie de parsing JSON n'a abouti."""
+
+    def __init__(self, message: str, *, meta: dict[str, Any] | None = None):
+        super().__init__(message)
+        self.meta = meta or {}
+
+
+def _strip_markdown_fences(text: str) -> str:
+    cleaned = (text or "").strip()
+    cleaned = re.sub(r"^\s*```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```\s*$", "", cleaned)
+    return cleaned.strip()
+
+
+def _extract_balanced_json_object(text: str) -> str:
+    start = text.find("{")
+    if start == -1:
+        raise SelectionJsonParseError("Aucun objet JSON détecté dans la réponse LLM.")
+
+    depth = 0
+    in_string = False
+    escaped = False
+
+    for index in range(start, len(text)):
+        char = text[index]
+
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+
+    raise SelectionJsonParseError("Objet JSON incomplet: accolade fermante manquante.")
+
+
+def extract_json_from_llm_response(text: str) -> str:
+    payload = _strip_markdown_fences(text).replace("\ufeff", "").replace("\x00", "").strip()
     if not payload:
-        raise ValueError("Réponse LLM vide.")
+        raise SelectionJsonParseError("Réponse LLM vide.")
 
-    if payload.startswith("{") and payload.endswith("}"):
-        return json.loads(payload)
+    return _extract_balanced_json_object(payload)
 
-    fenced = re.search(r"```(?:json)?\\s*(\{.*?\})\\s*```", payload, flags=re.DOTALL | re.IGNORECASE)
-    if fenced:
-        return json.loads(fenced.group(1))
 
-    start = payload.find("{")
-    end = payload.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        return json.loads(payload[start : end + 1])
+def repair_json_string(json_str: str) -> str:
+    repaired = (json_str or "").strip()
+    if not repaired:
+        return repaired
 
-    raise ValueError("Aucun objet JSON détecté dans la réponse LLM.")
+    replacements = {
+        "“": '"',
+        "”": '"',
+        "‘": "'",
+        "’": "'",
+    }
+    for source, target in replacements.items():
+        repaired = repaired.replace(source, target)
+
+    repaired = re.sub(r"\bNone\b", "null", repaired)
+    repaired = re.sub(r"\bTrue\b", "true", repaired)
+    repaired = re.sub(r"\bFalse\b", "false", repaired)
+    repaired = re.sub(r",\s*([}\]])", r"\1", repaired)
+    repaired = re.sub(r'([}\]"0-9a-zA-Z])(\s*)"([A-Za-z0-9_]+)"\s*:', r'\1,\2"\3":', repaired)
+    repaired = re.sub(r"(?<!\\)'([^'\\]*(?:\\.[^'\\]*)*)'", r'"\1"', repaired)
+    repaired = re.sub(r'([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*:)', r'\1"\2"\3', repaired)
+    return repaired
+
+
+def _safe_parse_json_with_meta(text: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    attempts = 0
+    repair_used = False
+    cleaned_json = ""
+    repair_applied = ""
+    last_error: Exception | None = None
+
+    attempts += 1
+    try:
+        parsed = json.loads(text)
+        return parsed, {
+            "parsing_attempts": attempts,
+            "repair_used": repair_used,
+            "cleaned_json": cleaned_json,
+            "repair_applied": repair_applied,
+        }
+    except Exception as exc:  # noqa: BLE001
+        last_error = exc
+
+    attempts += 1
+    cleaned_json = extract_json_from_llm_response(text)
+    try:
+        parsed = json.loads(cleaned_json)
+        return parsed, {
+            "parsing_attempts": attempts,
+            "repair_used": repair_used,
+            "cleaned_json": cleaned_json,
+            "repair_applied": repair_applied,
+        }
+    except Exception as exc:  # noqa: BLE001
+        last_error = exc
+
+    attempts += 1
+    repair_applied = repair_json_string(cleaned_json)
+    repair_used = repair_applied != cleaned_json
+    try:
+        parsed = json.loads(repair_applied)
+        return parsed, {
+            "parsing_attempts": attempts,
+            "repair_used": repair_used,
+            "cleaned_json": cleaned_json,
+            "repair_applied": repair_applied,
+        }
+    except Exception as exc:  # noqa: BLE001
+        last_error = exc
+
+    raise SelectionJsonParseError(
+        f"Parsing JSON impossible après {attempts} tentatives: {last_error}",
+        meta={
+            "parsing_attempts": attempts,
+            "repair_used": repair_used,
+            "cleaned_json": cleaned_json,
+            "repair_applied": repair_applied,
+        },
+    ) from last_error
+
+
+def safe_parse_json(text: str) -> dict[str, Any]:
+    parsed, _ = _safe_parse_json_with_meta(text)
+    return parsed
 
 
 def _risk_from_confidence(confidence_score: int) -> str:
@@ -200,17 +322,81 @@ def select_combo(match_analyses: dict, config: SelectionConfig, llm, *, input_fi
         if not model_name:
             raise RuntimeError("Modèle OpenAI manquant (SELECTION_ENGINE_MODEL/OPENAI_ANALYSIS_MODEL ou --model).")
 
-        response, _ = create_response_with_retry(
-            llm,
-            model=model_name,
-            input=prompt,
-            operation_name="openai.responses.create selection_engine",
-            timeout=float(os.getenv("OPENAI_TIMEOUT_SECONDS", "120")),
-        )
+        timeout = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "120"))
+        max_json_retries = 2
+        retry_count = 0
+        parsing_attempts = 0
+        repair_used = False
+        cleaned_json = ""
+        repair_applied = ""
+        last_raw_response = ""
 
-        parsed = _extract_json_from_text(response.output_text or "")
+        current_prompt = prompt
+        parsed: dict[str, Any] | None = None
+
+        while retry_count <= max_json_retries:
+            response, _ = create_response_with_retry(
+                llm,
+                model=model_name,
+                input=current_prompt,
+                operation_name="openai.responses.create selection_engine",
+                timeout=timeout,
+            )
+            raw_response = response.output_text or ""
+            last_raw_response = raw_response
+
+            try:
+                parsed, parse_meta = _safe_parse_json_with_meta(raw_response)
+                parsing_attempts += int(parse_meta.get("parsing_attempts", 0))
+                repair_used = repair_used or bool(parse_meta.get("repair_used"))
+                cleaned_json = str(parse_meta.get("cleaned_json") or cleaned_json)
+                repair_applied = str(parse_meta.get("repair_applied") or repair_applied)
+                logger.info(
+                    "Selection JSON parsed successfully | parsing_attempts=%s repair_used=%s retry_count=%s",
+                    parsing_attempts,
+                    repair_used,
+                    retry_count,
+                )
+                break
+            except SelectionJsonParseError as parse_exc:
+                parse_meta = parse_exc.meta
+                parsing_attempts += int(parse_meta.get("parsing_attempts", 0))
+                repair_used = repair_used or bool(parse_meta.get("repair_used"))
+                cleaned_json = str(parse_meta.get("cleaned_json") or cleaned_json)
+                repair_applied = str(parse_meta.get("repair_applied") or repair_applied)
+                retry_count += 1
+                retry_triggered = retry_count <= max_json_retries
+                logger.warning(
+                    "Selection JSON parsing failed | parsing_attempts=%s repair_used=%s retry_count=%s retry_triggered=%s raw_llm_response=%s cleaned_json=%s repair_applied=%s",
+                    parsing_attempts,
+                    repair_used,
+                    retry_count,
+                    retry_triggered,
+                    raw_response[:500],
+                    cleaned_json[:500],
+                    repair_applied[:500],
+                )
+                if not retry_triggered:
+                    raise
+                current_prompt = (
+                    "The previous output was not valid JSON. Fix ONLY the JSON.\n\n"
+                    f"Previous output:\n{raw_response}"
+                )
+
+        if parsed is None:
+            raise SelectionJsonParseError("Aucune sortie JSON parseable après les retries.")
+
         normalized = _normalize_selection_payload(parsed, config=config, input_file=input_file)
         validated = SelectionResult.model_validate(normalized)
+        logger.info(
+            "Selection completed | parsing_attempts=%s repair_used=%s retry_count=%s raw_llm_response=%s cleaned_json=%s repair_applied=%s",
+            parsing_attempts,
+            repair_used,
+            retry_count,
+            last_raw_response[:500],
+            cleaned_json[:500],
+            repair_applied[:500],
+        )
         return validated.model_dump()
     except Exception as exc:  # noqa: BLE001
         logger.exception("Selection engine failed")
