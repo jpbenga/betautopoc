@@ -39,3 +39,5 @@ frontend/pnpm-debug.log*
 *.webp
 *.gif
 *.ico
+# Codex local config (secrets)
+.codex/config.toml
