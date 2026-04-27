@@ -5,6 +5,7 @@ import json
 import os
 import re
 import uuid
+from datetime import date as date_cls
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
@@ -19,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from browser_use import Agent, ChatOpenAI
 from betauto.market_dictionary.resolver import resolve_pick_market_aliases
+from betauto.orchestrator import run_orchestrated_pipeline
 
 
 # ============================================================
@@ -170,9 +172,23 @@ def set_step(job_id: str, step: str, status: str, message: str) -> None:
 
 
 def set_error(job_id: str, message: str) -> None:
-    JOBS[job_id]["status"] = "error"
+    JOBS[job_id]["status"] = "failed"
     JOBS[job_id]["error"] = message
     log(job_id, f"ERREUR — {message}")
+
+
+def env_flag(name: str, default: bool) -> bool:
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    return raw_value.strip().lower() not in {"0", "false", "no", "off"}
+
+
+def resolve_target_date(value: Any) -> str:
+    if value is None:
+        return get_target_date()
+    parsed = date_cls.fromisoformat(str(value))
+    return parsed.isoformat()
 
 
 def load_master_prompt(target_date: str) -> str:
@@ -370,9 +386,9 @@ async def verify_unibet_with_browser_use(job_id: str, picks: dict[str, Any]) -> 
 # PIPELINE
 # ============================================================
 
-async def run_pipeline(job_id: str, force_regenerate: bool) -> None:
+async def run_legacy_pipeline(job_id: str, force_regenerate: bool, target_date: str | None = None) -> None:
     try:
-        target = get_target_date()
+        target = target_date or get_target_date()
         JOBS[job_id]["target_date"] = target
 
         log(job_id, f"Process lancé. Date cible : {target}")
@@ -433,7 +449,8 @@ async def run_pipeline(job_id: str, force_regenerate: bool) -> None:
                 "skipped",
                 "Aucun pick généré. Vérification Unibet ignorée.",
             )
-            JOBS[job_id]["status"] = "done"
+            JOBS[job_id]["status"] = "completed"
+            JOBS[job_id]["completed_at"] = now_iso()
             log(job_id, "Process terminé sans vérification Unibet.")
             return
 
@@ -455,10 +472,56 @@ async def run_pipeline(job_id: str, force_regenerate: bool) -> None:
             "Vérification Unibet terminée.",
         )
 
-        JOBS[job_id]["status"] = "done"
+        JOBS[job_id]["status"] = "completed"
         JOBS[job_id]["completed_at"] = now_iso()
         log(job_id, "Process terminé.")
 
+    except Exception as exc:
+        set_error(job_id, str(exc))
+
+
+async def run_orchestrated_pipeline_job(
+    job_id: str,
+    date: str,
+    strategy_file: str | None = None,
+    max_matches: int | None = None,
+    sleep_between_matches: float | None = None,
+    with_browser: bool = False,
+) -> None:
+    try:
+        JOBS[job_id]["target_date"] = date
+        set_step(job_id, "cache", "skipped", "Mode orchestré actif: cache legacy ignoré.")
+        set_step(job_id, "analysis", "running", "Lancement de l'orchestrateur V1.")
+        set_step(job_id, "unibet", "skipped", "Browser Use non branché en mode orchestré API.")
+
+        def on_log(message: str) -> None:
+            log(job_id, message)
+
+        run_summary = await asyncio.to_thread(
+            run_orchestrated_pipeline,
+            target_date=date,
+            strategy_file=strategy_file,
+            max_matches=max_matches,
+            sleep_between_matches=sleep_between_matches,
+            with_browser=with_browser,
+            log_callback=on_log,
+        )
+
+        selection_file = run_summary.get("files", {}).get("selection")
+        selection_payload: dict[str, Any] | None = None
+        if selection_file and Path(selection_file).exists():
+            selection_payload = json.loads(Path(selection_file).read_text(encoding="utf-8"))
+
+        JOBS[job_id]["orchestrator_run_id"] = run_summary.get("run_id")
+        JOBS[job_id]["orchestrator_run_dir"] = run_summary.get("run_dir")
+        JOBS[job_id]["run_summary"] = run_summary
+        JOBS[job_id]["selection_file"] = selection_file
+        JOBS[job_id]["selection"] = selection_payload
+        JOBS[job_id]["picks"] = (selection_payload or {}).get("picks")
+
+        set_step(job_id, "analysis", "done", "Orchestrateur V1 terminé.")
+        JOBS[job_id]["status"] = "completed"
+        JOBS[job_id]["completed_at"] = now_iso()
     except Exception as exc:
         set_error(job_id, str(exc))
 
@@ -475,6 +538,10 @@ async def index():
 @app.post("/api/run")
 async def run(data: dict, background_tasks: BackgroundTasks):
     job_id = uuid.uuid4().hex[:8]
+    try:
+        requested_date = resolve_target_date(data.get("date"))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {exc}") from exc
 
     JOBS[job_id] = {
         "job_id": job_id,
@@ -506,11 +573,33 @@ async def run(data: dict, background_tasks: BackgroundTasks):
         "logs": [],
         "picks": None,
         "verification": None,
+        "orchestrator_run_id": None,
+        "orchestrator_run_dir": None,
+        "run_summary": None,
+        "selection_file": None,
+        "selection": None,
     }
 
     force_regenerate = bool(data.get("force", False))
+    strategy_file = data.get("strategy_file") or os.getenv("BETAUTO_STRATEGY_FILE") or "config/strategies/default.json"
+    max_matches = data.get("max_matches")
+    sleep_between_matches = data.get("sleep_between_matches")
 
-    background_tasks.add_task(run_pipeline, job_id, force_regenerate)
+    if env_flag("ORCHESTRATOR_ENABLED", True):
+        with_browser = bool(data.get("with_browser", env_flag("ORCHESTRATOR_WITH_BROWSER", False)))
+        background_tasks.add_task(
+            run_orchestrated_pipeline_job,
+            job_id,
+            requested_date,
+            strategy_file,
+            max_matches,
+            sleep_between_matches,
+            with_browser,
+        )
+    else:
+        if run_legacy_pipeline is None:
+            raise HTTPException(status_code=503, detail="Legacy pipeline disabled or unavailable.")
+        background_tasks.add_task(run_legacy_pipeline, job_id, force_regenerate, requested_date)
 
     return {"job_id": job_id, "status": "running"}
 
