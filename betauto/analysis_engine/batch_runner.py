@@ -39,13 +39,16 @@ def run_analysis_batch_with_stats(
     context_file: str,
     llm,
     *,
+    matches: list[dict[str, Any]] | None = None,
+    strategy_cfg: Any | None = None,
     max_matches: int | None = None,
     sleep_between_matches: float | None = None,
     continue_on_error: bool = True,
 ) -> tuple[list[dict], dict[str, Any]]:
     context_path = Path(context_file)
-    payload = json.loads(context_path.read_text(encoding="utf-8"))
-    matches: list[dict[str, Any]] = payload.get("matches", [])
+    if matches is None:
+        payload = json.loads(context_path.read_text(encoding="utf-8"))
+        matches = payload.get("matches", [])
 
     env_max_matches = os.getenv("OPENAI_BATCH_MAX_MATCHES")
     if max_matches is None and env_max_matches:
@@ -65,7 +68,7 @@ def run_analysis_batch_with_stats(
         logger.info("[analysis_batch] [%s/%s] analyzing fixture_id=%s", index, len(matches), fixture_id)
         match_start = time.perf_counter()
 
-        analysis_result = analyze_match(match, llm)
+        analysis_result = analyze_match(match, llm, strategy_cfg=strategy_cfg)
         results.append(analysis_result)
 
         status = analysis_result.get("status", "failed")

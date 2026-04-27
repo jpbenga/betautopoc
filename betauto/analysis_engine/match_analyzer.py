@@ -6,10 +6,11 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from betauto.api_clients.errors import ExternalApiError
 from betauto.api_clients.openai_client import create_response_with_retry
+from betauto.strategy import ResolvedStrategyConfig
 
 from .models import MatchAnalysis, MatchAnalysisResult
 
@@ -122,7 +123,29 @@ def _load_prompt() -> str:
     return PROMPT_PATH.read_text(encoding="utf-8")
 
 
-def analyze_match(match_context: dict, llm) -> dict:
+def _build_strategy_constraints(strategy_cfg: ResolvedStrategyConfig | None) -> str:
+    if strategy_cfg is None:
+        return ""
+
+    allowed_markets = strategy_cfg.allowed_markets or []
+    allowed_markets_text = ", ".join(allowed_markets) if allowed_markets else "(aucun marché explicite; rester strictement factuel)"
+    risk_policy = f"pick={strategy_cfg.max_pick_risk}, combo={strategy_cfg.max_combo_risk}"
+    data_quality_min = getattr(strategy_cfg.min_data_quality, "value", strategy_cfg.min_data_quality)
+
+    return (
+        "CONTRAINTES STRATÉGIE (OBLIGATOIRES)\n"
+        f"- Strategy ID: {strategy_cfg.strategy_id}\n"
+        f"- Marchés autorisés (prioritaires): {allowed_markets_text}\n"
+        f"- Seuil de confiance minimal (pick): {strategy_cfg.min_pick_confidence}\n"
+        f"- Data quality minimale: {data_quality_min}\n"
+        f"- Risk policy: {risk_policy}\n"
+        "- N'invente jamais de marché hors stratégie.\n"
+        "- Priorise strictement les marchés autorisés.\n"
+        "- Si les données ne permettent pas un marché autorisé fiable, renvoie predicted_markets=[].\n"
+    )
+
+
+def analyze_match(match_context: dict, llm, strategy_cfg: Optional[ResolvedStrategyConfig] = None) -> dict:
     """Analyze one match context with exactly one LLM call."""
     start = time.perf_counter()
     prompt_size_chars = 0
@@ -131,11 +154,20 @@ def analyze_match(match_context: dict, llm) -> dict:
         prompt_template = _load_prompt()
         compact_context = compact_match_context_for_llm(match_context)
         match_json = json.dumps(compact_context, ensure_ascii=False, indent=2)
-        prompt = prompt_template.replace("{{MATCH_CONTEXT_JSON}}", match_json)
+        strategy_constraints = _build_strategy_constraints(strategy_cfg)
+        prompt = (
+            prompt_template.replace("{{STRATEGY_CONSTRAINTS}}", strategy_constraints)
+            .replace("{{MATCH_CONTEXT_JSON}}", match_json)
+        )
         prompt_size_chars = len(prompt)
 
         fixture_id = match_context.get("fixture_id", "unknown")
-        logger.info("[analysis] fixture_id=%s prompt_size_chars=%s", fixture_id, prompt_size_chars)
+        logger.info(
+            "[analysis] fixture_id=%s prompt_size_chars=%s strategy_applied=%s",
+            fixture_id,
+            prompt_size_chars,
+            strategy_cfg is not None,
+        )
 
         model_name = getattr(llm, "analysis_model", None) or "gpt-4.1-mini"
         timeout_seconds = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "120"))

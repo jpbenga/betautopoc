@@ -5,11 +5,13 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
 from betauto.analysis_engine import run_analysis_batch_with_stats
+from betauto.strategy import ResolvedStrategyConfig, load_and_resolve_strategy
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,7 +49,40 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="Continue batch even if one match fails (default: true).",
     )
+    parser.add_argument(
+        "--strategy-file",
+        default=None,
+        help="Path to strategy definition JSON file. If omitted, current behavior is unchanged.",
+    )
     return parser.parse_args()
+
+
+def _extract_league_id(match: dict[str, Any]) -> int | None:
+    fixture = match.get("fixture") or {}
+    fixture_league_id = fixture.get("league_id")
+    if isinstance(fixture_league_id, int):
+        return fixture_league_id
+    if isinstance(match.get("league_id"), int):
+        return int(match["league_id"])
+    league = match.get("league")
+    if isinstance(league, dict) and isinstance(league.get("id"), int):
+        return int(league["id"])
+    return None
+
+
+def _filter_matches_with_strategy(
+    matches: list[dict[str, Any]],
+    strategy_cfg: ResolvedStrategyConfig | None,
+) -> list[dict[str, Any]]:
+    if strategy_cfg is None or not strategy_cfg.league_ids_allowed:
+        return matches
+    allowed = set(strategy_cfg.league_ids_allowed)
+    filtered: list[dict[str, Any]] = []
+    for match in matches:
+        league_id = _extract_league_id(match)
+        if league_id is None or league_id in allowed:
+            filtered.append(match)
+    return filtered
 
 
 def main() -> None:
@@ -65,9 +100,24 @@ def main() -> None:
     client = OpenAI(api_key=api_key)
     client.analysis_model = model
 
+    strategy_cfg: ResolvedStrategyConfig | None = None
+    if args.strategy_file:
+        strategy_cfg = load_and_resolve_strategy(args.strategy_file)
+
+    context_payload = json.loads(Path(args.context_file).read_text(encoding="utf-8"))
+    context_matches: list[dict[str, Any]] = context_payload.get("matches", [])
+    total_matches_before_filter = len(context_matches)
+    filtered_matches = _filter_matches_with_strategy(context_matches, strategy_cfg)
+
+    print(f"Matches total: {total_matches_before_filter}")
+    print(f"Matches after strategy filter: {len(filtered_matches)}")
+    print(f"Strategy: {(strategy_cfg.strategy_id if strategy_cfg else 'none')}")
+
     results, stats = run_analysis_batch_with_stats(
         context_file=args.context_file,
         llm=client,
+        matches=filtered_matches,
+        strategy_cfg=strategy_cfg,
         max_matches=args.max_matches,
         sleep_between_matches=args.sleep_between_matches,
         continue_on_error=args.continue_on_error,
