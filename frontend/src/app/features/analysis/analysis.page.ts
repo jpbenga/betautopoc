@@ -1,10 +1,10 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { Subscription, catchError, forkJoin, interval, of } from 'rxjs';
 import { AnalysisApiService } from '../../core/api/analysis-api.service';
 import { formatApiDate, statusToTone } from '../../core/api/api.mappers';
 import { AnalysisLogEntry, AnalysisRun, AnalysisRunListItem, AnalysisTimelineStep } from '../../core/api/api.types';
 import { BetautoApiService } from '../../core/api/betauto-api.service';
-import { DataTableColumn, DataTableComponent, DataTableRow } from '../../shared/ui/data-table/data-table.component';
+import { DataTableColumn, DataTableRow } from '../../shared/ui/data-table/data-table.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../shared/ui/error-state/error-state.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
@@ -26,7 +26,6 @@ interface AnalysisKpi {
   selector: 'ba-analysis-page',
   standalone: true,
   imports: [
-    DataTableComponent,
     EmptyStateComponent,
     ErrorStateComponent,
     KpiCardComponent,
@@ -44,6 +43,16 @@ interface AnalysisKpi {
       subtitle="Suivi des analyses programmées et des runs d’orchestrateur."
     >
       <div class="flex flex-wrap gap-2">
+        <label class="ba-tool flex items-center gap-2">
+          <span class="ba-label normal-case tracking-normal">Target</span>
+          <input
+            class="bg-transparent font-data text-text outline-none"
+            type="date"
+            [value]="targetDate"
+            (change)="setTargetDate($event)"
+            aria-label="Analysis target date"
+          />
+        </label>
         <button
           type="button"
           class="ba-tool border-accent/60 bg-accent text-background hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60"
@@ -52,14 +61,18 @@ interface AnalysisKpi {
         >
           {{ isStartingRun ? 'Starting...' : 'Run Analysis' }}
         </button>
-        <button type="button" class="ba-tool">
+        <button type="button" class="ba-tool" (click)="viewLogs()">
           View Logs
         </button>
       </div>
     </ba-page-header>
 
     @if (selectedRunId || isPolling || lastUpdatedAt || startRunError) {
-      <section class="mb-4 grid gap-3 md:grid-cols-3">
+      <section class="mb-4 grid gap-3 md:grid-cols-4">
+        <div class="rounded-card border border-border/60 bg-surface-low p-3">
+          <p class="ba-label">Target date</p>
+          <p class="ba-data mt-2 text-text">{{ targetDate }}</p>
+        </div>
         <div class="rounded-card border border-border/60 bg-surface-low p-3">
           <p class="ba-label">Active run</p>
           <p class="ba-data mt-2 text-text">{{ selectedRunId || '—' }}</p>
@@ -195,12 +208,54 @@ interface AnalysisKpi {
 
       <section class="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div class="space-y-4">
-          <ba-data-table
-            title="Runs table"
-            subtitle="Runs exposés par la façade analysis au-dessus des jobs existants."
-            [columns]="runColumns"
-            [rows]="runRows"
-          ></ba-data-table>
+          <ba-section-card>
+            <div class="ba-card-header">
+              <h3 class="text-sm font-semibold text-text">Runs table</h3>
+              <p class="mt-1 text-xs text-muted">Clique une ligne pour charger son détail, sa timeline et ses logs.</p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[760px] border-collapse text-left text-sm">
+                <thead class="bg-surface text-muted">
+                  <tr>
+                    @for (column of runColumns; track column.key) {
+                      <th class="ba-label px-4 py-3" [class.text-right]="column.align === 'right'">
+                        {{ column.label }}
+                      </th>
+                    }
+                    <th class="ba-label px-4 py-3 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of runRows; track row.runId) {
+                    <tr
+                      class="cursor-pointer border-t border-border/60 transition hover:bg-surface-high/70"
+                      [class.bg-accent/10]="row.runId === selectedRunId"
+                      [class.outline]="row.runId === selectedRunId"
+                      [class.outline-1]="row.runId === selectedRunId"
+                      [class.outline-accent/40]="row.runId === selectedRunId"
+                      (click)="selectRun(row.runId)"
+                    >
+                      <td class="px-4 py-3 font-data text-text">{{ row.cells['id'] }}</td>
+                      <td class="px-4 py-3 font-data text-text">{{ row.cells['date'] }}</td>
+                      <td class="px-4 py-3 font-data text-text">{{ row.cells['target'] }}</td>
+                      <td class="px-4 py-3 text-right font-data text-text">{{ row.cells['progress'] }}</td>
+                      <td class="px-4 py-3 text-right font-data text-text">{{ row.cells['steps'] }}</td>
+                      <td class="px-4 py-3 text-right font-data text-text">{{ row.cells['picks'] }}</td>
+                      <td class="px-4 py-3 text-right">
+                        <ba-status-badge [label]="row.status || 'unknown'" [tone]="row.statusTone || 'default'"></ba-status-badge>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td class="px-4 py-8 text-center text-sm text-muted" colspan="7">
+                        No rows available.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </ba-section-card>
 
           @if (failedRuns.length > 0) {
             <ba-error-state
@@ -237,11 +292,18 @@ interface AnalysisKpi {
           </div>
         </ba-section-card>
 
-        <ba-log-console
-          label="Recent logs"
-          title="Analysis pipeline output"
-          [entries]="logs"
-        ></ba-log-console>
+        <div
+          #logsSection
+          class="rounded-card transition"
+          [class.ring-2]="isLogsFocused"
+          [class.ring-accent/50]="isLogsFocused"
+        >
+          <ba-log-console
+            label="Recent logs"
+            title="Analysis pipeline output"
+            [entries]="logs"
+          ></ba-log-console>
+        </div>
       </section>
     }
   `
@@ -250,13 +312,19 @@ export class AnalysisPage implements OnInit, OnDestroy {
   private readonly analysisApi = inject(AnalysisApiService);
   private readonly betautoApi = inject(BetautoApiService);
   private pollingSubscription?: Subscription;
+  private readonly visibilityHandler = () => this.handleVisibilityChange();
+  private logsFocusTimeout?: ReturnType<typeof setTimeout>;
+
+  @ViewChild('logsSection') private logsSection?: ElementRef<HTMLElement>;
 
   protected isLoading = true;
   protected isStartingRun = false;
   protected isPolling = false;
+  protected isLogsFocused = false;
   protected errorMessage = '';
   protected startRunError = '';
   protected lastUpdatedAt = '';
+  protected targetDate = this.todayIsoDate();
   protected runs: AnalysisRunListItem[] = [];
   protected selectedRun?: AnalysisRun;
   protected selectedRunId = '';
@@ -273,11 +341,16 @@ export class AnalysisPage implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
+    document.addEventListener('visibilitychange', this.visibilityHandler);
     this.loadRuns();
   }
 
   ngOnDestroy(): void {
     this.stopPolling();
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
+    if (this.logsFocusTimeout) {
+      clearTimeout(this.logsFocusTimeout);
+    }
   }
 
   protected get activeRuns(): AnalysisRunListItem[] {
@@ -303,8 +376,9 @@ export class AnalysisPage implements OnInit, OnDestroy {
     ];
   }
 
-  protected get runRows(): DataTableRow[] {
+  protected get runRows(): Array<DataTableRow & { runId: string }> {
     return this.runs.map((run) => ({
+      runId: run.run_id,
       cells: {
         id: run.run_id,
         date: formatApiDate(run.created_at),
@@ -338,7 +412,7 @@ export class AnalysisPage implements OnInit, OnDestroy {
     this.isStartingRun = true;
     this.startRunError = '';
 
-    this.betautoApi.runPipeline({ date: '2026-04-25' }).pipe(
+    this.betautoApi.runPipeline({ date: this.targetDate }).pipe(
       catchError((error: unknown) => {
         this.startRunError = this.errorToMessage(error);
         return of(null);
@@ -353,6 +427,39 @@ export class AnalysisPage implements OnInit, OnDestroy {
       this.selectedRunId = response.job_id;
       this.loadRuns(response.job_id, false);
     });
+  }
+
+  protected selectRun(runId: string): void {
+    if (runId === this.selectedRunId) {
+      return;
+    }
+
+    this.selectedRunId = runId;
+    this.selectedRun = undefined;
+    this.timeline = [];
+    this.logs = [];
+    this.stopPolling();
+    this.loadSelectedRunDetails(runId);
+  }
+
+  protected viewLogs(): void {
+    this.logsSection?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    this.isLogsFocused = true;
+
+    if (this.logsFocusTimeout) {
+      clearTimeout(this.logsFocusTimeout);
+    }
+
+    this.logsFocusTimeout = setTimeout(() => {
+      this.isLogsFocused = false;
+    }, 1400);
+  }
+
+  protected setTargetDate(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    if (input?.value) {
+      this.targetDate = input.value;
+    }
   }
 
   private loadRuns(preferredRunId = '', showLoading = true): void {
@@ -401,7 +508,7 @@ export class AnalysisPage implements OnInit, OnDestroy {
   }
 
   private refreshSelectedRun(): void {
-    if (!this.selectedRunId) {
+    if (!this.selectedRunId || document.hidden) {
       this.stopPolling();
       return;
     }
@@ -433,7 +540,7 @@ export class AnalysisPage implements OnInit, OnDestroy {
 
   private updatePollingState(status: string | undefined): void {
     const normalized = String(status || '').toLowerCase();
-    if (['running', 'active', 'pending'].includes(normalized)) {
+    if (['running', 'active', 'pending'].includes(normalized) && !document.hidden) {
       this.startPolling();
       return;
     }
@@ -444,6 +551,11 @@ export class AnalysisPage implements OnInit, OnDestroy {
   }
 
   private startPolling(): void {
+    if (!this.selectedRunId || document.hidden) {
+      this.isPolling = false;
+      return;
+    }
+
     if (this.pollingSubscription) {
       this.isPolling = true;
       return;
@@ -457,6 +569,26 @@ export class AnalysisPage implements OnInit, OnDestroy {
     this.pollingSubscription?.unsubscribe();
     this.pollingSubscription = undefined;
     this.isPolling = false;
+  }
+
+  private handleVisibilityChange(): void {
+    if (document.hidden) {
+      this.stopPolling();
+      return;
+    }
+
+    if (this.selectedRunId && this.isLiveStatus(this.selectedRun?.status)) {
+      this.refreshSelectedRun();
+      this.startPolling();
+    }
+  }
+
+  private isLiveStatus(status: string | undefined): boolean {
+    return ['running', 'active', 'pending'].includes(String(status || '').toLowerCase());
+  }
+
+  private todayIsoDate(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   private toTimelineItem(step: AnalysisTimelineStep): TimelineItem {
