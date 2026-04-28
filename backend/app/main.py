@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -9,10 +10,17 @@ from backend.app.api.routes.capabilities import router as capabilities_router
 from backend.app.api.routes.health import router as health_router
 from backend.app.api.routes.jobs import router as jobs_router
 from backend.app.api.routes.runs import router as runs_router
-from backend.app.core.config import APP_TITLE
+from backend.app.core.config import APP_TITLE, CORS_ORIGINS
 from backend.app.core.paths import STATIC_DIR
 
 app = FastAPI(title=APP_TITLE)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 

@@ -1,8 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { catchError, forkJoin, of } from 'rxjs';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Subscription, catchError, forkJoin, interval, of } from 'rxjs';
 import { AnalysisApiService } from '../../core/api/analysis-api.service';
 import { formatApiDate, statusToTone } from '../../core/api/api.mappers';
-import { AnalysisLogEntry, AnalysisRunListItem, AnalysisTimelineStep } from '../../core/api/api.types';
+import { AnalysisLogEntry, AnalysisRun, AnalysisRunListItem, AnalysisTimelineStep } from '../../core/api/api.types';
+import { BetautoApiService } from '../../core/api/betauto-api.service';
 import { DataTableColumn, DataTableComponent, DataTableRow } from '../../shared/ui/data-table/data-table.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../shared/ui/error-state/error-state.component';
@@ -43,14 +44,50 @@ interface AnalysisKpi {
       subtitle="Suivi des analyses programmées et des runs d’orchestrateur."
     >
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="ba-tool border-accent/60 bg-accent text-background hover:bg-accent-strong">
-          Run Analysis
+        <button
+          type="button"
+          class="ba-tool border-accent/60 bg-accent text-background hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="isStartingRun"
+          (click)="startRun()"
+        >
+          {{ isStartingRun ? 'Starting...' : 'Run Analysis' }}
         </button>
         <button type="button" class="ba-tool">
           View Logs
         </button>
       </div>
     </ba-page-header>
+
+    @if (selectedRunId || isPolling || lastUpdatedAt || startRunError) {
+      <section class="mb-4 grid gap-3 md:grid-cols-3">
+        <div class="rounded-card border border-border/60 bg-surface-low p-3">
+          <p class="ba-label">Active run</p>
+          <p class="ba-data mt-2 text-text">{{ selectedRunId || '—' }}</p>
+        </div>
+        <div class="rounded-card border border-border/60 bg-surface-low p-3">
+          <p class="ba-label">Polling</p>
+          <div class="mt-2 flex items-center gap-2">
+            <ba-status-badge
+              [label]="isPolling ? 'Live polling active' : 'Polling stopped'"
+              [tone]="isPolling ? 'live' : 'default'"
+            ></ba-status-badge>
+          </div>
+        </div>
+        <div class="rounded-card border border-border/60 bg-surface-low p-3">
+          <p class="ba-label">Last updated</p>
+          <p class="ba-data mt-2 text-text">{{ lastUpdatedAt || '—' }}</p>
+        </div>
+      </section>
+    }
+
+    @if (startRunError) {
+      <div class="mb-4">
+        <ba-error-state
+          label="Run start failed"
+          [message]="startRunError"
+        ></ba-error-state>
+      </div>
+    }
 
     @if (isLoading) {
       <ba-section-card>
@@ -209,12 +246,19 @@ interface AnalysisKpi {
     }
   `
 })
-export class AnalysisPage implements OnInit {
+export class AnalysisPage implements OnInit, OnDestroy {
   private readonly analysisApi = inject(AnalysisApiService);
+  private readonly betautoApi = inject(BetautoApiService);
+  private pollingSubscription?: Subscription;
 
   protected isLoading = true;
+  protected isStartingRun = false;
+  protected isPolling = false;
   protected errorMessage = '';
+  protected startRunError = '';
+  protected lastUpdatedAt = '';
   protected runs: AnalysisRunListItem[] = [];
+  protected selectedRun?: AnalysisRun;
   protected selectedRunId = '';
   protected timeline: TimelineItem[] = [];
   protected logs: LogEntry[] = [];
@@ -230,6 +274,10 @@ export class AnalysisPage implements OnInit {
 
   ngOnInit(): void {
     this.loadRuns();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
   }
 
   protected get activeRuns(): AnalysisRunListItem[] {
@@ -271,15 +319,44 @@ export class AnalysisPage implements OnInit {
   }
 
   protected get selectedRunTitle(): string {
-    return this.selectedRunId ? `${this.selectedRunId} timeline` : 'No run selected';
+    if (!this.selectedRunId) {
+      return 'No run selected';
+    }
+
+    return this.selectedRun ? `${this.selectedRunId} · ${this.selectedRun.status}` : `${this.selectedRunId} timeline`;
   }
 
   protected toneFor(status: string): 'default' | 'success' | 'warning' | 'danger' | 'live' {
     return statusToTone(status);
   }
 
-  private loadRuns(): void {
-    this.isLoading = true;
+  protected startRun(): void {
+    if (this.isStartingRun) {
+      return;
+    }
+
+    this.isStartingRun = true;
+    this.startRunError = '';
+
+    this.betautoApi.runPipeline({ date: '2026-04-25' }).pipe(
+      catchError((error: unknown) => {
+        this.startRunError = this.errorToMessage(error);
+        return of(null);
+      })
+    ).subscribe((response) => {
+      this.isStartingRun = false;
+
+      if (!response) {
+        return;
+      }
+
+      this.selectedRunId = response.job_id;
+      this.loadRuns(response.job_id, false);
+    });
+  }
+
+  private loadRuns(preferredRunId = '', showLoading = true): void {
+    this.isLoading = showLoading;
     this.errorMessage = '';
 
     this.analysisApi.getRuns().pipe(
@@ -289,10 +366,13 @@ export class AnalysisPage implements OnInit {
       })
     ).subscribe((runs) => {
       this.runs = runs;
-      this.selectedRunId = runs[0]?.run_id || '';
+      const preferredRun = preferredRunId ? runs.find((run) => run.run_id === preferredRunId) : undefined;
+      const currentRun = this.selectedRunId ? runs.find((run) => run.run_id === this.selectedRunId) : undefined;
+      this.selectedRunId = preferredRun?.run_id || currentRun?.run_id || runs[0]?.run_id || '';
 
       if (!this.selectedRunId || this.errorMessage) {
         this.isLoading = false;
+        this.stopPolling();
         return;
       }
 
@@ -302,18 +382,81 @@ export class AnalysisPage implements OnInit {
 
   private loadSelectedRunDetails(runId: string): void {
     forkJoin({
+      run: this.analysisApi.getRun(runId),
       timeline: this.analysisApi.getTimeline(runId),
       logs: this.analysisApi.getLogs(runId)
     }).pipe(
       catchError((error: unknown) => {
         this.errorMessage = this.errorToMessage(error);
-        return of({ timeline: [], logs: [] });
+        return of({ run: undefined, timeline: [], logs: [] });
       })
-    ).subscribe(({ timeline, logs }) => {
+    ).subscribe(({ run, timeline, logs }) => {
+      this.selectedRun = run;
       this.timeline = timeline.map((step) => this.toTimelineItem(step));
       this.logs = logs.map((entry) => this.toLogEntry(entry));
+      this.lastUpdatedAt = formatApiDate(new Date().toISOString());
       this.isLoading = false;
+      this.updatePollingState(run?.status);
     });
+  }
+
+  private refreshSelectedRun(): void {
+    if (!this.selectedRunId) {
+      this.stopPolling();
+      return;
+    }
+
+    forkJoin({
+      runs: this.analysisApi.getRuns(),
+      run: this.analysisApi.getRun(this.selectedRunId),
+      timeline: this.analysisApi.getTimeline(this.selectedRunId),
+      logs: this.analysisApi.getLogs(this.selectedRunId)
+    }).pipe(
+      catchError((error: unknown) => {
+        this.errorMessage = this.errorToMessage(error);
+        this.stopPolling();
+        return of(null);
+      })
+    ).subscribe((snapshot) => {
+      if (!snapshot) {
+        return;
+      }
+
+      this.runs = snapshot.runs;
+      this.selectedRun = snapshot.run;
+      this.timeline = snapshot.timeline.map((step) => this.toTimelineItem(step));
+      this.logs = snapshot.logs.map((entry) => this.toLogEntry(entry));
+      this.lastUpdatedAt = formatApiDate(new Date().toISOString());
+      this.updatePollingState(snapshot.run.status);
+    });
+  }
+
+  private updatePollingState(status: string | undefined): void {
+    const normalized = String(status || '').toLowerCase();
+    if (['running', 'active', 'pending'].includes(normalized)) {
+      this.startPolling();
+      return;
+    }
+
+    if (['completed', 'done', 'success', 'succeeded', 'failed', 'error', 'skipped'].includes(normalized)) {
+      this.stopPolling();
+    }
+  }
+
+  private startPolling(): void {
+    if (this.pollingSubscription) {
+      this.isPolling = true;
+      return;
+    }
+
+    this.isPolling = true;
+    this.pollingSubscription = interval(3000).subscribe(() => this.refreshSelectedRun());
+  }
+
+  private stopPolling(): void {
+    this.pollingSubscription?.unsubscribe();
+    this.pollingSubscription = undefined;
+    this.isPolling = false;
   }
 
   private toTimelineItem(step: AnalysisTimelineStep): TimelineItem {

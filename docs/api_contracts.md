@@ -174,6 +174,21 @@ Tous les champs sont optionnels. `date` garde le comportement existant: si absen
 - Les DTOs backend Pydantic et les interfaces TypeScript doivent évoluer ensemble.
 - Les statuts backend doivent être normalisés côté UI via les mappers frontend avant affichage.
 
+## CORS local development
+
+Le backend FastAPI autorise les origines frontend locales suivantes par défaut:
+
+- `http://localhost:4200`
+- `http://127.0.0.1:4200`
+
+La liste est configurable avec `BETAUTO_CORS_ORIGINS`, au format CSV:
+
+```bash
+BETAUTO_CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
+```
+
+Le middleware CORS accepte les credentials, toutes les méthodes et tous les headers afin que les preflights `OPTIONS` Angular passent en développement local.
+
 ## Frontend adapter
 
 Le service Angular `BetautoApiService` expose uniquement les endpoints réels du Lot 0:

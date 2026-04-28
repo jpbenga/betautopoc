@@ -9,6 +9,12 @@ load_dotenv()
 
 APP_TITLE = "BetAuto Real POC"
 TZ = ZoneInfo(os.getenv("APP_TIMEZONE", "Europe/Paris"))
+DEFAULT_CORS_ORIGINS = "http://localhost:4200,http://127.0.0.1:4200"
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("BETAUTO_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
 
 
 def env_flag(name: str, default: bool) -> bool:
