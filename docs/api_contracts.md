@@ -43,6 +43,11 @@ Le Lot 0 stabilise le contrat minimal entre le backend FastAPI et le frontend An
 | GET | `/api/agents/logs` | partiel | Logs techniques agents |
 | GET | `/api/agents/resources` | partiel | Ressources simulées depuis l'activité jobs |
 | GET | `/api/agents/browser-use/sessions` | partiel | Placeholder Browser Use désactivé |
+| GET | `/api/settings` | partiel | Configuration runtime consolidée en lecture seule |
+| GET | `/api/settings/integrations` | partiel | Etat des intégrations runtime |
+| POST | `/api/settings/validate` | partiel | Validation sans application d'une payload settings |
+| PUT | `/api/settings` | planifié | Ecriture désactivée, retourne 501 |
+| GET | `/api/settings/logs` | partiel | Journal settings placeholder |
 | GET | `/api/job/{job_id}` | disponible | Retourne l’état complet d’un job |
 | GET | `/api/job/{job_id}/file/{filename}` | disponible | Télécharge un fichier autorisé du job |
 | POST | `/api/cache/clear` | disponible | Vide le cache généré legacy |
@@ -192,7 +197,7 @@ Tous les champs sont optionnels. `date` garde le comportement existant: si absen
 | `bankroll` | `partial` |
 | `agents` | `partial` |
 | `performance` | `planned` |
-| `settings` | `planned` |
+| `settings` | `partial` |
 
 ## Règles de compatibilité
 
@@ -394,6 +399,38 @@ Règles strictes:
 - Aucun fichier `latest_*`.
 - Les métriques resources sont simulées et doivent être affichées comme telles côté frontend.
 - Si aucune donnée run/job n'existe, les endpoints retournent `status: no_data` sauf Browser Use qui retourne `status: disabled`.
+
+## Settings Core
+
+La capability `settings` expose la configuration runtime en lecture structurée. Elle ne crée aucune persistance et ne modifie pas les fichiers de stratégie dans cette passe.
+
+Sources:
+
+- variables d'environnement (`ORCHESTRATOR_ENABLED`, `ORCHESTRATOR_WITH_BROWSER`, `BETAUTO_STRICT_MODE`, `BETAUTO_ALLOW_LEGACY`, `BETAUTO_STRATEGY_FILE`, `BETAUTO_CORS_ORIGINS`)
+- `config/strategies/default.json` ou le fichier indiqué par `BETAUTO_STRATEGY_FILE`
+- constantes de configuration backend existantes
+
+Endpoints:
+
+- `GET /api/settings`
+  - retourne `strategy`, `runtime`, `selection`, `risk`, `integrations`, `notifications`, `metadata`.
+- `GET /api/settings/integrations`
+  - retourne l'état `openai`, `api_football`, `browser_use`, `strict_mode`, `legacy_mode`.
+- `POST /api/settings/validate`
+  - valide une payload sans l'appliquer.
+  - retourne `errors`, `warnings`, `normalized`, `writable: false`.
+- `PUT /api/settings`
+  - retourne `501` tant qu'un contrat de persistance/rollback n'existe pas.
+- `GET /api/settings/logs`
+  - retourne un journal placeholder expliquant le mode read-only.
+
+Règles strictes:
+
+- Tous les champs exposés sont `read_only`.
+- Aucune écriture réelle n'est effectuée.
+- Aucun fallback `latest_*`.
+- Les secrets ne sont pas exposés; seules les présences/absences de clés d'intégration sont indiquées.
+- Le frontend doit afficher clairement que `Save Changes` est désactivé.
 
 ## Frontend adapter
 

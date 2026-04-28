@@ -550,3 +550,111 @@ export interface BrowserSessionsResponse {
   reason: string;
   sessions: BrowserSession[];
 }
+
+export interface StrategySettings {
+  strategy_file: string;
+  strategy_id?: string | null;
+  enabled?: boolean | null;
+  max_matches?: number | null;
+  sleep_between_matches?: number | null;
+  min_confidence?: number | null;
+  allowed_markets: string[];
+  require_odds_available?: boolean | null;
+  data_provider?: string | null;
+  season?: number | null;
+  read_only: boolean;
+}
+
+export interface RuntimeSettings {
+  orchestrator_enabled: boolean;
+  with_browser: boolean;
+  strict_mode: boolean;
+  allow_legacy: boolean;
+  cors_origins: string[];
+  read_only: boolean;
+}
+
+export interface SelectionSettings {
+  combo_min_odds?: number | null;
+  combo_max_odds?: number | null;
+  max_picks?: number | null;
+  min_pick_confidence?: number | null;
+  min_global_match_confidence?: number | null;
+  min_combo_confidence?: number | null;
+  read_only: boolean;
+}
+
+export interface RiskSettingsApi {
+  max_pick_risk?: string | null;
+  max_combo_risk?: string | null;
+  bankroll_enabled?: boolean | null;
+  staking_method?: string | null;
+  max_stake_percent_per_ticket?: number | null;
+  daily_loss_limit_percent?: number | null;
+  weekly_loss_limit_percent?: number | null;
+  read_only: boolean;
+}
+
+export interface SettingsIntegrationStatus {
+  name: string;
+  status: string;
+  detail: string;
+  source: string;
+  read_only: boolean;
+}
+
+export interface NotificationSettingsApi {
+  status: string;
+  email_alerts?: boolean | null;
+  critical_alerts_only?: boolean | null;
+  slack_webhook_configured?: boolean | null;
+  read_only: boolean;
+}
+
+export interface SettingsMetadata {
+  status: string;
+  mode: string;
+  writable: boolean;
+  message: string;
+}
+
+export interface SettingsResponse {
+  status: string;
+  strategy: StrategySettings;
+  runtime: RuntimeSettings;
+  selection: SelectionSettings;
+  risk: RiskSettingsApi;
+  integrations: SettingsIntegrationStatus[];
+  notifications: NotificationSettingsApi;
+  metadata: SettingsMetadata;
+}
+
+export interface SettingsIntegrationsResponse {
+  status: string;
+  integrations: SettingsIntegrationStatus[];
+}
+
+export interface SettingsValidationRequest {
+  settings: Record<string, unknown>;
+}
+
+export interface SettingsValidationResult {
+  status: string;
+  errors: string[];
+  warnings: string[];
+  normalized: Record<string, unknown>;
+  writable: boolean;
+  message: string;
+}
+
+export interface SettingsLogEntry {
+  at?: string | null;
+  level: 'info' | 'success' | 'warning' | 'error' | string;
+  message: string;
+  source: string;
+}
+
+export interface SettingsLogsResponse {
+  status: string;
+  logs: SettingsLogEntry[];
+}
