@@ -3,13 +3,14 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
+from backend.app.api.schemas.job import JobResponse
 from backend.app.services.job_service import get_job
 from backend.app.services.run_service import get_run_dir
 
 router = APIRouter(prefix="/api", tags=["jobs"])
 
 
-@router.get("/job/{job_id}")
+@router.get("/job/{job_id}", response_model=JobResponse)
 async def get_job_details(job_id: str):
     job = get_job(job_id)
     if job is None:

@@ -1,1 +1,1 @@
-""""""
+"""Stable API contract schemas."""

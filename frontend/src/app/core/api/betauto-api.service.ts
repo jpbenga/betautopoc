@@ -1,36 +1,39 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Analysis } from '../models/analysis.model';
-import { Job } from '../models/job.model';
-import { Selection } from '../models/selection.model';
-import { Strategy } from '../models/strategy.model';
+import {
+  ApiStatus,
+  CapabilitiesResponse,
+  JobResponse,
+  RunRequest,
+  RunStartResponse
+} from './api.types';
 
 @Injectable({ providedIn: 'root' })
 export class BetautoApiService {
   private readonly http = inject(HttpClient);
 
-  runPipeline(): Observable<Job> {
-    return this.http.post<Job>('pipeline/run', {});
+  health(): Observable<ApiStatus> {
+    return this.http.get<ApiStatus>('health');
   }
 
-  getJob(jobId: string): Observable<Job> {
-    return this.http.get<Job>(`jobs/${jobId}`);
+  getCapabilities(): Observable<CapabilitiesResponse> {
+    return this.http.get<CapabilitiesResponse>('api/capabilities');
   }
 
-  getLatestSelection(): Observable<Selection> {
-    return this.http.get<Selection>('selection/latest');
+  runPipeline(request: RunRequest = {}): Observable<RunStartResponse> {
+    return this.http.post<RunStartResponse>('api/run', request);
   }
 
-  getLatestAnalysis(): Observable<Analysis> {
-    return this.http.get<Analysis>('analysis/latest');
+  getJob(jobId: string): Observable<JobResponse> {
+    return this.http.get<JobResponse>(`api/job/${jobId}`);
   }
 
-  getStrategy(): Observable<Strategy> {
-    return this.http.get<Strategy>('strategy');
+  getJobFile(jobId: string, filename: string): Observable<Blob> {
+    return this.http.get(`api/job/${jobId}/file/${filename}`, { responseType: 'blob' });
   }
 
-  updateStrategy(payload: Strategy): Observable<Strategy> {
-    return this.http.put<Strategy>('strategy', payload);
+  clearCache(): Observable<{ status: 'ok'; removed: number }> {
+    return this.http.post<{ status: 'ok'; removed: number }>('api/cache/clear', {});
   }
 }
