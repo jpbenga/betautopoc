@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { AnalysisApiService } from '../../core/api/analysis-api.service';
@@ -36,6 +37,7 @@ interface TicketKpi {
     LoadingStateComponent,
     LogConsoleComponent,
     PageHeaderComponent,
+    RouterLink,
     SectionCardComponent,
     StatusBadgeComponent,
     TicketCardComponent
@@ -85,6 +87,15 @@ interface TicketKpi {
               }
               @if (isGenerationPolling) {
                 <ba-status-badge label="polling" tone="live"></ba-status-badge>
+              }
+              @if (showViewRunLink) {
+                <a
+                  class="ba-tool"
+                  routerLink="/analysis"
+                  [queryParams]="{ run_id: generatedRunId }"
+                >
+                  View run
+                </a>
               }
             </div>
           </div>
@@ -488,6 +499,10 @@ export class TicketsPage implements OnInit, OnDestroy {
 
   private isFailureStatus(status: string): boolean {
     return ['failed', 'error'].includes(String(status).toLowerCase());
+  }
+
+  protected get showViewRunLink(): boolean {
+    return Boolean(this.generatedRunId && (this.isGeneratingTicket || this.isFailureStatus(this.generationStatus) || this.generationError));
   }
 
   protected get kpis(): TicketKpi[] {

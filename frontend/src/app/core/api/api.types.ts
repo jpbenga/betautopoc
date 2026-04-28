@@ -290,3 +290,263 @@ export interface TicketGenerateResponse {
   target_date: string;
   message: string;
 }
+
+export interface CostNoDataResponse {
+  status: 'no_data';
+  message: string;
+  data_source_mode: string;
+}
+
+export interface CostRunItem {
+  run_id: string;
+  target_date?: string | null;
+  status?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  duration_seconds?: number | null;
+  duration_label: string;
+  matches_analyzed_estimate: number;
+  estimated_tokens: number;
+  estimated_cost: number;
+  openai_estimated_cost: number;
+  api_football_estimated_cost: number;
+  browser_use_estimated_cost: number;
+  source_file: string;
+  data_source_mode: string;
+}
+
+export interface CostSummary {
+  status: string;
+  currency: string;
+  total_cost_today: number;
+  total_cost_7d: number;
+  runs_count: number;
+  average_cost_per_run: number;
+  total_estimated_tokens: number;
+  estimation_method: string;
+}
+
+export interface CostRunListResponse {
+  status: string;
+  runs: CostRunItem[];
+}
+
+export interface CostTrendPoint {
+  date: string;
+  cost: number;
+}
+
+export interface CostTrendResponse {
+  status: string;
+  window: string;
+  points: CostTrendPoint[];
+}
+
+export interface CostBreakdownItem {
+  service: string;
+  estimated_requests: number;
+  estimated_cost: number;
+  average_cost_per_request: number;
+  status: string;
+}
+
+export interface CostBreakdownResponse {
+  status: string;
+  services: CostBreakdownItem[];
+}
+
+export interface CostAlert {
+  level: 'info' | 'success' | 'warning' | 'error' | string;
+  title: string;
+  detail: string;
+  metric: string;
+  threshold: number;
+  value: number;
+}
+
+export interface CostAlertsResponse {
+  status: string;
+  alerts: CostAlert[];
+}
+
+export interface BankrollNoDataResponse {
+  status: 'no_data';
+  message: string;
+  data_source_mode: string;
+}
+
+export interface BankrollSummary {
+  status: string;
+  currency: string;
+  total_bankroll: number;
+  available_capital: number;
+  total_exposure: number;
+  exposure_percent: number;
+  estimated_roi: number;
+  simulated_pnl: number;
+  open_positions_count: number;
+  stake_per_ticket: number;
+  simulation_mode: string;
+}
+
+export interface BankrollTrendPoint {
+  date: string;
+  bankroll: number;
+  exposure: number;
+  available_capital: number;
+}
+
+export interface BankrollTrendResponse {
+  status: string;
+  window: string;
+  points: BankrollTrendPoint[];
+}
+
+export interface BankrollExposureItem {
+  ticket_id: string;
+  run_id: string;
+  target_date?: string | null;
+  exposure: number;
+  bankroll_percent: number;
+  estimated_odds?: number | null;
+  potential_return: number;
+  risk_level?: string | null;
+  picks_count: number;
+  source_file: string;
+  data_source_mode: string;
+}
+
+export interface BankrollExposureResponse {
+  status: string;
+  total_exposure: number;
+  exposure_percent: number;
+  items: BankrollExposureItem[];
+}
+
+export interface OpenPosition {
+  position_id: string;
+  ticket_id: string;
+  run_id: string;
+  target_date?: string | null;
+  stake: number;
+  estimated_odds?: number | null;
+  potential_return: number;
+  status: string;
+  result_status: string;
+  risk_level?: string | null;
+  picks_count: number;
+  source_file: string;
+}
+
+export interface OpenPositionsResponse {
+  status: string;
+  positions: OpenPosition[];
+}
+
+export interface RiskLimit {
+  key: string;
+  value: number | string;
+  unit: string;
+  status: string;
+}
+
+export interface RiskLimitsResponse {
+  status: string;
+  limits: RiskLimit[];
+}
+
+export interface BankrollAlert {
+  level: 'info' | 'success' | 'warning' | 'danger' | string;
+  title: string;
+  detail: string;
+  metric: string;
+  threshold: number;
+  value: number;
+}
+
+export interface BankrollAlertsResponse {
+  status: string;
+  alerts: BankrollAlert[];
+}
+
+export interface AgentsNoDataResponse {
+  status: 'no_data';
+  message: string;
+  data_source_mode: string;
+}
+
+export interface AgentSummary {
+  agent_id: string;
+  label: string;
+  status: string;
+  current_job_id?: string | null;
+  last_activity_at?: string | null;
+  last_message?: string | null;
+  jobs_processed_count: number;
+  error_count: number;
+  source_mode: string;
+}
+
+export interface AgentJob {
+  job_id: string;
+  run_id?: string | null;
+  agent_id: string;
+  target_date?: string | null;
+  status: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  current_step?: string | null;
+  last_message?: string | null;
+  source_mode: string;
+}
+
+export interface AgentDetail extends AgentSummary {
+  jobs: AgentJob[];
+}
+
+export interface AgentListResponse {
+  status: string;
+  agents: AgentSummary[];
+}
+
+export interface AgentJobsResponse {
+  status: string;
+  jobs: AgentJob[];
+}
+
+export interface AgentLogEntry {
+  at?: string | null;
+  agent_id: string;
+  job_id?: string | null;
+  level: 'info' | 'success' | 'warning' | 'error' | string;
+  message: string;
+  source_mode: string;
+}
+
+export interface AgentLogsResponse {
+  status: string;
+  logs: AgentLogEntry[];
+}
+
+export interface AgentResourcesResponse {
+  status: string;
+  cpu_usage: number;
+  memory_usage: number;
+  jobs_running: number;
+  active_sessions: number;
+  source_mode: string;
+  message: string;
+}
+
+export interface BrowserSession {
+  session_id: string;
+  status: string;
+  reason: string;
+  source_mode: string;
+}
+
+export interface BrowserSessionsResponse {
+  status: string;
+  reason: string;
+  sessions: BrowserSession[];
+}

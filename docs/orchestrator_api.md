@@ -7,7 +7,9 @@ Le mode orchestré API branche `POST /api/run` sur l'orchestrateur V1 pour exéc
 1. Strategy
 2. Analysis Context
 3. Match Analysis
-4. Selection
+4. Aggregation
+5. Filtering
+6. Selection
 
 Le flux conserve le système de jobs existant (job_id, logs horodatés, statut, polling via `GET /api/job/{job_id}`).
 
@@ -60,6 +62,8 @@ Contenu principal:
 - `resolved_strategy.json`
 - `analysis_context.json`
 - `match_analysis.json`
+- `aggregation_candidates.json`
+- `filtered_candidates.json`
 - `selection.json`
 
 Le job API expose ensuite:
@@ -79,7 +83,9 @@ Règles appliquées:
 - `target_date` est conservée dans `run_summary`.
 - `analysis_context.json` doit déclarer la même `target_date`.
 - `match_analysis.json` déclare aussi `target_date`.
-- `selection.input_file` doit pointer vers le `match_analysis.json` du dossier `data/orchestrator_runs/<run_id>/`.
+- `aggregation_candidates.json` transforme les `predicted_markets` de `match_analysis.json` en candidats normalisés.
+- `filtered_candidates.json` applique les règles de stratégie (`min_confidence`, marchés autorisés, qualité de données, présence de cote).
+- `selection.input_file` doit pointer vers le `filtered_candidates.json` du dossier `data/orchestrator_runs/<run_id>/`.
 - Les fallbacks historiques `latest_analysis_context.json`, `latest_match_analysis.json` et `latest_selection.json` sont interdits sauf si `BETAUTO_ALLOW_LEGACY=true`.
 - Les scripts legacy `build_analysis_context.py`, `run_match_analysis_batch.py` et `run_selection_engine.py` sont bloqués en mode strict.
 
@@ -90,6 +96,8 @@ Métadonnées exposées dans `run_summary`:
 - `match_analysis_target_date`
 - `analysis_context_file`
 - `match_analysis_file`
+- `aggregation_candidates_file`
+- `filtered_candidates_file`
 - `selection_file`
 - `selection_input_file`
 - `data_source_mode`
@@ -111,7 +119,57 @@ Il se termine avec:
 - `date_consistency_status: no_data`
 - message: `No matches found for target date YYYY-MM-DD`
 
-Les étapes `match_analysis` et `selection` sont alors marquées comme ignorées, et `selection.picks` reste vide.
+Les étapes `match_analysis`, `aggregation`, `filtering` et `selection` sont alors marquées comme ignorées, et `selection.picks` reste vide.
+
+## Couche intermédiaire candidates
+
+`aggregation_candidates.json` contient une liste de candidats normalisés au format:
+
+```json
+{
+  "fixture_id": 123456,
+  "event": "Team A vs Team B",
+  "pick": "Home",
+  "market": "Match Winner",
+  "confidence_score": 74,
+  "confidence_tier": "strong",
+  "risk_level": "medium",
+  "reasoning": "Forme récente favorable.",
+  "data_quality": "high",
+  "odds": 1.75,
+  "odds_source": "analysis_context"
+}
+```
+
+Champs additionnels utiles:
+
+- `candidate_id`
+- `market_canonical_id`
+- `selection_canonical_id`
+- `expected_odds_min`
+- `expected_odds_max`
+- `competition`
+- `kickoff`
+- `source_match_analysis_id`
+- `source_status`
+- `rejection_reasons`
+
+`filtered_candidates.json` conserve le même format de candidat et ajoute:
+
+- `filter_config`
+- `rejected_candidates`
+- `filter_reasons`
+- `rejection_reasons`
+
+Règles de scoring:
+
+- `confidence_score` est la confiance effective: `min(predicted_market.confidence, analysis.global_confidence)`.
+- `confidence_tier`: `elite` (>=90), `very_strong` (80-89), `strong` (70-79), `medium` (60-69), `weak` (50-59), `very_weak` (<50).
+- `risk_level`: `high` si `data_quality` est `low`, sinon `low` pour score >=85, `medium` pour score >=70, `high` sinon.
+- Si la stratégie exige des cotes, tout candidat sans `odds` est rejeté avec `missing_odds`.
+- Les raisons de rejet standard sont `low_confidence`, `missing_odds`, `low_data_quality`, `disallowed_market`.
+
+La sélection finale garde le format historique `selection.json`; seule son entrée change de `match_analysis.json` vers `filtered_candidates.json`.
 
 ## Scripts
 

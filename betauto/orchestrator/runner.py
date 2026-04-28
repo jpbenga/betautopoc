@@ -12,7 +12,11 @@ from openai import OpenAI
 
 from betauto.analysis_context import AnalysisContextBuilder
 from betauto.analysis_context.exporter import write_json
-from betauto.analysis_engine import run_analysis_batch_with_stats
+from betauto.analysis_engine import (
+    aggregate_candidates_from_file,
+    filter_candidates_from_file,
+    run_analysis_batch_with_stats,
+)
 from betauto.runtime_mode import log_runtime_mode
 from betauto.selection_engine import SelectionConfig, select_combo
 from betauto.strategy import load_and_resolve_strategy
@@ -51,6 +55,8 @@ def _date_consistency_metadata(
 ) -> dict[str, Any]:
     context_file = run_dir / "analysis_context.json"
     analysis_file = run_dir / "match_analysis.json"
+    aggregation_file = run_dir / "aggregation_candidates.json"
+    filtered_candidates_file = run_dir / "filtered_candidates.json"
     selection_file = run_dir / "selection.json"
     effective_context_date = (context_payload or {}).get("target_date")
     match_analysis_target_date = (analysis_payload or {}).get("target_date")
@@ -63,7 +69,8 @@ def _date_consistency_metadata(
         status = "mismatch"
     if match_analysis_target_date and match_analysis_target_date != target_date:
         status = "mismatch"
-    if selection_input_file and Path(selection_input_file) != analysis_file:
+    expected_selection_input = filtered_candidates_file if filtered_candidates_file.exists() else analysis_file
+    if selection_input_file and Path(selection_input_file) != expected_selection_input:
         status = "mismatch"
 
     return {
@@ -71,6 +78,8 @@ def _date_consistency_metadata(
         "match_analysis_target_date": match_analysis_target_date,
         "analysis_context_file": str(context_file) if context_file.exists() else None,
         "match_analysis_file": str(analysis_file) if analysis_file.exists() else None,
+        "aggregation_candidates_file": str(aggregation_file) if aggregation_file.exists() else None,
+        "filtered_candidates_file": str(filtered_candidates_file) if filtered_candidates_file.exists() else None,
         "selection_file": str(selection_file) if selection_file.exists() else None,
         "selection_input_file": selection_input_file,
         "data_source_mode": "run_artifacts",
@@ -92,6 +101,7 @@ def _assert_date_consistency(summary: dict[str, Any]) -> None:
             f"target_date={summary.get('target_date')} "
             f"effective_context_date={summary.get('effective_context_date')} "
             f"match_analysis_target_date={summary.get('match_analysis_target_date')} "
+            f"filtered_candidates_file={summary.get('filtered_candidates_file')} "
             f"selection_input_file={summary.get('selection_input_file')}"
         )
 
@@ -169,6 +179,8 @@ def run_orchestrated_pipeline(
             _emit(log_callback, f"[orchestrator] {message}")
             summary["steps"]["analysis_context"] = "completed_no_data"
             summary["steps"]["match_analysis"] = "skipped"
+            summary["steps"]["aggregation"] = "skipped"
+            summary["steps"]["filtering"] = "skipped"
             summary["steps"]["selection"] = "skipped"
             summary["files"]["analysis_context"] = str(context_file)
             summary.update(
@@ -186,6 +198,8 @@ def run_orchestrated_pipeline(
         summary["files"]["analysis_context"] = str(context_file)
 
     analysis_file = run_dir / "match_analysis.json"
+    aggregation_file = run_dir / "aggregation_candidates.json"
+    filtered_candidates_file = run_dir / "filtered_candidates.json"
     analysis_payload: dict[str, Any] = {}
     if skip_analysis:
         summary["steps"]["match_analysis"] = "skipped"
@@ -223,6 +237,37 @@ def run_orchestrated_pipeline(
         summary["steps"]["match_analysis"] = "completed"
         summary["files"]["match_analysis"] = str(analysis_file)
 
+    filtered_candidates_payload: dict[str, Any] = {}
+    if skip_analysis:
+        summary["steps"]["aggregation"] = "skipped"
+        summary["steps"]["filtering"] = "skipped"
+    else:
+        _emit(log_callback, "[orchestrator] Agrégation candidats")
+        _validate_run_artifact(analysis_file, run_dir, "match_analysis")
+        aggregation_payload = aggregate_candidates_from_file(analysis_file, aggregation_file)
+        summary["steps"]["aggregation"] = "completed"
+        summary["files"]["aggregation_candidates"] = str(aggregation_file)
+        _emit(
+            log_callback,
+            f"[orchestrator] {aggregation_payload.get('candidate_count', 0)} candidats agrégés",
+        )
+
+        _emit(log_callback, "[orchestrator] Filtrage candidats")
+        _validate_run_artifact(aggregation_file, run_dir, "aggregation_candidates")
+        filtered_candidates_payload = filter_candidates_from_file(
+            aggregation_file,
+            filtered_candidates_file,
+            resolved_strategy,
+        )
+        summary["steps"]["filtering"] = "completed"
+        summary["files"]["filtered_candidates"] = str(filtered_candidates_file)
+        _emit(
+            log_callback,
+            "[orchestrator] "
+            f"{filtered_candidates_payload.get('candidate_count', 0)} candidats retenus, "
+            f"{filtered_candidates_payload.get('rejected_count', 0)} rejetés",
+        )
+
     selection_payload: dict[str, Any] = {}
     selection_file = run_dir / "selection.json"
     if skip_selection:
@@ -240,16 +285,16 @@ def run_orchestrated_pipeline(
         llm.analysis_model = model
 
         selection_config = _selection_config_from_strategy(resolved_strategy)
-        _validate_run_artifact(analysis_file, run_dir, "match_analysis")
+        _validate_run_artifact(filtered_candidates_file, run_dir, "filtered_candidates")
         selection_payload = select_combo(
-            match_analyses=analysis_payload,
+            match_analyses=filtered_candidates_payload,
             config=selection_config,
             llm=llm,
-            input_file=str(analysis_file),
+            input_file=str(filtered_candidates_file),
         )
-        if selection_payload.get("input_file") != str(analysis_file):
+        if selection_payload.get("input_file") != str(filtered_candidates_file):
             raise RuntimeError(
-                "Selection input_file must point to current run match_analysis artifact, "
+                "Selection input_file must point to current run filtered_candidates artifact, "
                 f"got: {selection_payload.get('input_file')}"
             )
         write_json(selection_file, selection_payload)

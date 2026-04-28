@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription, catchError, forkJoin, interval, of } from 'rxjs';
 import { AnalysisApiService } from '../../core/api/analysis-api.service';
 import { formatApiDate, statusToTone } from '../../core/api/api.mappers';
@@ -311,6 +312,7 @@ interface AnalysisKpi {
 export class AnalysisPage implements OnInit, OnDestroy {
   private readonly analysisApi = inject(AnalysisApiService);
   private readonly betautoApi = inject(BetautoApiService);
+  private readonly route = inject(ActivatedRoute);
   private pollingSubscription?: Subscription;
   private readonly visibilityHandler = () => this.handleVisibilityChange();
   private logsFocusTimeout?: ReturnType<typeof setTimeout>;
@@ -342,7 +344,11 @@ export class AnalysisPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     document.addEventListener('visibilitychange', this.visibilityHandler);
-    this.loadRuns();
+    const runId = this.route.snapshot.queryParamMap.get('run_id') || '';
+    if (runId) {
+      this.selectedRunId = runId;
+    }
+    this.loadRuns(runId);
   }
 
   ngOnDestroy(): void {

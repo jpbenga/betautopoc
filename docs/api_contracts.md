@@ -26,6 +26,23 @@ Le Lot 0 stabilise le contrat minimal entre le backend FastAPI et le frontend An
 | GET | `/api/tickets/{ticket_id}` | partiel | Détail ticket depuis `selection.json` |
 | GET | `/api/tickets/{ticket_id}/audit-log` | partiel | Notes, erreurs et métadonnées de sélection |
 | POST | `/api/tickets/generate` | partiel | Démarre un run orchestré pour générer un ticket |
+| GET | `/api/costs/summary` | partiel | Résumé des coûts estimés depuis `run_summary.json` |
+| GET | `/api/costs/runs` | partiel | Coûts estimés par run orchestré |
+| GET | `/api/costs/trend` | partiel | Série temporelle coût estimé |
+| GET | `/api/costs/breakdown` | partiel | Répartition estimée par service |
+| GET | `/api/costs/alerts` | partiel | Alertes simples sur seuils locaux |
+| GET | `/api/bankroll/summary` | partiel | Résumé bankroll simulé depuis tickets |
+| GET | `/api/bankroll/trend` | partiel | Courbe bankroll simulée |
+| GET | `/api/bankroll/exposure` | partiel | Exposition par ticket |
+| GET | `/api/bankroll/positions/open` | partiel | Positions ouvertes simulées |
+| GET | `/api/bankroll/risk-limits` | partiel | Limites de risque simulées |
+| GET | `/api/bankroll/alerts` | partiel | Alertes simples exposition/drawdown |
+| GET | `/api/agents` | partiel | Agents logiques dérivés des runs/jobs |
+| GET | `/api/agents/{agent_id}` | partiel | Détail agent et jobs liés |
+| GET | `/api/agents/jobs` | partiel | Jobs agents récents et actifs |
+| GET | `/api/agents/logs` | partiel | Logs techniques agents |
+| GET | `/api/agents/resources` | partiel | Ressources simulées depuis l'activité jobs |
+| GET | `/api/agents/browser-use/sessions` | partiel | Placeholder Browser Use désactivé |
 | GET | `/api/job/{job_id}` | disponible | Retourne l’état complet d’un job |
 | GET | `/api/job/{job_id}/file/{filename}` | disponible | Télécharge un fichier autorisé du job |
 | POST | `/api/cache/clear` | disponible | Vide le cache généré legacy |
@@ -171,9 +188,9 @@ Tous les champs sont optionnels. `date` garde le comportement existant: si absen
 | `analysis` | `available` |
 | `match_data` | `partial` |
 | `ticketing` | `partial` |
-| `costs` | `planned` |
-| `bankroll` | `planned` |
-| `agents` | `planned` |
+| `costs` | `partial` |
+| `bankroll` | `partial` |
+| `agents` | `partial` |
 | `performance` | `planned` |
 | `settings` | `planned` |
 
@@ -246,6 +263,13 @@ La capability `ticketing` expose les propositions de tickets déjà produites pa
 - `data/orchestrator_runs/<run_id>/run_summary.json`
 - `data/orchestrator_runs/<run_id>/selection.json`
 
+Le pipeline strict produit désormais une couche intermédiaire avant sélection:
+
+- `match_analysis.json`: résultats bruts des agents d'analyse match par match.
+- `aggregation_candidates.json`: candidats normalisés, un candidat par `predicted_market`.
+- `filtered_candidates.json`: candidats retenus après règles configurables.
+- `selection.json`: ticket final, format historique conservé.
+
 Endpoints:
 
 - `GET /api/tickets`
@@ -263,8 +287,113 @@ Règles strictes:
 
 - Aucun fichier `latest_*` n'est lu.
 - `selection.json` doit appartenir au `run_dir` courant.
-- `selection.input_file` doit aussi rester dans le même `run_dir`.
+- `selection.input_file` doit pointer vers `filtered_candidates.json` du même `run_dir`.
+- Chaque candidat porte `confidence_tier`, `risk_level` déterministe, `odds`, `odds_source` et `rejection_reasons`.
+- `confidence_score` est la confiance effective: `min(predicted_market.confidence, analysis.global_confidence)`.
+- Les règles de filtrage appliquées sont `min_confidence`, `allowed_markets`, `data_quality != low` via `min_data_quality`, et présence de cote si la stratégie l'exige.
+- Les raisons de rejet standard sont `low_confidence`, `missing_odds`, `low_data_quality`, `disallowed_market`.
 - Aucune persistance additionnelle n'est ajoutée; la source de vérité reste l'artefact orchestré.
+
+## Costs & Quotas Core
+
+La capability `costs` expose des estimations locales à partir des artefacts stricts:
+
+- `data/orchestrator_runs/<run_id>/run_summary.json`
+
+Elle ne fait aucun appel réel à OpenAI, API-Football ou Browser Use et ne lit aucun fichier `latest_*`.
+
+Endpoints:
+
+- `GET /api/costs/summary`
+  - coût estimé du jour, coût estimé sur 7 jours, nombre de runs, coût moyen par run.
+- `GET /api/costs/runs`
+  - liste les runs avec durée, matches estimés, tokens estimés et coût estimé.
+- `GET /api/costs/trend?window=7d`
+  - série temporelle `date -> coût estimé`.
+- `GET /api/costs/breakdown`
+  - répartition estimée `openai`, `api_football`, `browser_use`.
+- `GET /api/costs/alerts`
+  - alertes simples sur seuils locaux.
+
+Règles d'estimation:
+
+- Les dates de coûts utilisent `finished_at` puis `started_at`, pas la `target_date` sportive.
+- Les tokens sont une heuristique basée sur les étapes complétées et les picks dans `run_summary.selection`.
+- Le nombre de matches analysés n'est pas encore exposé précisément dans `run_summary`; l'API retourne donc `matches_analyzed_estimate`.
+- `browser_use` reste un placeholder tant que Browser Use n'est pas branché dans le mode orchestrateur API.
+- Si aucun `run_summary.json` n'est disponible, les endpoints retournent `status: no_data`.
+
+## Bankroll & Risk Core
+
+La capability `bankroll` expose une simulation locale, sans pari réel, à partir des artefacts stricts:
+
+- `data/orchestrator_runs/<run_id>/run_summary.json`
+- `run_summary.selection.picks`
+
+Endpoints:
+
+- `GET /api/bankroll/summary`
+  - bankroll initiale simulée, capital disponible, exposition, ROI et P&L neutres.
+- `GET /api/bankroll/trend?window=7d`
+  - courbe de bankroll simulée.
+- `GET /api/bankroll/exposure`
+  - exposition par ticket, avec `run_id` source.
+- `GET /api/bankroll/positions/open`
+  - positions ouvertes simulées, une par ticket avec picks.
+- `GET /api/bankroll/risk-limits`
+  - limites locales simples.
+- `GET /api/bankroll/alerts`
+  - alertes simples sur exposition et drawdown.
+
+Règles de simulation:
+
+- Bankroll initiale: `1000 EUR`.
+- Stake fixe par ticket: `10 EUR`.
+- Chaque ticket avec picks devient une position ouverte simulée.
+- Gain potentiel: `estimated_combo_odds * stake`.
+- Aucun résultat réel n'est inféré: `simulated_pnl = 0`, `estimated_roi = 0`.
+- Aucun appel externe, aucune DB, aucun fichier `latest_*`.
+
+## Agents Observability Core
+
+La capability `agents` expose une vue d'observabilité simulée à partir des données strictement locales:
+
+- jobs en mémoire (`JOBS`)
+- steps et logs de jobs
+- `data/orchestrator_runs/<run_id>/run_summary.json`
+
+Endpoints:
+
+- `GET /api/agents`
+  - liste des agents logiques dérivés du pipeline.
+- `GET /api/agents/{agent_id}`
+  - détail d'un agent et jobs récents liés.
+- `GET /api/agents/jobs`
+  - jobs récents et actifs, dérivés des steps de jobs et run summaries.
+- `GET /api/agents/logs`
+  - logs techniques agrégés depuis les jobs et logs synthétiques depuis les run summaries.
+- `GET /api/agents/resources`
+  - métriques simulées `cpu_usage`, `memory_usage`, `jobs_running`, `active_sessions`.
+- `GET /api/agents/browser-use/sessions`
+  - placeholder propre `status: disabled`, car Browser Use n'est pas implémenté en mode orchestrateur API.
+
+Agents logiques:
+
+- `orchestrator`
+- `analysis`
+- `aggregation`
+- `filtering`
+- `selection`
+- `browser_use`
+- `ticketing`
+
+Règles strictes:
+
+- Aucun appel externe.
+- Aucune DB, aucun cache global.
+- Aucun fichier `latest_*`.
+- Les métriques resources sont simulées et doivent être affichées comme telles côté frontend.
+- Si aucune donnée run/job n'existe, les endpoints retournent `status: no_data` sauf Browser Use qui retourne `status: disabled`.
 
 ## Frontend adapter
 
