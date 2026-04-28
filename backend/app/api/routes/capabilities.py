@@ -13,6 +13,10 @@ async def get_capabilities():
         "GET /health",
         "GET /api/capabilities",
         "POST /api/run",
+        "GET /api/analysis/runs",
+        "GET /api/analysis/runs/{run_id}",
+        "GET /api/analysis/runs/{run_id}/timeline",
+        "GET /api/analysis/logs",
         "GET /api/job/{job_id}",
         "GET /api/job/{job_id}/file/{filename}",
         "POST /api/cache/clear",
@@ -20,7 +24,17 @@ async def get_capabilities():
 
     return CapabilitiesResponse(
         capabilities=[
-            CapabilityStatus(name="analysis", status="available", endpoints=["POST /api/run", "GET /api/job/{job_id}"]),
+            CapabilityStatus(
+                name="analysis",
+                status="available",
+                endpoints=[
+                    "POST /api/run",
+                    "GET /api/analysis/runs",
+                    "GET /api/analysis/runs/{run_id}",
+                    "GET /api/analysis/runs/{run_id}/timeline",
+                    "GET /api/analysis/logs",
+                ],
+            ),
             CapabilityStatus(name="match_data", status="planned"),
             CapabilityStatus(name="ticketing", status="planned"),
             CapabilityStatus(name="costs", status="planned"),

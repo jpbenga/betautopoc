@@ -1,8 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { catchError, forkJoin, of } from 'rxjs';
+import { AnalysisApiService } from '../../core/api/analysis-api.service';
+import { formatApiDate, statusToTone } from '../../core/api/api.mappers';
+import { AnalysisLogEntry, AnalysisRunListItem, AnalysisTimelineStep } from '../../core/api/api.types';
 import { DataTableColumn, DataTableComponent, DataTableRow } from '../../shared/ui/data-table/data-table.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../shared/ui/error-state/error-state.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
+import { LoadingStateComponent } from '../../shared/ui/loading-state/loading-state.component';
 import { LogConsoleComponent, LogEntry } from '../../shared/ui/log-console/log-console.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card.component';
@@ -14,26 +19,6 @@ interface AnalysisKpi {
   value: string;
   status?: string;
   tone?: 'default' | 'success' | 'warning' | 'danger' | 'live';
-  delta?: string;
-  deltaTone?: 'muted' | 'success' | 'warning' | 'danger';
-}
-
-interface ActiveRun {
-  id: string;
-  status: string;
-  tone: 'default' | 'success' | 'warning' | 'danger' | 'live';
-  progress: number;
-  matchesAnalysed?: string;
-  picks?: number;
-  started?: string;
-  duration?: string;
-}
-
-interface ScheduledScan {
-  label: string;
-  time: string;
-  status: string;
-  tone: 'default' | 'success' | 'warning' | 'danger' | 'live';
 }
 
 @Component({
@@ -44,6 +29,7 @@ interface ScheduledScan {
     EmptyStateComponent,
     ErrorStateComponent,
     KpiCardComponent,
+    LoadingStateComponent,
     LogConsoleComponent,
     PageHeaderComponent,
     SectionCardComponent,
@@ -66,249 +52,304 @@ interface ScheduledScan {
       </div>
     </ba-page-header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      @for (kpi of kpis; track kpi.label) {
-        <ba-kpi-card
-          [label]="kpi.label"
-          [value]="kpi.value"
-          [status]="kpi.status || ''"
-          [tone]="kpi.tone || 'default'"
-          [delta]="kpi.delta || ''"
-          [deltaTone]="kpi.deltaTone || 'muted'"
-        ></ba-kpi-card>
-      }
-    </section>
-
-    <section class="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+    @if (isLoading) {
       <ba-section-card>
-        <div class="ba-card-header flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p class="ba-label">Active runs</p>
-            <h3 class="mt-1 text-sm font-semibold text-text">Orchestrator execution queue</h3>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <ba-status-badge label="2 active" tone="live"></ba-status-badge>
-            <ba-status-badge label="1 failed today" tone="danger"></ba-status-badge>
-          </div>
+        <div class="p-4">
+          <ba-loading-state message="Chargement des runs d’analyse..."></ba-loading-state>
         </div>
+      </ba-section-card>
+    } @else if (errorMessage) {
+      <ba-error-state
+        label="Analysis API unavailable"
+        [message]="errorMessage"
+      ></ba-error-state>
+    } @else if (runs.length === 0) {
+      <ba-empty-state
+        label="No analysis runs"
+        message="Aucun job n’est présent en mémoire. Lance un run via l’API pour alimenter cette page."
+      ></ba-empty-state>
+    } @else {
+      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        @for (kpi of kpis; track kpi.label) {
+          <ba-kpi-card
+            [label]="kpi.label"
+            [value]="kpi.value"
+            [status]="kpi.status || ''"
+            [tone]="kpi.tone || 'default'"
+          ></ba-kpi-card>
+        }
+      </section>
 
-        @if (activeRuns.length > 0) {
-          <div class="grid gap-4 p-4 md:grid-cols-2">
-            @for (run of activeRuns; track run.id) {
-              <article class="rounded-card border border-border/60 bg-background/60 p-4">
-                <div class="flex items-start justify-between gap-4">
-                  <div>
-                    <p class="ba-label">Run ID</p>
-                    <h4 class="ba-data mt-2 text-base text-text">{{ run.id }}</h4>
-                  </div>
-                  <ba-status-badge [label]="run.status" [tone]="run.tone"></ba-status-badge>
-                </div>
-                <div class="mt-4 h-2 overflow-hidden rounded-full bg-surface-high">
-                  <div class="h-full rounded-full bg-accent shadow-glow" [style.width.%]="run.progress"></div>
-                </div>
-                <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <dt class="ba-label">Progress</dt>
-                    <dd class="ba-data mt-1 text-text">{{ run.progress }}%</dd>
-                  </div>
-                  @if (run.matchesAnalysed) {
+      <section class="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <ba-section-card>
+          <div class="ba-card-header flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p class="ba-label">Active runs</p>
+              <h3 class="mt-1 text-sm font-semibold text-text">Orchestrator execution queue</h3>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <ba-status-badge [label]="activeRuns.length + ' active'" tone="live"></ba-status-badge>
+              <ba-status-badge [label]="failedRuns.length + ' failed'" tone="danger"></ba-status-badge>
+            </div>
+          </div>
+
+          @if (activeRuns.length > 0) {
+            <div class="grid gap-4 p-4 md:grid-cols-2">
+              @for (run of activeRuns; track run.run_id) {
+                <article class="rounded-card border border-border/60 bg-background/60 p-4">
+                  <div class="flex items-start justify-between gap-4">
                     <div>
-                      <dt class="ba-label">Matches</dt>
-                      <dd class="ba-data mt-1 text-text">{{ run.matchesAnalysed }}</dd>
+                      <p class="ba-label">Run ID</p>
+                      <h4 class="ba-data mt-2 text-base text-text">{{ run.run_id }}</h4>
                     </div>
-                  }
-                  @if (run.started) {
+                    <ba-status-badge [label]="run.status" [tone]="toneFor(run.status)"></ba-status-badge>
+                  </div>
+                  <div class="mt-4 h-2 overflow-hidden rounded-full bg-surface-high">
+                    <div class="h-full rounded-full bg-accent shadow-glow" [style.width.%]="run.progress"></div>
+                  </div>
+                  <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <dt class="ba-label">Started</dt>
-                      <dd class="mt-1 text-muted">{{ run.started }}</dd>
+                      <dt class="ba-label">Progress</dt>
+                      <dd class="ba-data mt-1 text-text">{{ run.progress }}%</dd>
                     </div>
-                  }
-                  @if (run.picks !== undefined) {
+                    <div>
+                      <dt class="ba-label">Steps</dt>
+                      <dd class="ba-data mt-1 text-text">{{ run.completed_steps }} / {{ run.step_count }}</dd>
+                    </div>
+                    <div>
+                      <dt class="ba-label">Target</dt>
+                      <dd class="mt-1 text-muted">{{ run.target_date || '—' }}</dd>
+                    </div>
                     <div>
                       <dt class="ba-label">Picks</dt>
-                      <dd class="ba-data mt-1 text-success">{{ run.picks }}</dd>
+                      <dd class="ba-data mt-1 text-success">{{ run.picks_count ?? '—' }}</dd>
                     </div>
-                  }
-                  @if (run.duration) {
-                    <div>
-                      <dt class="ba-label">Duration</dt>
-                      <dd class="ba-data mt-1 text-text">{{ run.duration }}</dd>
-                    </div>
-                  }
-                </dl>
-              </article>
-            }
-          </div>
-        } @else {
-          <div class="p-4">
-            <ba-empty-state
-              label="No active runs"
-              message="No orchestrator run is currently active."
-            ></ba-empty-state>
-          </div>
-        }
-      </ba-section-card>
-
-      <ba-section-card>
-        <div class="ba-card-header">
-          <p class="ba-label">Analysis timeline</p>
-          <h3 class="mt-1 text-sm font-semibold text-text">Complete and in-progress run states</h3>
-        </div>
-        <div class="grid gap-4 p-4 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-          <ba-timeline title="run_dba43175 completed" [items]="completedTimeline"></ba-timeline>
-          <ba-timeline title="run_f6f68d92 running" [items]="runningTimeline"></ba-timeline>
-        </div>
-      </ba-section-card>
-    </section>
-
-    <section class="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-      <div class="space-y-4">
-        <ba-data-table
-          title="Runs table"
-          subtitle="Recent analysis runs and orchestrator outcomes."
-          [columns]="runColumns"
-          [rows]="runRows"
-        ></ba-data-table>
-
-        @if (hasFailedRun) {
-          <ba-error-state
-            label="Failed run detected"
-            message="Run cc98dd12 failed before ticket generation. The row remains visible for audit and retry planning."
-          ></ba-error-state>
-        }
-      </div>
-
-      <ba-section-card>
-        <div class="ba-card-header">
-          <p class="ba-label">Scheduled scans</p>
-          <h3 class="mt-1 text-sm font-semibold text-text">Today’s scan windows</h3>
-        </div>
-        <div class="space-y-3 p-4">
-          @for (scan of scheduledScans; track scan.label) {
-            <div class="flex items-center justify-between gap-4 rounded-card border border-border/60 bg-background/60 p-3">
-              <div>
-                <p class="text-sm font-medium text-text">{{ scan.label }}</p>
-                <p class="ba-data mt-1 text-muted">{{ scan.time }}</p>
-              </div>
-              <ba-status-badge [label]="scan.status" [tone]="scan.tone"></ba-status-badge>
+                  </dl>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="p-4">
+              <ba-empty-state
+                label="No active runs"
+                message="Les runs connus sont terminés, échoués ou en attente."
+              ></ba-empty-state>
             </div>
           }
-        </div>
-      </ba-section-card>
-    </section>
+        </ba-section-card>
 
-    <section class="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-      <ba-section-card>
-        <div class="ba-card-header">
-          <p class="ba-label">Filters</p>
-          <h3 class="mt-1 text-sm font-semibold text-text">Mock queue filters</h3>
-        </div>
-        <div class="grid gap-3 p-4 sm:grid-cols-3 xl:grid-cols-1">
-          <button type="button" class="ba-tool text-left">Status: all</button>
-          <button type="button" class="ba-tool text-left">Date: today</button>
-          <button type="button" class="ba-tool text-left">Strategy: any</button>
-        </div>
-      </ba-section-card>
+        <ba-section-card>
+          <div class="ba-card-header">
+            <p class="ba-label">Analysis timeline</p>
+            <h3 class="mt-1 text-sm font-semibold text-text">{{ selectedRunTitle }}</h3>
+          </div>
+          <div class="p-4">
+            @if (timeline.length > 0) {
+              <ba-timeline [items]="timeline"></ba-timeline>
+            } @else {
+              <ba-empty-state
+                label="No timeline"
+                message="Ce run ne contient pas encore d’étapes."
+              ></ba-empty-state>
+            }
+          </div>
+        </ba-section-card>
+      </section>
 
-      <ba-log-console
-        label="Recent logs"
-        title="Analysis pipeline output"
-        [entries]="logs"
-      ></ba-log-console>
-    </section>
+      <section class="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div class="space-y-4">
+          <ba-data-table
+            title="Runs table"
+            subtitle="Runs exposés par la façade analysis au-dessus des jobs existants."
+            [columns]="runColumns"
+            [rows]="runRows"
+          ></ba-data-table>
+
+          @if (failedRuns.length > 0) {
+            <ba-error-state
+              label="Failed run detected"
+              [message]="failedRuns.length + ' run(s) en erreur ou échoués dans les jobs connus.'"
+            ></ba-error-state>
+          }
+        </div>
+
+        <ba-section-card>
+          <div class="ba-card-header">
+            <p class="ba-label">Scheduled scans</p>
+            <h3 class="mt-1 text-sm font-semibold text-text">Planned for a later Lot 1 slice</h3>
+          </div>
+          <div class="p-4">
+            <ba-empty-state
+              label="Schedule API planned"
+              message="La façade actuelle couvre runs, timeline et logs. Les scans planifiés seront ajoutés ensuite."
+            ></ba-empty-state>
+          </div>
+        </ba-section-card>
+      </section>
+
+      <section class="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+        <ba-section-card>
+          <div class="ba-card-header">
+            <p class="ba-label">Filters</p>
+            <h3 class="mt-1 text-sm font-semibold text-text">Client-side view</h3>
+          </div>
+          <div class="grid gap-3 p-4 sm:grid-cols-3 xl:grid-cols-1">
+            <button type="button" class="ba-tool text-left">Status: all</button>
+            <button type="button" class="ba-tool text-left">Runs: {{ runs.length }}</button>
+            <button type="button" class="ba-tool text-left">Selected: {{ selectedRunId || 'none' }}</button>
+          </div>
+        </ba-section-card>
+
+        <ba-log-console
+          label="Recent logs"
+          title="Analysis pipeline output"
+          [entries]="logs"
+        ></ba-log-console>
+      </section>
+    }
   `
 })
-export class AnalysisPage {
-  protected readonly kpis: AnalysisKpi[] = [
-    { label: 'Active runs', value: '2', status: 'Live', tone: 'live' },
-    { label: 'Scheduled today', value: '6', status: 'Planned', tone: 'default' },
-    { label: 'Completed today', value: '14', status: 'Healthy', tone: 'success' },
-    { label: 'Failed runs', value: '1', status: 'Review', tone: 'danger' },
-    { label: 'Avg duration', value: '2m 10s', status: 'Stable', tone: 'success' }
-  ];
+export class AnalysisPage implements OnInit {
+  private readonly analysisApi = inject(AnalysisApiService);
 
-  protected readonly activeRuns: ActiveRun[] = [
-    {
-      id: 'run_f6f68d92',
-      status: 'running',
-      tone: 'live',
-      progress: 75,
-      matchesAnalysed: '8/10',
-      started: '2 min ago'
-    },
-    {
-      id: 'run_dba43175',
-      status: 'completed',
-      tone: 'success',
-      progress: 100,
-      picks: 2,
-      duration: '2m17s'
-    }
-  ];
-
-  protected readonly completedTimeline: TimelineItem[] = [
-    { title: 'Strategy loaded', meta: 'completed', description: 'default_football_balanced loaded.', tone: 'success' },
-    { title: 'Context built', meta: 'completed', description: 'API-Football context normalized.', tone: 'success' },
-    { title: 'Match analysis', meta: 'completed', description: '10 matches analysed.', tone: 'success' },
-    { title: 'Selection engine', meta: 'completed', description: '2 picks selected.', tone: 'success' },
-    { title: 'Ticket generated', meta: 'completed', description: 'Draft ticket created for review.', tone: 'success' }
-  ];
-
-  protected readonly runningTimeline: TimelineItem[] = [
-    { title: 'Strategy loaded', meta: 'completed', description: 'Strategy loaded for live run.', tone: 'success' },
-    { title: 'Context built', meta: 'completed', description: 'Context builder finished.', tone: 'success' },
-    { title: 'Match analysis', meta: 'running', description: '8 of 10 matches analysed.', tone: 'live' },
-    { title: 'Selection engine', meta: 'pending', description: 'Waiting for match analysis output.', tone: 'default' },
-    { title: 'Ticket generated', meta: 'pending', description: 'No ticket generated yet.', tone: 'default' }
-  ];
+  protected isLoading = true;
+  protected errorMessage = '';
+  protected runs: AnalysisRunListItem[] = [];
+  protected selectedRunId = '';
+  protected timeline: TimelineItem[] = [];
+  protected logs: LogEntry[] = [];
 
   protected readonly runColumns: DataTableColumn[] = [
     { key: 'id', label: 'Run ID', data: true },
-    { key: 'date', label: 'Date', data: true },
-    { key: 'matches', label: 'Matches', align: 'right', data: true },
-    { key: 'picks', label: 'Picks', align: 'right', data: true },
-    { key: 'duration', label: 'Duration', align: 'right', data: true }
+    { key: 'date', label: 'Created', data: true },
+    { key: 'target', label: 'Target', data: true },
+    { key: 'progress', label: 'Progress', align: 'right', data: true },
+    { key: 'steps', label: 'Steps', align: 'right', data: true },
+    { key: 'picks', label: 'Picks', align: 'right', data: true }
   ];
 
-  protected readonly runRows: DataTableRow[] = [
-    {
-      cells: { id: 'f6f68d92', date: '2026-04-25', matches: 10, picks: 2, duration: '2m17s' },
-      status: 'completed',
-      statusTone: 'success'
-    },
-    {
-      cells: { id: 'dba43175', date: '2026-04-25', matches: 12, picks: 2, duration: '2m30s' },
-      status: 'completed',
-      statusTone: 'success'
-    },
-    {
-      cells: { id: 'aa12bb34', date: '2026-04-26', matches: 8, picks: 1, duration: '1m50s' },
-      status: 'running',
-      statusTone: 'live'
-    },
-    {
-      cells: { id: 'cc98dd12', date: '2026-04-26', matches: 15, picks: 0, duration: '—' },
-      status: 'failed',
-      statusTone: 'danger'
+  ngOnInit(): void {
+    this.loadRuns();
+  }
+
+  protected get activeRuns(): AnalysisRunListItem[] {
+    return this.runs.filter((run) => ['running', 'active'].includes(run.status.toLowerCase()));
+  }
+
+  protected get failedRuns(): AnalysisRunListItem[] {
+    return this.runs.filter((run) => ['failed', 'error'].includes(run.status.toLowerCase()) || run.failed_steps > 0);
+  }
+
+  protected get kpis(): AnalysisKpi[] {
+    const completed = this.runs.filter((run) => ['completed', 'done', 'success', 'succeeded'].includes(run.status.toLowerCase()));
+    const averageProgress = this.runs.length
+      ? Math.round(this.runs.reduce((sum, run) => sum + run.progress, 0) / this.runs.length)
+      : 0;
+
+    return [
+      { label: 'Known runs', value: String(this.runs.length), status: 'API', tone: 'default' },
+      { label: 'Active runs', value: String(this.activeRuns.length), status: 'Live', tone: this.activeRuns.length ? 'live' : 'default' },
+      { label: 'Completed', value: String(completed.length), status: 'Done', tone: 'success' },
+      { label: 'Failed runs', value: String(this.failedRuns.length), status: this.failedRuns.length ? 'Review' : 'Clear', tone: this.failedRuns.length ? 'danger' : 'success' },
+      { label: 'Avg progress', value: `${averageProgress}%`, status: 'Jobs', tone: 'default' }
+    ];
+  }
+
+  protected get runRows(): DataTableRow[] {
+    return this.runs.map((run) => ({
+      cells: {
+        id: run.run_id,
+        date: formatApiDate(run.created_at),
+        target: run.target_date || '—',
+        progress: `${run.progress}%`,
+        steps: `${run.completed_steps}/${run.step_count}`,
+        picks: run.picks_count ?? '—'
+      },
+      status: run.status,
+      statusTone: this.toneFor(run.status)
+    }));
+  }
+
+  protected get selectedRunTitle(): string {
+    return this.selectedRunId ? `${this.selectedRunId} timeline` : 'No run selected';
+  }
+
+  protected toneFor(status: string): 'default' | 'success' | 'warning' | 'danger' | 'live' {
+    return statusToTone(status);
+  }
+
+  private loadRuns(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.analysisApi.getRuns().pipe(
+      catchError((error: unknown) => {
+        this.errorMessage = this.errorToMessage(error);
+        return of([]);
+      })
+    ).subscribe((runs) => {
+      this.runs = runs;
+      this.selectedRunId = runs[0]?.run_id || '';
+
+      if (!this.selectedRunId || this.errorMessage) {
+        this.isLoading = false;
+        return;
+      }
+
+      this.loadSelectedRunDetails(this.selectedRunId);
+    });
+  }
+
+  private loadSelectedRunDetails(runId: string): void {
+    forkJoin({
+      timeline: this.analysisApi.getTimeline(runId),
+      logs: this.analysisApi.getLogs(runId)
+    }).pipe(
+      catchError((error: unknown) => {
+        this.errorMessage = this.errorToMessage(error);
+        return of({ timeline: [], logs: [] });
+      })
+    ).subscribe(({ timeline, logs }) => {
+      this.timeline = timeline.map((step) => this.toTimelineItem(step));
+      this.logs = logs.map((entry) => this.toLogEntry(entry));
+      this.isLoading = false;
+    });
+  }
+
+  private toTimelineItem(step: AnalysisTimelineStep): TimelineItem {
+    return {
+      title: step.title,
+      meta: step.status,
+      description: step.message || 'No message.',
+      tone: statusToTone(step.status)
+    };
+  }
+
+  private toLogEntry(entry: AnalysisLogEntry): LogEntry {
+    return {
+      time: formatApiDate(entry.at),
+      level: this.logLevel(entry.level),
+      message: entry.message
+    };
+  }
+
+  private logLevel(level: string): LogEntry['level'] {
+    if (level === 'success' || level === 'warning') {
+      return level;
     }
-  ];
 
-  protected readonly scheduledScans: ScheduledScan[] = [
-    { label: 'Daily scan', time: '08:00', status: 'completed', tone: 'success' },
-    { label: 'Midday scan', time: '14:00', status: 'next run', tone: 'live' },
-    { label: 'Evening scan', time: '20:00', status: 'pending', tone: 'default' }
-  ];
+    if (level === 'error') {
+      return 'danger';
+    }
 
-  protected readonly logs: LogEntry[] = [
-    { time: '10:31', level: 'info', message: '[analysis] orchestrator started' },
-    { time: '10:31', level: 'info', message: '[orchestrator] loading strategy' },
-    { time: '10:32', level: 'success', message: '[orchestrator] building context' },
-    { time: '10:33', level: 'success', message: '[orchestrator] match analysis' },
-    { time: '10:35', level: 'info', message: '[orchestrator] selection' },
-    { time: '10:36', level: 'success', message: '[analysis] completed' }
-  ];
+    return 'info';
+  }
 
-  protected get hasFailedRun(): boolean {
-    return this.runRows.some((row) => row.statusTone === 'danger');
+  private errorToMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return 'Impossible de charger les runs analysis depuis l’API.';
   }
 }

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from backend.app.api.routes.analysis import router as analysis_router
 from backend.app.api.routes.capabilities import router as capabilities_router
 from backend.app.api.routes.health import router as health_router
 from backend.app.api.routes.jobs import router as jobs_router
@@ -22,5 +23,6 @@ async def index():
 
 app.include_router(health_router)
 app.include_router(capabilities_router)
+app.include_router(analysis_router)
 app.include_router(runs_router)
 app.include_router(jobs_router)

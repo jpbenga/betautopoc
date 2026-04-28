@@ -93,3 +93,40 @@ export interface CapabilitiesResponse {
   capabilities: CapabilityStatus[];
   available_endpoints: string[];
 }
+
+export interface AnalysisRunListItem {
+  run_id: string;
+  job_id: string;
+  status: string;
+  created_at: string;
+  completed_at?: string | null;
+  target_date?: string | null;
+  progress: number;
+  step_count: number;
+  completed_steps: number;
+  failed_steps: number;
+  picks_count?: number | null;
+  orchestrator_run_id?: string | null;
+}
+
+export interface AnalysisTimelineStep {
+  id: string;
+  title: string;
+  status: string;
+  message?: string | null;
+  updated_at?: string | null;
+}
+
+export interface AnalysisLogEntry {
+  at?: string | null;
+  message: string;
+  level: 'info' | 'success' | 'warning' | 'error' | string;
+}
+
+export interface AnalysisRun extends AnalysisRunListItem {
+  error?: string | null;
+  steps: AnalysisTimelineStep[];
+  logs: AnalysisLogEntry[];
+  run_summary?: Record<string, unknown> | null;
+  selection?: unknown;
+}
