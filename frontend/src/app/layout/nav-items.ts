@@ -15,5 +15,6 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/market-dictionary', label: 'Markets' },
   { path: '/platform-agents', label: 'Agents' },
   { path: '/logs-audit', label: 'Logs' },
+  { path: '/settings', label: 'Settings' },
   { path: '/design-system', label: 'Design System' }
 ];
