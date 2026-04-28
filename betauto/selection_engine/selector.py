@@ -242,9 +242,9 @@ def _normalize_selection_payload(
         normalized["status"] = "completed" if normalized_picks else "failed"
         normalization_notes.append("status injecté automatiquement")
 
-    if not normalized.get("input_file"):
+    if normalized.get("input_file") != input_file:
         normalized["input_file"] = input_file
-        normalization_notes.append("input_file injecté automatiquement")
+        normalization_notes.append("input_file forcé depuis l'artefact du run courant")
 
     normalized.setdefault(
         "generated_at",

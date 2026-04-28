@@ -6,8 +6,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from betauto.analysis_context import AnalysisContextBuilder, export_analysis_context
-from betauto.strategy import load_and_resolve_strategy
+from betauto.runtime_mode import require_legacy_mode
 
 
 def parse_args() -> argparse.Namespace:
@@ -38,6 +37,10 @@ def summarize(payload: dict) -> dict[str, int]:
 
 def main() -> None:
     load_dotenv()
+    require_legacy_mode("build_analysis_context.py calls AnalysisContextBuilder directly and writes latest_analysis_context.json")
+    from betauto.analysis_context import AnalysisContextBuilder, export_analysis_context
+    from betauto.strategy import load_and_resolve_strategy
+
     args = parse_args()
 
     output_dir = Path(

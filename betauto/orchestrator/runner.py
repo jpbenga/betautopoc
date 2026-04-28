@@ -13,6 +13,7 @@ from openai import OpenAI
 from betauto.analysis_context import AnalysisContextBuilder
 from betauto.analysis_context.exporter import write_json
 from betauto.analysis_engine import run_analysis_batch_with_stats
+from betauto.runtime_mode import log_runtime_mode
 from betauto.selection_engine import SelectionConfig, select_combo
 from betauto.strategy import load_and_resolve_strategy
 
@@ -40,6 +41,61 @@ def _selection_config_from_strategy(resolved_strategy: Any) -> SelectionConfig:
     )
 
 
+def _date_consistency_metadata(
+    *,
+    target_date: str,
+    run_dir: Path,
+    context_payload: dict[str, Any] | None = None,
+    analysis_payload: dict[str, Any] | None = None,
+    selection_payload: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    context_file = run_dir / "analysis_context.json"
+    analysis_file = run_dir / "match_analysis.json"
+    selection_file = run_dir / "selection.json"
+    effective_context_date = (context_payload or {}).get("target_date")
+    match_analysis_target_date = (analysis_payload or {}).get("target_date")
+    selection_input_file = (selection_payload or {}).get("input_file")
+
+    status = "unknown"
+    if effective_context_date == target_date:
+        status = "ok"
+    if effective_context_date and effective_context_date != target_date:
+        status = "mismatch"
+    if match_analysis_target_date and match_analysis_target_date != target_date:
+        status = "mismatch"
+    if selection_input_file and Path(selection_input_file) != analysis_file:
+        status = "mismatch"
+
+    return {
+        "effective_context_date": effective_context_date,
+        "match_analysis_target_date": match_analysis_target_date,
+        "analysis_context_file": str(context_file) if context_file.exists() else None,
+        "match_analysis_file": str(analysis_file) if analysis_file.exists() else None,
+        "selection_file": str(selection_file) if selection_file.exists() else None,
+        "selection_input_file": selection_input_file,
+        "data_source_mode": "run_artifacts",
+        "date_consistency_status": status,
+    }
+
+
+def _validate_run_artifact(path: Path, run_dir: Path, label: str) -> None:
+    if not path.exists():
+        raise RuntimeError(f"{label} missing in current run artifacts: {path}")
+    if path.parent.resolve() != run_dir.resolve():
+        raise RuntimeError(f"{label} must come from current run_dir, got: {path}")
+
+
+def _assert_date_consistency(summary: dict[str, Any]) -> None:
+    if summary.get("date_consistency_status") != "ok":
+        raise RuntimeError(
+            "Date consistency failed: "
+            f"target_date={summary.get('target_date')} "
+            f"effective_context_date={summary.get('effective_context_date')} "
+            f"match_analysis_target_date={summary.get('match_analysis_target_date')} "
+            f"selection_input_file={summary.get('selection_input_file')}"
+        )
+
+
 def run_orchestrated_pipeline(
     target_date: str,
     strategy_file: str | None = None,
@@ -53,6 +109,7 @@ def run_orchestrated_pipeline(
     log_callback: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     load_dotenv()
+    log_runtime_mode()
 
     run_id = uuid.uuid4().hex[:12]
     run_dir = Path(output_dir) / run_id
@@ -68,6 +125,8 @@ def run_orchestrated_pipeline(
         "strategy_file": resolved_strategy_file,
         "started_at": _utc_now_iso(),
         "with_browser": with_browser,
+        "data_source_mode": "run_artifacts",
+        "date_consistency_status": "unknown",
         "steps": {},
         "files": {},
     }
@@ -95,6 +154,34 @@ def run_orchestrated_pipeline(
         )
         context_payload = builder.build(target_date=target_date)
         write_json(context_file, context_payload)
+        if context_payload.get("target_date") != target_date:
+            summary.update(
+                _date_consistency_metadata(target_date=target_date, run_dir=run_dir, context_payload=context_payload)
+            )
+            summary["status"] = "failed"
+            summary["error"] = "Analysis context target_date mismatch."
+            write_json(run_dir / "run_summary.json", summary)
+            _assert_date_consistency(summary)
+
+        matches = context_payload.get("matches") or []
+        if not matches:
+            message = f"No matches found for target date {target_date}"
+            _emit(log_callback, f"[orchestrator] {message}")
+            summary["steps"]["analysis_context"] = "completed_no_data"
+            summary["steps"]["match_analysis"] = "skipped"
+            summary["steps"]["selection"] = "skipped"
+            summary["files"]["analysis_context"] = str(context_file)
+            summary.update(
+                _date_consistency_metadata(target_date=target_date, run_dir=run_dir, context_payload=context_payload)
+            )
+            summary["date_consistency_status"] = "no_data"
+            summary["finished_at"] = _utc_now_iso()
+            summary["selection"] = {"status": "completed_no_data", "picks": [], "notes": [message], "errors": []}
+            summary["status"] = "completed_no_data"
+            summary["message"] = message
+            write_json(run_dir / "run_summary.json", summary)
+            return summary
+
         summary["steps"]["analysis_context"] = "completed"
         summary["files"]["analysis_context"] = str(context_file)
 
@@ -113,6 +200,7 @@ def run_orchestrated_pipeline(
 
         if not context_file.exists():
             raise RuntimeError("Analysis context manquant pour l'étape d'analyse.")
+        _validate_run_artifact(context_file, run_dir, "analysis_context")
 
         llm = OpenAI(api_key=api_key)
         llm.analysis_model = model
@@ -125,6 +213,7 @@ def run_orchestrated_pipeline(
         )
         analysis_payload = {
             "generated_at": _utc_now_iso(),
+            "target_date": target_date,
             "context_file": str(context_file),
             "model": model,
             "stats": stats,
@@ -151,16 +240,32 @@ def run_orchestrated_pipeline(
         llm.analysis_model = model
 
         selection_config = _selection_config_from_strategy(resolved_strategy)
+        _validate_run_artifact(analysis_file, run_dir, "match_analysis")
         selection_payload = select_combo(
             match_analyses=analysis_payload,
             config=selection_config,
             llm=llm,
             input_file=str(analysis_file),
         )
+        if selection_payload.get("input_file") != str(analysis_file):
+            raise RuntimeError(
+                "Selection input_file must point to current run match_analysis artifact, "
+                f"got: {selection_payload.get('input_file')}"
+            )
         write_json(selection_file, selection_payload)
         summary["steps"]["selection"] = "completed"
         summary["files"]["selection"] = str(selection_file)
 
+    summary.update(
+        _date_consistency_metadata(
+            target_date=target_date,
+            run_dir=run_dir,
+            context_payload=context_payload,
+            analysis_payload=analysis_payload,
+            selection_payload=selection_payload,
+        )
+    )
+    _assert_date_consistency(summary)
     summary["finished_at"] = _utc_now_iso()
     summary["selection"] = selection_payload
     summary["status"] = "completed"

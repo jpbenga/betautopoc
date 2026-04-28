@@ -1,7 +1,7 @@
 # Selection Engine v1
 
 ## Rôle
-Le **Selection Engine** consomme les analyses individuelles déjà générées par l'Analysis Engine (`data/analysis_results/latest_match_analysis.json`) et construit un ticket combiné final exporté vers `data/selection_results/latest_selection.json`.
+Le **Selection Engine** consomme les analyses individuelles déjà générées par l'Analysis Engine. En mode strict, il est appelé par l'orchestrateur avec le `match_analysis.json` du `run_dir` courant et exporte `selection.json` dans ce même dossier.
 
 ## Pourquoi ce module est séparé
 - Séparation claire des responsabilités :
@@ -17,7 +17,7 @@ Le **Selection Engine** consomme les analyses individuelles déjà générées p
 4. Validation du JSON de sortie.
 5. Export :
    - `selection_YYYYMMDD_HHMMSS.json`
-   - `latest_selection.json`
+   - `latest_selection.json` uniquement en mode legacy explicite
 
 ## Configuration (.env + CLI)
 Priorité des valeurs : **CLI > .env > defaults**.
@@ -32,13 +32,17 @@ Variables supportées :
 - `SELECTION_OUTPUT_DIR` (défaut `data/selection_results`)
 
 ## Commandes d'exécution
+
+En mode strict par défaut:
+
 ```bash
-PYTHONPATH=. python scripts/run_selection_engine.py
+PYTHONPATH=. python scripts/run_orchestrated_pipeline.py --date 2026-04-26
 ```
 
-Exemple avec overrides :
+Le script historique est réservé au mode legacy:
+
 ```bash
-PYTHONPATH=. python scripts/run_selection_engine.py \
+BETAUTO_ALLOW_LEGACY=true PYTHONPATH=. python scripts/run_selection_engine.py \
   --input-file data/analysis_results/latest_match_analysis.json \
   --combo-min-odds 2.80 \
   --combo-max-odds 3.50 \
@@ -57,5 +61,6 @@ Le JSON suit `SelectionResult` et inclut notamment :
 - candidats rejetés
 - notes et erreurs
 
-## Futur branchement Browser Use
-Le module exporte un résultat stable vers `latest_selection.json`, prévu comme entrée du futur pipeline Browser Use pour préparer et vérifier le ticket sur Unibet.
+## Mode strict
+
+`latest_selection.json` est interdit par défaut. Toute tentative de lecture ou écriture est bloquée sauf si `BETAUTO_ALLOW_LEGACY=true`.

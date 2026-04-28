@@ -5,14 +5,7 @@ import json
 import os
 from pathlib import Path
 
-from betauto.selection_engine import (
-    export_selection_result,
-    load_selection_config_from_env_and_cli,
-    resolve_output_dir,
-    resolve_selection_model,
-    resolve_strategy_config,
-    select_combo,
-)
+from betauto.runtime_mode import ensure_latest_allowed, require_legacy_mode
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,9 +49,19 @@ def _load_input_payload(path: Path) -> dict:
 
 def main() -> None:
     args = parse_args()
+    require_legacy_mode("run_selection_engine.py calls the selection engine directly and reads/writes latest_* artifacts")
+    ensure_latest_allowed(args.input_file)
 
     from dotenv import load_dotenv
     from openai import OpenAI
+    from betauto.selection_engine import (
+        export_selection_result,
+        load_selection_config_from_env_and_cli,
+        resolve_output_dir,
+        resolve_selection_model,
+        resolve_strategy_config,
+        select_combo,
+    )
 
     load_dotenv()
 

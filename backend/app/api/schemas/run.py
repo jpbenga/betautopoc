@@ -41,5 +41,14 @@ class RunSummary(ContractBaseModel):
     run_id: str | None = None
     run_dir: str | None = None
     target_date: str | None = None
+    effective_context_date: str | None = None
+    match_analysis_target_date: str | None = None
     status: str | None = None
+    message: str | None = None
+    data_source_mode: str | None = None
+    date_consistency_status: str | None = None
+    analysis_context_file: str | None = None
+    match_analysis_file: str | None = None
+    selection_file: str | None = None
+    selection_input_file: str | None = None
     files: dict[str, Any] = Field(default_factory=dict)

@@ -77,7 +77,7 @@ Exemple complet valide:
     "min_pick_confidence": 65,
     "min_global_match_confidence": 65
   },
-  "input_file": "data/analysis_results/latest_match_analysis.json",
+  "input_file": "data/orchestrator_runs/<run_id>/match_analysis.json",
   "picks": [
     {
       "pick_id": "pick_001",

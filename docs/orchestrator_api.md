@@ -34,6 +34,11 @@ Paramètres utiles:
 - `ORCHESTRATOR_ENABLED=true` (par défaut si absent)
   - `true`: `/api/run` utilise l'orchestrateur V1
   - `false`: `/api/run` utilise le pipeline legacy
+- `BETAUTO_STRICT_MODE=true` (par défaut)
+  - interdit les artefacts `latest_*`
+  - impose les artefacts du `run_dir` courant
+- `BETAUTO_ALLOW_LEGACY=false` (par défaut)
+  - doit être explicitement défini à `true` pour autoriser les anciens scripts qui lisent/écrivent `latest_*`
 - `ORCHESTRATOR_WITH_BROWSER=false` (par défaut)
   - Si activé, l'API loggue: `Browser execution is not implemented in orchestrator API mode yet.`
 
@@ -64,6 +69,74 @@ Le job API expose ensuite:
 - `run_summary`
 - `selection_file`
 - `selection` (contenu JSON chargé si disponible)
+
+## Cohérence de date et artefacts de run
+
+En mode strict, la date transmise au run est la source de vérité. Le mode API et le script `scripts/run_orchestrated_pipeline.py` utilisent le même orchestrateur et doivent produire le même comportement.
+
+Règles appliquées:
+
+- `target_date` est conservée dans `run_summary`.
+- `analysis_context.json` doit déclarer la même `target_date`.
+- `match_analysis.json` déclare aussi `target_date`.
+- `selection.input_file` doit pointer vers le `match_analysis.json` du dossier `data/orchestrator_runs/<run_id>/`.
+- Les fallbacks historiques `latest_analysis_context.json`, `latest_match_analysis.json` et `latest_selection.json` sont interdits sauf si `BETAUTO_ALLOW_LEGACY=true`.
+- Les scripts legacy `build_analysis_context.py`, `run_match_analysis_batch.py` et `run_selection_engine.py` sont bloqués en mode strict.
+
+Métadonnées exposées dans `run_summary`:
+
+- `target_date`
+- `effective_context_date`
+- `match_analysis_target_date`
+- `analysis_context_file`
+- `match_analysis_file`
+- `selection_file`
+- `selection_input_file`
+- `data_source_mode`
+- `date_consistency_status`
+
+En mode orchestrateur API, `data_source_mode` doit être `run_artifacts`.
+`date_consistency_status` vaut:
+
+- `ok` si tous les artefacts correspondent à la date et au dossier du run.
+- `no_data` si API-Football ne retourne aucun match pour la date cible.
+- `mismatch` si une incohérence est détectée.
+
+## Date sans données
+
+Si aucun match n'est trouvé pour la date cible, le run ne recycle aucun ancien résultat.
+Il se termine avec:
+
+- `status: completed_no_data`
+- `date_consistency_status: no_data`
+- message: `No matches found for target date YYYY-MM-DD`
+
+Les étapes `match_analysis` et `selection` sont alors marquées comme ignorées, et `selection.picks` reste vide.
+
+## Scripts
+
+Le script supporté en mode strict est:
+
+```bash
+python scripts/run_orchestrated_pipeline.py --date 2026-04-25
+```
+
+Les scripts historiques restent disponibles uniquement en mode legacy explicite:
+
+```bash
+BETAUTO_ALLOW_LEGACY=true python scripts/build_analysis_context.py --date 2026-04-25
+BETAUTO_ALLOW_LEGACY=true python scripts/run_match_analysis_batch.py
+BETAUTO_ALLOW_LEGACY=true python scripts/run_selection_engine.py
+```
+
+Quand le mode strict bloque un usage `latest_*`, le log contient:
+
+- `STRICT MODE ENABLED`
+- `FORBIDDEN latest_* usage blocked`
+
+Quand le legacy est autorisé, le log contient:
+
+- `LEGACY MODE ENABLED`
 
 ## Limitation actuelle
 

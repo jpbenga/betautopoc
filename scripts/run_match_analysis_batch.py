@@ -8,10 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from openai import OpenAI
 
-from betauto.analysis_engine import run_analysis_batch_with_stats
-from betauto.strategy import ResolvedStrategyConfig, load_and_resolve_strategy
+from betauto.runtime_mode import ensure_latest_allowed, require_legacy_mode
+from betauto.strategy import ResolvedStrategyConfig
 
 
 def parse_args() -> argparse.Namespace:
@@ -87,7 +86,13 @@ def _filter_matches_with_strategy(
 
 def main() -> None:
     load_dotenv()
+    require_legacy_mode("run_match_analysis_batch.py calls the analysis engine directly and reads/writes latest_* artifacts")
     args = parse_args()
+    ensure_latest_allowed(args.context_file)
+    from openai import OpenAI
+
+    from betauto.analysis_engine import run_analysis_batch_with_stats
+    from betauto.strategy import load_and_resolve_strategy
 
     api_key = os.getenv("OPENAI_API_KEY")
     model = args.model or os.getenv("OPENAI_ANALYSIS_MODEL")
@@ -129,6 +134,7 @@ def main() -> None:
     ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     dated_path = output_dir / f"match_analysis_{ts}.json"
     latest_path = output_dir / "latest_match_analysis.json"
+    ensure_latest_allowed(latest_path)
 
     data = {
         "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",

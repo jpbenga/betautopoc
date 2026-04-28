@@ -102,17 +102,18 @@ Il contient une stratégie football équilibrée, avec :
 
 ## Utilisation CLI
 
+En mode strict, la stratégie est appliquée via l'orchestrateur:
+
 ```bash
-PYTHONPATH=. python scripts/run_selection_engine.py \
-  --strategy-file config/strategies/default.json \
-  --input-file data/analysis_results/latest_match_analysis.json \
-  --output-dir data/selection_results
+PYTHONPATH=. python scripts/run_orchestrated_pipeline.py \
+  --date 2026-04-26 \
+  --strategy-file config/strategies/default.json
 ```
 
-Override CLI (prioritaire sur stratégie) :
+Le script de sélection direct est legacy uniquement:
 
 ```bash
-PYTHONPATH=. python scripts/run_selection_engine.py \
+BETAUTO_ALLOW_LEGACY=true PYTHONPATH=. python scripts/run_selection_engine.py \
   --strategy-file config/strategies/default.json \
   --combo-min-odds 3.00 \
   --combo-max-odds 4.00 \

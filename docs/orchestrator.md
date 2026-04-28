@@ -53,10 +53,9 @@ PYTHONPATH=. python scripts/run_orchestrated_pipeline.py --help
 - `--output-dir` : dossier racine des runs (défaut `data/orchestrator_runs`).
 - `--max-matches` : limite le nombre de matchs transmis à l’Analysis Engine.
 - `--sleep-between-matches` : délai (secondes) entre deux analyses.
-- `--skip-context` : réutilise `data/analysis_context/latest_analysis_context.json`.
-- `--skip-analysis` : réutilise `data/analysis_results/latest_match_analysis.json`.
-- `--skip-selection` : n’exécute pas la sélection.
 - `--with-browser` : flag réservé (non implémenté V1).
+
+Le mode strict interdit les réutilisations `latest_*`. Chaque run doit utiliser uniquement ses artefacts `data/orchestrator_runs/<run_id>/`.
 
 ## Pourquoi Browser Use n’est pas lancé par défaut
 

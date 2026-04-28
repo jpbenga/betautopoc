@@ -11,6 +11,19 @@ La brique `analysis_context` prépare un contexte structuré et compact pour l'a
 API-Football fournit les faits mesurables. L'analyse IA doit ensuite interpréter ces faits dans un contexte plus large (psychologique, médiatique, météo, enchaînement des matchs, etc.). Cette brique n'est donc qu'une couche de préparation de données.
 
 ## Générer un contexte
+
+En mode strict par défaut, cette brique ne doit pas être lancée directement. Utiliser plutôt:
+
+```bash
+PYTHONPATH=. python scripts/run_orchestrated_pipeline.py --date 2026-04-26
+```
+
+Le script historique ci-dessous est réservé au mode legacy explicite:
+
+```bash
+BETAUTO_ALLOW_LEGACY=true PYTHONPATH=. python scripts/build_analysis_context.py --strategy-file config/strategies/default.json --date 2026-04-26
+```
+
 1. Définir les variables d'environnement techniques:
    - `API_FOOTBALL_KEY` (obligatoire)
    - `API_FOOTBALL_BASE_URL` (défaut: `https://v3.football.api-sports.io`)
@@ -20,10 +33,6 @@ API-Football fournit les faits mesurables. L'analyse IA doit ensuite interpréte
    - Variables legacy de fallback (si la stratégie ne fournit pas la donnée): `API_FOOTBALL_LEAGUE_ID`, `API_FOOTBALL_SEASON`, `API_FOOTBALL_BOOKMAKER_ID`, `API_FOOTBALL_BOOKMAKER_NAME`
 2. Lancer:
 
-```bash
-PYTHONPATH=. python scripts/build_analysis_context.py --strategy-file config/strategies/default.json --date 2026-04-26
-```
-
 Priorité de résolution: **CLI > Strategy > env fallback**.
 
 Comportement multi-ligues:
@@ -32,12 +41,13 @@ Comportement multi-ligues:
 
 ## Sorties
 - `analysis_context_YYYYMMDD_HHMMSS.json`
-- `latest_analysis_context.json`
+- `latest_analysis_context.json` uniquement si `BETAUTO_ALLOW_LEGACY=true`
 
 Les appels API sont conservés dans le champ `api_calls` pour audit.
 
-## Injection future dans le master prompt
-Plus tard, le `latest_analysis_context.json` pourra être injecté en entrée du prompt maître pour alimenter la phase d'analyse IA sans changer la logique d'appel API.
+## Mode strict
+
+`latest_analysis_context.json` est interdit par défaut. Toute tentative de lecture ou écriture est bloquée sauf si `BETAUTO_ALLOW_LEGACY=true`.
 
 ## Extension future: presse / météo / rumeurs
 Le module `qualitative.py` contient déjà la structure cible. Il suffira d'ajouter des connecteurs de sources (sans casser le format du contexte) et d'alimenter `qualitative_context` dans `builder.py`.

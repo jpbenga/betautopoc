@@ -1,7 +1,7 @@
 # Analysis Engine v1
 
 ## Rôle du module
-La brique `analysis_engine` réalise une analyse LLM **match par match** à partir d'un seul input: `data/analysis_context/latest_analysis_context.json`.
+La brique `analysis_engine` réalise une analyse LLM **match par match** à partir d'un contexte d'analyse. En mode strict, elle est appelée par l'orchestrateur avec le fichier `analysis_context.json` du `run_dir` courant.
 
 Pipeline cible:
 
@@ -32,6 +32,21 @@ Pipeline cible:
   - Exporte les résultats dans `data/analysis_results/`.
 
 ## Exécution
+
+En mode strict par défaut, lancer l'orchestrateur complet:
+
+```bash
+PYTHONPATH=. python scripts/run_orchestrated_pipeline.py --date 2026-04-26
+```
+
+Le script historique est réservé au mode legacy explicite:
+
+```bash
+BETAUTO_ALLOW_LEGACY=true PYTHONPATH=. python scripts/run_match_analysis_batch.py \
+  --context-file data/analysis_context/latest_analysis_context.json \
+  --output-dir data/analysis_results
+```
+
 Pré-requis:
 - `OPENAI_API_KEY`
 - `OPENAI_ANALYSIS_MODEL`
@@ -40,17 +55,9 @@ Optionnel pour estimation de coût:
 - `OPENAI_INPUT_COST_PER_1M`
 - `OPENAI_OUTPUT_COST_PER_1M`
 
-Commande:
-
-```bash
-python scripts/run_match_analysis_batch.py \
-  --context-file data/analysis_context/latest_analysis_context.json \
-  --output-dir data/analysis_results
-```
-
 ## Sorties
 - `data/analysis_results/match_analysis_YYYYMMDD_HHMMSS.json`
-- `data/analysis_results/latest_match_analysis.json`
+- `data/analysis_results/latest_match_analysis.json` uniquement si `BETAUTO_ALLOW_LEGACY=true`
 
 Structure de sortie (niveau racine):
 - `generated_at`: timestamp UTC.

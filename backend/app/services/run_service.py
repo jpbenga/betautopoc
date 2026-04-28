@@ -224,11 +224,14 @@ async def run_orchestrated_pipeline_job(
             with_browser=with_browser,
             log_callback=on_log,
         )
+        run_status = str(run_summary.get("status") or "completed")
 
         selection_file = run_summary.get("files", {}).get("selection")
         selection_payload: dict[str, Any] | None = None
         if selection_file and Path(selection_file).exists():
             selection_payload = json.loads(Path(selection_file).read_text(encoding="utf-8"))
+        elif isinstance(run_summary.get("selection"), dict):
+            selection_payload = run_summary.get("selection")
 
         JOBS[job_id]["orchestrator_run_id"] = run_summary.get("run_id")
         JOBS[job_id]["orchestrator_run_dir"] = run_summary.get("run_dir")
@@ -237,8 +240,14 @@ async def run_orchestrated_pipeline_job(
         JOBS[job_id]["selection"] = selection_payload
         JOBS[job_id]["picks"] = (selection_payload or {}).get("picks")
 
-        set_step(job_id, "analysis", "done", "Orchestrateur V1 terminé.")
-        JOBS[job_id]["status"] = "completed"
+        if run_status == "completed_no_data":
+            message = str(run_summary.get("message") or f"No matches found for target date {date}")
+            set_step(job_id, "analysis", "skipped", message)
+            JOBS[job_id]["status"] = "completed_no_data"
+            log(job_id, message)
+        else:
+            set_step(job_id, "analysis", "done", "Orchestrateur V1 terminé.")
+            JOBS[job_id]["status"] = run_status
         JOBS[job_id]["completed_at"] = now_iso()
     except Exception as exc:
         set_error(job_id, str(exc))
