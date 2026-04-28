@@ -1,9 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
+import { AnalysisApiService } from '../../core/api/analysis-api.service';
 import { TicketApiService } from '../../core/api/ticket-api.service';
 import { statusToTone } from '../../core/api/api.mappers';
-import { TicketAuditLog, TicketDetail, TicketSummary } from '../../core/api/api.types';
+import { AnalysisRun, TicketAuditLog, TicketDetail, TicketSummary } from '../../core/api/api.types';
 import { DataTableColumn, DataTableComponent, DataTableRow } from '../../shared/ui/data-table/data-table.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../shared/ui/error-state/error-state.component';
@@ -56,10 +57,10 @@ interface TicketKpi {
         <button
           type="button"
           class="ba-tool border-accent/60 bg-accent text-background hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60"
-          [disabled]="isGenerating"
+          [disabled]="isGeneratingTicket"
           (click)="generateTicket()"
         >
-          {{ isGenerating ? 'Generating...' : 'Generate Ticket' }}
+          {{ isGeneratingTicket ? 'Generating...' : 'Generate Ticket' }}
         </button>
         <button type="button" class="ba-tool" (click)="refreshTickets()">
           Refresh
@@ -67,16 +68,47 @@ interface TicketKpi {
       </div>
     </ba-page-header>
 
-    @if (generateMessage) {
-      <div class="mt-4 rounded-card border border-accent/30 bg-accent/10 p-4 text-sm text-accent">
-        {{ generateMessage }}
-      </div>
-    }
-
-    @if (generateError) {
-      <div class="mt-4">
-        <ba-error-state label="Generation failed" [message]="generateError"></ba-error-state>
-      </div>
+    @if (isGeneratingTicket || generatedRunId || generationStatus || generationError) {
+      <section class="mt-4">
+        <ba-section-card>
+          <div class="ba-card-header flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p class="ba-label">Ticket generation</p>
+              <h3 class="mt-1 text-sm font-semibold text-text">{{ generationMessage }}</h3>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              @if (generatedRunId) {
+                <ba-status-badge [label]="'job ' + generatedRunId" tone="default"></ba-status-badge>
+              }
+              @if (generationStatus) {
+                <ba-status-badge [label]="generationStatus" [tone]="toneFor(generationStatus)"></ba-status-badge>
+              }
+              @if (isGenerationPolling) {
+                <ba-status-badge label="polling" tone="live"></ba-status-badge>
+              }
+            </div>
+          </div>
+          <div class="grid gap-3 p-4 md:grid-cols-3">
+            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+              <p class="ba-label">Target date</p>
+              <p class="mt-2 text-sm text-text">{{ generationTargetDate || targetDate }}</p>
+            </div>
+            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+              <p class="ba-label">Orchestrator run</p>
+              <p class="mt-2 text-sm text-text">{{ generatedOrchestratorRunId || 'Waiting for run artifact' }}</p>
+            </div>
+            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+              <p class="ba-label">Last updated</p>
+              <p class="mt-2 text-sm text-text">{{ ticketGenerationLastUpdatedAt || '—' }}</p>
+            </div>
+          </div>
+          @if (generationError) {
+            <div class="px-4 pb-4">
+              <ba-error-state label="Generation issue" [message]="generationError"></ba-error-state>
+            </div>
+          }
+        </ba-section-card>
+      </section>
     }
 
     @if (isLoading) {
@@ -219,8 +251,13 @@ interface TicketKpi {
     }
   `
 })
-export class TicketsPage implements OnInit {
+export class TicketsPage implements OnInit, OnDestroy {
   private readonly ticketApi = inject(TicketApiService);
+  private readonly analysisApi = inject(AnalysisApiService);
+  private generationPollId: ReturnType<typeof setInterval> | null = null;
+  private generationPollInFlight = false;
+  private generationStartedAt = 0;
+  private readonly generationTimeoutMs = 10 * 60 * 1000;
 
   protected tickets: TicketSummary[] = [];
   protected selectedTicketId = '';
@@ -230,10 +267,16 @@ export class TicketsPage implements OnInit {
   protected isLoading = true;
   protected isDetailLoading = false;
   protected isAuditLoading = false;
-  protected isGenerating = false;
+  protected isGeneratingTicket = false;
+  protected isGenerationPolling = false;
+  protected generatedRunId = '';
+  protected generatedOrchestratorRunId = '';
+  protected generationStatus = '';
+  protected generationTargetDate = '';
+  protected generationError = '';
+  protected generationMessage = '';
+  protected ticketGenerationLastUpdatedAt = '';
   protected error = '';
-  protected generateError = '';
-  protected generateMessage = '';
 
   protected readonly ticketColumns: DataTableColumn[] = [
     { key: 'id', label: 'Ticket ID', data: true },
@@ -257,8 +300,16 @@ export class TicketsPage implements OnInit {
     this.refreshTickets();
   }
 
+  ngOnDestroy(): void {
+    this.stopGenerationPolling();
+  }
+
   protected refreshTickets(): void {
-    this.isLoading = true;
+    this.loadTickets(true);
+  }
+
+  private loadTickets(showLoading: boolean): void {
+    this.isLoading = showLoading;
     this.error = '';
     this.ticketApi.getTickets().subscribe({
       next: (tickets) => {
@@ -300,23 +351,143 @@ export class TicketsPage implements OnInit {
   }
 
   protected generateTicket(): void {
-    if (this.isGenerating) {
+    if (this.isGeneratingTicket) {
       return;
     }
-    this.isGenerating = true;
-    this.generateError = '';
-    this.generateMessage = '';
+    this.stopGenerationPolling();
+    this.isGeneratingTicket = true;
+    this.isGenerationPolling = false;
+    this.generatedRunId = '';
+    this.generatedOrchestratorRunId = '';
+    this.generationStatus = 'starting';
+    this.generationTargetDate = this.targetDate;
+    this.generationError = '';
+    this.generationMessage = 'Generating ticket...';
+    this.ticketGenerationLastUpdatedAt = this.nowLabel();
     this.ticketApi.generateTicket({ date: this.targetDate }).subscribe({
       next: (response) => {
-        this.isGenerating = false;
-        this.generateMessage = `${response.message} Job ${response.job_id} started for ${response.target_date}.`;
-        this.refreshTickets();
+        this.generatedRunId = response.job_id;
+        this.generationTargetDate = response.target_date;
+        this.generationStatus = response.status;
+        this.generationMessage = 'Generating ticket...';
+        this.generationStartedAt = Date.now();
+        this.ticketGenerationLastUpdatedAt = this.nowLabel();
+        this.startGenerationPolling(response.job_id);
+        this.pollGenerationOnce();
       },
       error: (error: unknown) => {
-        this.isGenerating = false;
-        this.generateError = this.errorMessage(error);
+        this.isGeneratingTicket = false;
+        this.generationStatus = 'error';
+        this.generationError = this.errorMessage(error);
+        this.generationMessage = 'Ticket generation failed to start';
+        this.ticketGenerationLastUpdatedAt = this.nowLabel();
       }
     });
+  }
+
+  private startGenerationPolling(runId: string): void {
+    this.stopGenerationPolling();
+    this.generatedRunId = runId;
+    this.isGenerationPolling = true;
+    this.generationPollId = setInterval(() => this.pollGenerationOnce(), 3000);
+  }
+
+  private pollGenerationOnce(): void {
+    if (!this.generatedRunId) {
+      return;
+    }
+    if (this.generationPollInFlight) {
+      return;
+    }
+
+    if (Date.now() - this.generationStartedAt > this.generationTimeoutMs) {
+      this.isGeneratingTicket = false;
+      this.generationStatus = 'timeout';
+      this.generationError = 'Ticket generation timed out after 10 minutes. The run may still finish server-side; refresh tickets later.';
+      this.generationMessage = 'Ticket generation timed out';
+      this.ticketGenerationLastUpdatedAt = this.nowLabel();
+      this.stopGenerationPolling();
+      return;
+    }
+
+    this.generationPollInFlight = true;
+    forkJoin({
+      run: this.analysisApi.getRun(this.generatedRunId),
+      tickets: this.ticketApi.getTickets()
+    }).subscribe({
+      next: ({ run, tickets }) => {
+        this.generationPollInFlight = false;
+        this.tickets = tickets;
+        this.generationStatus = run.status;
+        this.generatedOrchestratorRunId = run.orchestrator_run_id || this.extractRunId(run) || this.generatedOrchestratorRunId;
+        this.ticketGenerationLastUpdatedAt = this.nowLabel();
+        const generatedTicket = this.findGeneratedTicket(tickets, run);
+        if (generatedTicket && generatedTicket.picks_count > 0) {
+          this.generationMessage = 'Ticket generated successfully';
+          this.isGeneratingTicket = false;
+          this.stopGenerationPolling();
+          this.selectTicket(generatedTicket.ticket_id);
+          return;
+        }
+
+        if (this.isTerminalStatus(run.status)) {
+          this.isGeneratingTicket = false;
+          this.generationMessage = 'Run completed but no ticket was generated';
+          if (generatedTicket) {
+            this.selectTicket(generatedTicket.ticket_id);
+          }
+          if (this.isFailureStatus(run.status)) {
+            this.generationError = run.error || 'Run finished with an error before a ticket artifact appeared.';
+          }
+          this.stopGenerationPolling();
+          return;
+        }
+
+        this.generationMessage = 'Generating ticket...';
+      },
+      error: (error: unknown) => {
+        this.generationPollInFlight = false;
+        this.isGeneratingTicket = false;
+        this.generationStatus = 'error';
+        this.generationError = this.errorMessage(error);
+        this.generationMessage = 'Ticket generation polling failed';
+        this.ticketGenerationLastUpdatedAt = this.nowLabel();
+        this.stopGenerationPolling();
+      }
+    });
+  }
+
+  private stopGenerationPolling(): void {
+    if (this.generationPollId) {
+      clearInterval(this.generationPollId);
+      this.generationPollId = null;
+    }
+    this.generationPollInFlight = false;
+    this.isGenerationPolling = false;
+  }
+
+  private findGeneratedTicket(tickets: TicketSummary[], run: AnalysisRun): TicketSummary | undefined {
+    const orchestratorRunId = run.orchestrator_run_id || this.extractRunId(run);
+    if (!orchestratorRunId) {
+      return undefined;
+    }
+    return tickets.find((ticket) => ticket.run_id === orchestratorRunId);
+  }
+
+  private extractRunId(run: AnalysisRun): string {
+    const summary = run.run_summary;
+    if (summary && typeof summary === 'object' && 'run_id' in summary) {
+      return String((summary as { run_id?: unknown }).run_id || '');
+    }
+    return '';
+  }
+
+  private isTerminalStatus(status: string): boolean {
+    return ['completed', 'done', 'failed', 'error', 'skipped', 'completed_no_data'].includes(String(status).toLowerCase());
+  }
+
+  private isFailureStatus(status: string): boolean {
+    return ['failed', 'error'].includes(String(status).toLowerCase());
   }
 
   protected get kpis(): TicketKpi[] {
@@ -416,6 +587,14 @@ export class TicketsPage implements OnInit {
 
   private today(): string {
     return new Date().toISOString().slice(0, 10);
+  }
+
+  private nowLabel(): string {
+    return new Intl.DateTimeFormat('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).format(new Date());
   }
 
   private average(values: number[]): number {
