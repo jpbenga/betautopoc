@@ -22,6 +22,10 @@ Le Lot 0 stabilise le contrat minimal entre le backend FastAPI et le frontend An
 | GET | `/api/match-data/odds` | partiel | Odds disponibles pour une fixture |
 | GET | `/api/match-data/providers/api-football/quota` | partiel | Statut quota provider, quota réel non exposé |
 | POST | `/api/match-data/context/rebuild` | planifié | Rebuild context, retourne 501 pour l'instant |
+| GET | `/api/tickets` | partiel | Liste des tickets depuis les artefacts orchestrés |
+| GET | `/api/tickets/{ticket_id}` | partiel | Détail ticket depuis `selection.json` |
+| GET | `/api/tickets/{ticket_id}/audit-log` | partiel | Notes, erreurs et métadonnées de sélection |
+| POST | `/api/tickets/generate` | partiel | Démarre un run orchestré pour générer un ticket |
 | GET | `/api/job/{job_id}` | disponible | Retourne l’état complet d’un job |
 | GET | `/api/job/{job_id}/file/{filename}` | disponible | Télécharge un fichier autorisé du job |
 | POST | `/api/cache/clear` | disponible | Vide le cache généré legacy |
@@ -166,7 +170,7 @@ Tous les champs sont optionnels. `date` garde le comportement existant: si absen
 |---|---|
 | `analysis` | `available` |
 | `match_data` | `partial` |
-| `ticketing` | `planned` |
+| `ticketing` | `partial` |
 | `costs` | `planned` |
 | `bankroll` | `planned` |
 | `agents` | `planned` |
@@ -234,6 +238,33 @@ Règles strictes:
 - `target_date` reste obligatoire pour les lectures de contexte et fixtures.
 - Les fichiers `latest_analysis_context.json`, `latest_match_analysis.json` et `latest_selection.json` restent interdits sauf legacy explicite.
 - Une date sans artefact retourne `no_data`; elle ne recycle jamais un contexte d'une autre date.
+
+## Ticketing Core
+
+La capability `ticketing` expose les propositions de tickets déjà produites par l'orchestrateur. Elle lit uniquement les artefacts de run:
+
+- `data/orchestrator_runs/<run_id>/run_summary.json`
+- `data/orchestrator_runs/<run_id>/selection.json`
+
+Endpoints:
+
+- `GET /api/tickets`
+  - liste les tickets disponibles, un ticket par run contenant un `selection.json` valide.
+- `GET /api/tickets/{ticket_id}`
+  - retourne le détail du ticket, les picks, les notes, les erreurs et la configuration de sélection.
+- `GET /api/tickets/{ticket_id}/audit-log`
+  - retourne les notes, erreurs et métadonnées sous forme de journal d'audit.
+- `POST /api/tickets/generate`
+  - démarre un run orchestré comme `POST /api/run`.
+  - retourne `202` avec `job_id` et `target_date`.
+  - le vrai `ticket_id` apparaît dans `GET /api/tickets` après complétion du run, car le `run_id` est créé par l'orchestrateur en arrière-plan.
+
+Règles strictes:
+
+- Aucun fichier `latest_*` n'est lu.
+- `selection.json` doit appartenir au `run_dir` courant.
+- `selection.input_file` doit aussi rester dans le même `run_dir`.
+- Aucune persistance additionnelle n'est ajoutée; la source de vérité reste l'artefact orchestré.
 
 ## Frontend adapter
 

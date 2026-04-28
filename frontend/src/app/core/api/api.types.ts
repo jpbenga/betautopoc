@@ -216,3 +216,77 @@ export interface RebuildContextResponse {
   message: string;
   target_date?: string | null;
 }
+
+export interface TicketPick {
+  pick_id?: string | null;
+  fixture_id?: number | null;
+  event?: string | null;
+  competition?: string | null;
+  kickoff?: string | null;
+  market?: string | null;
+  market_canonical_id?: string | null;
+  pick?: string | null;
+  selection_canonical_id?: string | null;
+  confidence_score?: number | null;
+  expected_odds_min?: number | null;
+  expected_odds_max?: number | null;
+  risk_level?: string | null;
+  reason?: string | null;
+  evidence_summary?: Record<string, unknown>;
+}
+
+export interface TicketSummary {
+  ticket_id: string;
+  run_id: string;
+  target_date?: string | null;
+  status: string;
+  generated_at?: string | null;
+  estimated_combo_odds?: number | null;
+  global_confidence_score?: number | null;
+  combo_risk_level?: string | null;
+  combo_in_target_range?: boolean | null;
+  picks_count: number;
+  notes_count: number;
+  errors_count: number;
+  source_run_dir: string;
+  selection_file: string;
+  data_source_mode: string;
+  date_consistency_status?: string | null;
+}
+
+export interface TicketDetail extends TicketSummary {
+  picks: TicketPick[];
+  notes: string[];
+  errors: string[];
+  selection_config: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+}
+
+export interface TicketAuditEntry {
+  level: 'info' | 'success' | 'warning' | 'error' | string;
+  message: string;
+  code?: string | null;
+}
+
+export interface TicketAuditLog {
+  ticket_id: string;
+  run_id: string;
+  entries: TicketAuditEntry[];
+  metadata: Record<string, unknown>;
+}
+
+export interface TicketGenerateRequest {
+  date?: string | null;
+  strategy_file?: string | null;
+  max_matches?: number | null;
+  sleep_between_matches?: number | null;
+  with_browser?: boolean | null;
+}
+
+export interface TicketGenerateResponse {
+  job_id: string;
+  ticket_id?: string | null;
+  status: string;
+  target_date: string;
+  message: string;
+}
