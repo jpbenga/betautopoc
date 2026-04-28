@@ -9,6 +9,7 @@ from backend.app.api.routes.analysis import router as analysis_router
 from backend.app.api.routes.capabilities import router as capabilities_router
 from backend.app.api.routes.health import router as health_router
 from backend.app.api.routes.jobs import router as jobs_router
+from backend.app.api.routes.match_data import router as match_data_router
 from backend.app.api.routes.runs import router as runs_router
 from backend.app.core.config import APP_TITLE, CORS_ORIGINS
 from backend.app.core.paths import STATIC_DIR
@@ -32,5 +33,6 @@ async def index():
 app.include_router(health_router)
 app.include_router(capabilities_router)
 app.include_router(analysis_router)
+app.include_router(match_data_router)
 app.include_router(runs_router)
 app.include_router(jobs_router)

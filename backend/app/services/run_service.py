@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-from browser_use import Agent, ChatOpenAI
 from fastapi import HTTPException
 from openai import OpenAI
 
@@ -119,6 +118,8 @@ def build_unibet_task(picks: dict[str, Any]) -> str:
 
 
 async def verify_unibet_with_browser_use(job_id: str, picks: dict[str, Any]) -> dict[str, Any]:
+    from browser_use import Agent, ChatOpenAI
+
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_BROWSER_MODEL")
     if not api_key:

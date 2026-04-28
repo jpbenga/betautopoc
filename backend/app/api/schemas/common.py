@@ -20,7 +20,7 @@ class ApiError(BaseModel):
 
 class CapabilityStatus(BaseModel):
     name: str
-    status: Literal["available", "planned"]
+    status: Literal["available", "partial", "planned"]
     endpoints: list[str] = Field(default_factory=list)
 
 

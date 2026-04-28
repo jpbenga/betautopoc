@@ -13,6 +13,15 @@ Le Lot 0 stabilise le contrat minimal entre le backend FastAPI et le frontend An
 | GET | `/health` | disponible | Healthcheck API |
 | GET | `/api/capabilities` | disponible | Index des capabilities et endpoints réels |
 | POST | `/api/run` | disponible | Démarre un job orchestrateur/legacy |
+| GET | `/api/analysis/runs` | disponible | Liste simplifiée des runs/jobs |
+| GET | `/api/analysis/runs/{run_id}` | disponible | Détail d'un run via façade analysis |
+| GET | `/api/analysis/runs/{run_id}/timeline` | disponible | Timeline frontend-friendly d'un run |
+| GET | `/api/analysis/logs` | disponible | Logs de run, filtrables par `run_id` |
+| GET | `/api/match-data/context/latest` | partiel | Contexte match strict pour une date |
+| GET | `/api/match-data/fixtures` | partiel | Fixtures issues d'un contexte strict |
+| GET | `/api/match-data/odds` | partiel | Odds disponibles pour une fixture |
+| GET | `/api/match-data/providers/api-football/quota` | partiel | Statut quota provider, quota réel non exposé |
+| POST | `/api/match-data/context/rebuild` | planifié | Rebuild context, retourne 501 pour l'instant |
 | GET | `/api/job/{job_id}` | disponible | Retourne l’état complet d’un job |
 | GET | `/api/job/{job_id}/file/{filename}` | disponible | Télécharge un fichier autorisé du job |
 | POST | `/api/cache/clear` | disponible | Vide le cache généré legacy |
@@ -153,10 +162,10 @@ Tous les champs sont optionnels. `date` garde le comportement existant: si absen
 
 `GET /api/capabilities` retourne:
 
-| Capability | Statut Lot 0 |
+| Capability | Statut actuel |
 |---|---|
 | `analysis` | `available` |
-| `match_data` | `planned` |
+| `match_data` | `partial` |
 | `ticketing` | `planned` |
 | `costs` | `planned` |
 | `bankroll` | `planned` |
@@ -188,6 +197,43 @@ BETAUTO_CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 ```
 
 Le middleware CORS accepte les credentials, toutes les méthodes et tous les headers afin que les preflights `OPTIONS` Angular passent en développement local.
+
+## Lot 2 - Match Data Core
+
+La capability `match_data` expose les données match déjà présentes dans les artefacts stricts de l'orchestrateur. Elle ne déclenche aucun appel externe et ne lit jamais les fichiers historiques `latest_*`.
+
+Endpoints:
+
+- `GET /api/match-data/context/latest?date=YYYY-MM-DD`
+  - cherche un `analysis_context.json` sous `data/orchestrator_runs/<run_id>/` dont `target_date` correspond exactement à la date demandée.
+  - retourne `status: no_data` si aucun artefact strict ne correspond.
+- `GET /api/match-data/fixtures?date=YYYY-MM-DD&league_id=optional`
+  - extrait les fixtures depuis le contexte strict de la date.
+  - filtre par `league_id` si fourni.
+- `GET /api/match-data/odds?fixture_id=ID&date=optional`
+  - extrait les odds disponibles depuis un contexte strict.
+  - si `date` est fournie, la recherche est limitée à cette date.
+  - si `date` est absente, la recherche utilise uniquement les artefacts stricts récents, sans fallback `latest_*`.
+- `GET /api/match-data/providers/api-football/quota`
+  - retourne actuellement `status: unavailable` car le quota réel provider n'est pas encore exposé dans les artefacts stricts.
+- `POST /api/match-data/context/rebuild`
+  - retourne actuellement `501` avec `status: planned`.
+  - le rebuild sera branché plus tard sans contourner le mode strict.
+
+DTOs principaux:
+
+- `MatchContextSummary`: résumé d'un contexte de date, run source, fichier source, fixtures.
+- `FixtureSummary`: fixture normalisée, équipes, ligue, kickoff, nombre de marchés odds.
+- `OddsSummary`: odds disponibles par fixture, bookmaker, marchés et valeurs.
+- `ProviderQuotaSummary`: statut quota provider.
+- `MatchDataNoDataResponse`: réponse explicite quand aucune donnée stricte n'existe pour la date.
+- `RebuildContextRequest` / `RebuildContextResponse`: contrat de rebuild planifié.
+
+Règles strictes:
+
+- `target_date` reste obligatoire pour les lectures de contexte et fixtures.
+- Les fichiers `latest_analysis_context.json`, `latest_match_analysis.json` et `latest_selection.json` restent interdits sauf legacy explicite.
+- Une date sans artefact retourne `no_data`; elle ne recycle jamais un contexte d'une autre date.
 
 ## Frontend adapter
 

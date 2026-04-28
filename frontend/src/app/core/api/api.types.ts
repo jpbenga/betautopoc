@@ -80,7 +80,7 @@ export interface JobResponse {
   selection?: unknown;
 }
 
-export type CapabilityImplementationStatus = 'available' | 'planned';
+export type CapabilityImplementationStatus = 'available' | 'partial' | 'planned';
 
 export interface CapabilityStatus {
   name: 'analysis' | 'match_data' | 'ticketing' | 'costs' | 'bankroll' | 'agents' | 'performance' | 'settings' | string;
@@ -129,4 +129,90 @@ export interface AnalysisRun extends AnalysisRunListItem {
   logs: AnalysisLogEntry[];
   run_summary?: Record<string, unknown> | null;
   selection?: unknown;
+}
+
+export interface MatchDataStatus {
+  status: string;
+  message?: string | null;
+  target_date?: string | null;
+}
+
+export interface TeamSummary {
+  id?: number | null;
+  name: string;
+}
+
+export interface MarketOddsSummary {
+  market_id?: number | null;
+  name: string;
+  values: Array<Record<string, string | number | null>>;
+}
+
+export interface OddsSummary {
+  fixture_id: number;
+  target_date: string;
+  source_run_id: string;
+  source_file: string;
+  bookmaker_id?: number | null;
+  bookmaker_name?: string | null;
+  markets: MarketOddsSummary[];
+  status: string;
+}
+
+export interface FixtureSummary {
+  target_date: string;
+  source_run_id: string;
+  source_file: string;
+  data_source_mode: string;
+  date_consistency_status: string;
+  league_id?: number | null;
+  league_name?: string | null;
+  fixture_id: number;
+  home_team: TeamSummary;
+  away_team: TeamSummary;
+  kickoff?: string | null;
+  status: string;
+  odds_markets_count: number;
+}
+
+export interface MatchContextSummary {
+  status: string;
+  target_date: string;
+  source_run_id: string;
+  source_file: string;
+  data_source_mode: string;
+  date_consistency_status: string;
+  league_id?: number | null;
+  league_name?: string | null;
+  matches_count: number;
+  fixtures: FixtureSummary[];
+}
+
+export interface ProviderQuotaSummary {
+  provider: string;
+  status: string;
+  message: string;
+  used?: number | null;
+  limit?: number | null;
+  remaining?: number | null;
+  source?: string | null;
+}
+
+export interface MatchDataNoDataResponse {
+  status: 'no_data';
+  message: string;
+  target_date?: string | null;
+  data_source_mode: string;
+  date_consistency_status: 'no_data' | string;
+}
+
+export interface RebuildContextRequest {
+  date: string;
+  strategy_file?: string | null;
+}
+
+export interface RebuildContextResponse {
+  status: string;
+  message: string;
+  target_date?: string | null;
 }

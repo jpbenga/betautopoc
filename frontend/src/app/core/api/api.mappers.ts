@@ -1,4 +1,4 @@
-import { JobLogEntry, StepStatus } from './api.types';
+import { FixtureSummary, JobLogEntry, MatchDataNoDataResponse, StepStatus } from './api.types';
 
 export type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
 
@@ -61,4 +61,39 @@ export function logLevelToTone(entry: JobLogEntry): UiTone {
   }
 
   return statusToTone(entry.message);
+}
+
+export function fixtureLabel(fixture: Pick<FixtureSummary, 'home_team' | 'away_team'>): string {
+  return `${fixture.home_team.name} vs ${fixture.away_team.name}`;
+}
+
+export function formatKickoff(value: string | null | undefined): string {
+  return formatApiDate(value);
+}
+
+export function oddsStatusToTone(status: string | null | undefined): UiTone {
+  const normalized = String(status || '').toLowerCase();
+
+  if (normalized === 'available') {
+    return 'success';
+  }
+
+  if (normalized === 'no_odds' || normalized === 'unavailable') {
+    return 'warning';
+  }
+
+  if (normalized === 'failed' || normalized === 'error') {
+    return 'danger';
+  }
+
+  return 'default';
+}
+
+export function isMatchDataNoDataResponse(value: unknown): value is MatchDataNoDataResponse {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'status' in value &&
+      (value as { status?: unknown }).status === 'no_data'
+  );
 }
