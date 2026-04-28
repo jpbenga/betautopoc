@@ -658,3 +658,127 @@ export interface SettingsLogsResponse {
   status: string;
   logs: SettingsLogEntry[];
 }
+
+export interface PerformanceNoDataResponse {
+  status: 'no_data';
+  message: string;
+  data_source_mode: string;
+}
+
+export interface DistributionItem {
+  key: string;
+  count: number;
+  percent: number;
+}
+
+export interface PerformanceSummaryResponse {
+  status: string;
+  total_runs: number;
+  total_tickets: number;
+  total_candidates: number;
+  filtered_candidates_count: number;
+  average_confidence_score?: number | null;
+  average_confidence_score_filtered?: number | null;
+  average_estimated_odds?: number | null;
+  data_quality_distribution: DistributionItem[];
+  confidence_tier_distribution: DistributionItem[];
+  risk_level_distribution: DistributionItem[];
+  metric_basis: string;
+}
+
+export interface PerformanceAccuracyResponse {
+  status: string;
+  accuracy_not_available_reason: string;
+  proxy_acceptance_rate?: number | null;
+  total_candidates: number;
+  accepted_candidates: number;
+  metric_basis: string;
+}
+
+export interface PerformanceRoiResponse {
+  status: string;
+  message: string;
+  estimated_exposure?: number | null;
+  estimated_potential_return?: number | null;
+  simulated_pnl?: number | null;
+  metric_basis: string;
+}
+
+export interface CalibrationBucket {
+  bucket: string;
+  candidates_count: number;
+  filtered_count: number;
+  rejected_count: number;
+  filtered_rate: number;
+  metric_basis: string;
+}
+
+export interface PerformanceCalibrationResponse {
+  status: string;
+  message: string;
+  buckets: CalibrationBucket[];
+}
+
+export interface StrategyPerformanceItem {
+  strategy_key: string;
+  runs_count: number;
+  tickets_count: number;
+  avg_confidence?: number | null;
+  avg_filtered_candidates?: number | null;
+  avg_estimated_odds?: number | null;
+  status: string;
+}
+
+export interface StrategiesCompareResponse {
+  status: string;
+  strategies: StrategyPerformanceItem[];
+}
+
+export interface MarketPerformanceItem {
+  market: string;
+  candidates_count: number;
+  filtered_count: number;
+  rejected_count: number;
+  avg_confidence?: number | null;
+  avg_estimated_odds?: number | null;
+  filtered_rate: number;
+  status: string;
+}
+
+export interface MarketsPerformanceResponse {
+  status: string;
+  markets: MarketPerformanceItem[];
+}
+
+export interface DriftSignal {
+  dimension: string;
+  status: string;
+  variation_score: number;
+  message: string;
+}
+
+export interface PerformanceDriftResponse {
+  status: string;
+  message: string;
+  signals: DriftSignal[];
+}
+
+export interface PerformanceDataQualityResponse {
+  status: string;
+  data_quality_distribution: DistributionItem[];
+  candidates_with_odds_percent: number;
+  missing_odds_rejected_percent: number;
+  completed_no_data_runs_percent: number;
+  metric_basis: string;
+}
+
+export interface PerformanceLogEntry {
+  level: 'info' | 'success' | 'warning' | 'error' | string;
+  message: string;
+  source: string;
+}
+
+export interface PerformanceLogsResponse {
+  status: string;
+  logs: PerformanceLogEntry[];
+}

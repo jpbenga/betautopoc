@@ -48,6 +48,15 @@ Le Lot 0 stabilise le contrat minimal entre le backend FastAPI et le frontend An
 | POST | `/api/settings/validate` | partiel | Validation sans application d'une payload settings |
 | PUT | `/api/settings` | planifié | Ecriture désactivée, retourne 501 |
 | GET | `/api/settings/logs` | partiel | Journal settings placeholder |
+| GET | `/api/performance/summary` | partiel | Synthèse performance descriptive depuis artefacts |
+| GET | `/api/performance/accuracy` | partiel | Accuracy proxy, outcomes réels indisponibles |
+| GET | `/api/performance/roi` | partiel | ROI proxy, settlement réel indisponible |
+| GET | `/api/performance/calibration` | partiel | Calibration proxy via filtrage candidats |
+| GET | `/api/performance/strategies/compare` | partiel | Comparaison descriptive par stratégie |
+| GET | `/api/performance/markets` | partiel | Métriques descriptives par marché |
+| GET | `/api/performance/drift` | partiel | Drift proxy sur distributions |
+| GET | `/api/performance/data-quality` | partiel | Qualité des artefacts/candidats |
+| GET | `/api/performance/logs` | partiel | Logs analytiques synthétiques |
 | GET | `/api/job/{job_id}` | disponible | Retourne l’état complet d’un job |
 | GET | `/api/job/{job_id}/file/{filename}` | disponible | Télécharge un fichier autorisé du job |
 | POST | `/api/cache/clear` | disponible | Vide le cache généré legacy |
@@ -196,7 +205,7 @@ Tous les champs sont optionnels. `date` garde le comportement existant: si absen
 | `costs` | `partial` |
 | `bankroll` | `partial` |
 | `agents` | `partial` |
-| `performance` | `planned` |
+| `performance` | `partial` |
 | `settings` | `partial` |
 
 ## Règles de compatibilité
@@ -431,6 +440,46 @@ Règles strictes:
 - Aucun fallback `latest_*`.
 - Les secrets ne sont pas exposés; seules les présences/absences de clés d'intégration sont indiquées.
 - Le frontend doit afficher clairement que `Save Changes` est désactivé.
+
+## Performance Core
+
+La capability `performance` expose des métriques analytiques descriptives depuis les artefacts stricts:
+
+- `data/orchestrator_runs/<run_id>/run_summary.json`
+- `match_analysis.json`
+- `aggregation_candidates.json`
+- `filtered_candidates.json`
+- `selection.json`
+
+Endpoints:
+
+- `GET /api/performance/summary`
+  - total runs, tickets, candidats, candidats filtrés, confiance moyenne, distributions qualité/tier/risque.
+- `GET /api/performance/accuracy`
+  - retourne `status: partial`; aucune accuracy outcome-based n'est calculée sans résultats/settlement.
+  - expose `proxy_acceptance_rate = accepted / candidates`.
+- `GET /api/performance/roi`
+  - retourne `status: partial`; ROI réel indisponible sans settlement.
+  - expose uniquement exposition et potentiel estimés.
+- `GET /api/performance/calibration`
+  - calibration proxy par `confidence_tier`, basée sur filtered/rejected.
+- `GET /api/performance/strategies/compare`
+  - comparaison descriptive par `strategy_file`/`strategy_id`.
+- `GET /api/performance/markets`
+  - métriques descriptives par marché: counts, confidence, odds, filtered rate.
+- `GET /api/performance/drift`
+  - drift proxy sur distributions `confidence_tier`, `risk_level`, `data_quality`.
+- `GET /api/performance/data-quality`
+  - distribution qualité, % candidats avec odds, % rejets `missing_odds`, % runs `completed_no_data`.
+- `GET /api/performance/logs`
+  - logs synthétiques et caveats.
+
+Règles strictes:
+
+- Aucun fichier `latest_*`.
+- Toutes les métriques sont rattachées à des artefacts de run stricts.
+- Les métriques non fondées sur des outcomes réels sont marquées `partial`, `proxy` ou `estimated`.
+- Aucune performance réelle de pari n'est inférée tant que la capability settlement/results n'existe pas.
 
 ## Frontend adapter
 
