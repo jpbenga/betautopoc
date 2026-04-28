@@ -14,5 +14,6 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/api-costs', label: 'API Costs' },
   { path: '/market-dictionary', label: 'Markets' },
   { path: '/platform-agents', label: 'Agents' },
-  { path: '/logs-audit', label: 'Logs' }
+  { path: '/logs-audit', label: 'Logs' },
+  { path: '/design-system', label: 'Design System' }
 ];

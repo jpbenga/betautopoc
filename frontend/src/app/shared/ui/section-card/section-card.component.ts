@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'ba-section-card',
   standalone: true,
   template: `
-    <section class="rounded-lg border border-border bg-surface p-4">
+    <section class="ba-card overflow-hidden shadow-glow">
       <ng-content></ng-content>
     </section>
   `

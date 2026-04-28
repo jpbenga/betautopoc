@@ -50,6 +50,10 @@ export const appRoutes: Routes = [
       {
         path: 'logs-audit',
         loadComponent: () => import('./features/logs-audit/logs-audit.page').then((m) => m.LogsAuditPage)
+      },
+      {
+        path: 'design-system',
+        loadComponent: () => import('./features/design-system/design-system.page').then((m) => m.DesignSystemPage)
       }
     ]
   },
