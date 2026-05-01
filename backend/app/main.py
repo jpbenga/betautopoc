@@ -10,6 +10,7 @@ from backend.app.api.routes.analysis import router as analysis_router
 from backend.app.api.routes.bankroll import router as bankroll_router
 from backend.app.api.routes.capabilities import router as capabilities_router
 from backend.app.api.routes.costs import router as costs_router
+from backend.app.api.routes.coverage import router as coverage_router
 from backend.app.api.routes.health import router as health_router
 from backend.app.api.routes.jobs import router as jobs_router
 from backend.app.api.routes.match_data import router as match_data_router
@@ -43,6 +44,7 @@ app.include_router(analysis_router)
 app.include_router(bankroll_router)
 app.include_router(match_data_router)
 app.include_router(costs_router)
+app.include_router(coverage_router)
 app.include_router(performance_router)
 app.include_router(runs_router)
 app.include_router(settings_router)

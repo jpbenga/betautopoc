@@ -41,6 +41,8 @@ Un batch séquentiel peut rester bas en RPM mais exploser le TPM si les prompts 
 - `API_FOOTBALL_SLEEP_BETWEEN_REQUESTS_SECONDS` (défaut: 0.25)
 - `API_FOOTBALL_DAILY_QUOTA` (informatif)
 
+Les fréquences officielles par endpoint sont synthétisées dans `docs/api-football/endpoint-reference.md`. Les règles d'appel à respecter côté code sont dans `docs/api-football/usage-rules.md`.
+
 ## Bonnes pratiques
 
 - Tester d'abord avec `--max-matches 1`.

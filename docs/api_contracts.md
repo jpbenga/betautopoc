@@ -31,6 +31,7 @@ Le Lot 0 stabilise le contrat minimal entre le backend FastAPI et le frontend An
 | GET | `/api/costs/trend` | partiel | Série temporelle coût estimé |
 | GET | `/api/costs/breakdown` | partiel | Répartition estimée par service |
 | GET | `/api/costs/alerts` | partiel | Alertes simples sur seuils locaux |
+| GET | `/api/coverage/football/leagues` | partiel | Registre football read-only des compétitions suivies |
 | GET | `/api/bankroll/summary` | partiel | Résumé bankroll simulé depuis tickets |
 | GET | `/api/bankroll/trend` | partiel | Courbe bankroll simulée |
 | GET | `/api/bankroll/exposure` | partiel | Exposition par ticket |
@@ -203,6 +204,7 @@ Tous les champs sont optionnels. `date` garde le comportement existant: si absen
 | `match_data` | `partial` |
 | `ticketing` | `partial` |
 | `costs` | `partial` |
+| `coverage` | `partial` |
 | `bankroll` | `partial` |
 | `agents` | `partial` |
 | `performance` | `partial` |
@@ -367,6 +369,28 @@ Règles de simulation:
 - Gain potentiel: `estimated_combo_odds * stake`.
 - Aucun résultat réel n'est inféré: `simulated_pnl = 0`, `estimated_roi = 0`.
 - Aucun appel externe, aucune DB, aucun fichier `latest_*`.
+
+## Football Coverage Registry
+
+La capability `coverage` expose le registre des compétitions football que BetAuto pourra suivre progressivement.
+
+Source:
+
+- `config/coverage/football_leagues.json`
+
+Endpoint:
+
+- `GET /api/coverage/football/leagues`
+  - retourne la liste normalisée des compétitions football configurées.
+  - n'appelle pas API-Football.
+  - ne déclenche aucun run.
+
+Règles:
+
+- API-Football reste la source de vérité pour les `league_id`.
+- Les IDs restent `null` tant qu'ils n'ont pas été vérifiés avec `scripts/build_football_league_registry.py`.
+- Le registre est read-only côté API dans cette phase.
+- Les compétitions `enabled: false` ne sont pas encore intégrées au pipeline automatique.
 
 ## Agents Observability Core
 

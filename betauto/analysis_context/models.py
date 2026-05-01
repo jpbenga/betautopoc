@@ -86,6 +86,8 @@ class MatchContext:
     fixture_id: int
     kickoff_time: str
     competition: str
+    league_id: int | None
+    season: int | None
     home_team: TeamContext
     away_team: TeamContext
     head_to_head: list[dict[str, Any]] = field(default_factory=list)
@@ -113,8 +115,10 @@ class AnalysisContext:
     target_date: str
     source: dict[str, bool]
     league: dict[str, Any]
+    leagues: list[dict[str, Any]] = field(default_factory=list)
     matches: list[MatchContext] = field(default_factory=list)
     api_calls: list[ApiCallLog] = field(default_factory=list)
+    pipeline_trace: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -122,6 +126,8 @@ class AnalysisContext:
             "target_date": self.target_date,
             "source": self.source,
             "league": self.league,
+            "leagues": self.leagues,
             "matches": [match.to_dict() for match in self.matches],
             "api_calls": [call.to_dict() for call in self.api_calls],
+            "pipeline_trace": self.pipeline_trace,
         }

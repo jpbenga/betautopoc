@@ -3,6 +3,8 @@
 ## Rôle de la brique
 La brique `analysis_context` prépare un contexte structuré et compact pour l'agent analyste IA. Elle centralise les données quantitatives d'API-Football, les normalise, et exporte un JSON exploitable par un LLM.
 
+Avant toute modification d'appel API-Football, consulter la documentation locale officielle mise en forme dans `docs/api-football/`, en particulier `docs/api-football/usage-rules.md` et `docs/api-football/endpoint-reference.md`.
+
 ## Quantitatif vs qualitatif
 - **Quantitatif (API-Football)**: fixtures, standings, statistiques équipe, forme récente, blessures, lineups, head-to-head, odds, events.
 - **Qualitatif (placeholder pour l'instant)**: news, déclarations coachs, rumeurs, météo, fatigue, calendrier, motivation.

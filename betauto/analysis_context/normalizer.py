@@ -13,6 +13,7 @@ def normalize_fixture(item: dict[str, Any]) -> dict[str, Any]:
         "fixture_id": fixture.get("id"),
         "kickoff_time": fixture.get("date"),
         "competition": league.get("name", "Unknown competition"),
+        "season": league.get("season"),
         "home_team": {"id": teams.get("home", {}).get("id"), "name": teams.get("home", {}).get("name", "Home")},
         "away_team": {"id": teams.get("away", {}).get("id"), "name": teams.get("away", {}).get("name", "Away")},
     }

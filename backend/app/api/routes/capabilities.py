@@ -31,6 +31,7 @@ async def get_capabilities():
         "GET /api/costs/trend",
         "GET /api/costs/breakdown",
         "GET /api/costs/alerts",
+        "GET /api/coverage/football/leagues",
         "GET /api/bankroll/summary",
         "GET /api/bankroll/trend",
         "GET /api/bankroll/exposure",
@@ -105,6 +106,13 @@ async def get_capabilities():
                     "GET /api/costs/trend",
                     "GET /api/costs/breakdown",
                     "GET /api/costs/alerts",
+                ],
+            ),
+            CapabilityStatus(
+                name="coverage",
+                status="partial",
+                endpoints=[
+                    "GET /api/coverage/football/leagues",
                 ],
             ),
             CapabilityStatus(

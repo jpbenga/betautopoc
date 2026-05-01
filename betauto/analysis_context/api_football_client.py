@@ -180,8 +180,14 @@ class ApiFootballClient:
     def export_logs(self) -> list[dict[str, Any]]:
         return [asdict(item) for item in self.call_logs]
 
-    def get_fixtures(self, date: str, league_id: int, season: int) -> dict[str, Any]:
-        return self._request("fixtures", {"date": date, "league": league_id, "season": season})
+    def get_fixtures(self, date: str, league_id: int, season: int | None = None) -> dict[str, Any]:
+        params: dict[str, Any] = {"date": date, "league": league_id}
+        if season is not None:
+            params["season"] = season
+        return self._request("fixtures", params)
+
+    def get_fixtures_by_date(self, date: str) -> dict[str, Any]:
+        return self._request("fixtures", {"date": date})
 
     def get_standings(self, league_id: int, season: int) -> dict[str, Any]:
         return self._request("standings", {"league": league_id, "season": season})
