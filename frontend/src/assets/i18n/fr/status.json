@@ -1,0 +1,29 @@
+{
+  "active": "Actif",
+  "available": "Disponible",
+  "blocked": "Bloqué",
+  "completed": "Terminé",
+  "completed_no_data": "Terminé sans données",
+  "configured": "Configuré",
+  "disabled": "Désactivé",
+  "done": "Terminé",
+  "enabled": "Activé",
+  "error": "Erreur",
+  "failed": "Échec",
+  "missing": "Manquant",
+  "no_data": "Aucune donnée",
+  "partial": "Partiel",
+  "pending": "En attente",
+  "planned": "Planifié",
+  "running": "En cours",
+  "skipped": "Ignoré",
+  "success": "Succès",
+  "unavailable": "Indisponible",
+  "unknown": "Inconnu",
+  "watch": "Surveillance",
+  "capability": {
+    "available": "Disponible",
+    "partial": "Partiel",
+    "planned": "Planifié"
+  }
+}

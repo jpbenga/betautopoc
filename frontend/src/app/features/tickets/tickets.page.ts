@@ -56,19 +56,39 @@ interface TicketKpi {
           (input)="targetDate = inputValue($event)"
           aria-label="Target date"
         />
-        <button
-          type="button"
-          class="ba-tool border-accent/60 bg-accent text-background hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60"
-          [disabled]="isGeneratingTicket"
-          (click)="generateTicket()"
-        >
-          {{ isGeneratingTicket ? 'Generating...' : 'Generate Ticket' }}
-        </button>
+        <div class="flex flex-col">
+          <button
+            type="button"
+            class="ba-tool border-accent/60 bg-accent text-background hover:bg-accent-strong disabled:cursor-not-allowed disabled:border-accent/30 disabled:bg-accent/20 disabled:text-accent"
+            [disabled]="isGeneratingTicket"
+            [title]="isGeneratingTicket ? 'Ticket generation is already running for job ' + generatedRunId : 'Generate a ticket for the selected date'"
+            (click)="generateTicket()"
+          >
+            {{ isGeneratingTicket ? 'Generation in progress' : 'Generate Ticket' }}
+          </button>
+          @if (isGeneratingTicket) {
+            <span class="mt-1 text-[11px] text-muted">Disabled while job {{ generatedRunId || 'is starting' }} runs.</span>
+          }
+        </div>
         <button type="button" class="ba-tool" (click)="refreshTickets()">
           Refresh
         </button>
       </div>
     </ba-page-header>
+
+    <section class="mb-4 rounded-card border border-border/60 bg-surface-low p-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="ba-label mr-2">State vocabulary</span>
+        @for (state of stateBadges; track state.label) {
+          <ba-status-badge
+            [label]="state.label"
+            [tone]="state.tone"
+            [showPip]="true"
+            [pulse]="state.label === 'running'"
+          ></ba-status-badge>
+        }
+      </div>
+    </section>
 
     @if (isGeneratingTicket || generatedRunId || generationStatus || generationError) {
       <section class="mt-4">
@@ -77,26 +97,61 @@ interface TicketKpi {
             <div>
               <p class="ba-label">Ticket generation</p>
               <h3 class="mt-1 text-sm font-semibold text-text">{{ generationMessage }}</h3>
+              <p class="mt-1 text-xs text-muted">{{ generationDetail }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
               @if (generatedRunId) {
                 <ba-status-badge [label]="'job ' + generatedRunId" tone="default"></ba-status-badge>
               }
               @if (generationStatus) {
-                <ba-status-badge [label]="generationStatus" [tone]="toneFor(generationStatus)"></ba-status-badge>
+                <ba-status-badge
+                  [label]="generationStatus"
+                  [tone]="generationTone"
+                  [pulse]="isGenerationLive"
+                  [showPip]="true"
+                ></ba-status-badge>
               }
               @if (isGenerationPolling) {
-                <ba-status-badge label="polling" tone="live"></ba-status-badge>
+                <ba-status-badge label="polling every 3s" tone="live" [pulse]="true" [showPip]="true"></ba-status-badge>
               }
               @if (showViewRunLink) {
                 <a
-                  class="ba-tool"
+                  class="ba-tool border-accent/50 text-accent hover:bg-accent/10"
                   routerLink="/analysis"
                   [queryParams]="{ run_id: generatedRunId }"
                 >
                   View run
                 </a>
               }
+            </div>
+          </div>
+          <div
+            class="border-b border-border/60 px-4 py-3"
+            [class.bg-accent/5]="isGenerationLive"
+            [class.bg-success/5]="isGenerationSuccess"
+            [class.bg-danger/5]="isGenerationFailed"
+            [class.bg-surface]="!isGenerationLive && !isGenerationSuccess && !isGenerationFailed"
+          >
+            <div class="flex items-center gap-3">
+              <span class="relative flex h-3 w-3 shrink-0">
+                @if (isGenerationLive) {
+                  <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-30"></span>
+                }
+                <span class="relative h-3 w-3 rounded-full" [class]="generationPipClass"></span>
+              </span>
+              <div class="h-2 flex-1 overflow-hidden rounded-full bg-background">
+                <div
+                  class="h-full rounded-full"
+                  [class.bg-accent]="isGenerationLive"
+                  [class.bg-success]="isGenerationSuccess"
+                  [class.bg-danger]="isGenerationFailed"
+                  [class.bg-warning]="isGenerationNoTicket"
+                  [class.bg-muted]="!isGenerationLive && !isGenerationSuccess && !isGenerationFailed && !isGenerationNoTicket"
+                  [class.animate-pulse]="isGenerationLive"
+                  [style.width.%]="generationProgress"
+                ></div>
+              </div>
+              <span class="ba-data text-muted">{{ generationProgress }}%</span>
             </div>
           </div>
           <div class="grid gap-3 p-4 md:grid-cols-3">
@@ -117,6 +172,15 @@ interface TicketKpi {
             <div class="px-4 pb-4">
               <ba-error-state label="Generation issue" [message]="generationError"></ba-error-state>
             </div>
+          } @else if (isGenerationNoTicket) {
+            <div class="px-4 pb-4">
+              <ba-empty-state
+                label="Run completed but no ticket was generated"
+                message="The orchestration finished, but no usable selection artifact appeared for this target."
+                [meta]="generatedRunId ? 'job_id ' + generatedRunId : ''"
+                tone="warning"
+              ></ba-empty-state>
+            </div>
           }
         </ba-section-card>
       </section>
@@ -124,7 +188,11 @@ interface TicketKpi {
 
     @if (isLoading) {
       <section class="mt-4 rounded-card border border-border bg-surface-low p-4">
-        <ba-loading-state message="Loading tickets from strict run artifacts..."></ba-loading-state>
+        <ba-loading-state
+          message="Loading tickets from strict run artifacts..."
+          detail="Reading selection artifacts without latest_* fallback."
+          [showShimmer]="true"
+        ></ba-loading-state>
       </section>
     } @else if (error) {
       <section class="mt-4">
@@ -254,6 +322,7 @@ interface TicketKpi {
                 label="Selection audit"
                 [title]="selectedTicketId || 'No ticket'"
                 [entries]="auditEntries"
+                [highlightNewest]="isGeneratingTicket"
               ></ba-log-console>
             }
           </div>
@@ -286,8 +355,22 @@ export class TicketsPage implements OnInit, OnDestroy {
   protected generationTargetDate = '';
   protected generationError = '';
   protected generationMessage = '';
+  protected generationOutcome: 'idle' | 'ticket_ready' | 'no_ticket' | 'failed' = 'idle';
   protected ticketGenerationLastUpdatedAt = '';
   protected error = '';
+
+  protected readonly stateBadges: Array<{ label: string; tone: UiTone }> = [
+    { label: 'idle', tone: 'default' },
+    { label: 'pending', tone: 'warning' },
+    { label: 'running', tone: 'live' },
+    { label: 'completed', tone: 'success' },
+    { label: 'completed_no_data', tone: 'default' },
+    { label: 'failed', tone: 'danger' },
+    { label: 'partial', tone: 'warning' },
+    { label: 'proxy', tone: 'warning' },
+    { label: 'estimated', tone: 'warning' },
+    { label: 'unavailable', tone: 'default' }
+  ];
 
   protected readonly ticketColumns: DataTableColumn[] = [
     { key: 'id', label: 'Ticket ID', data: true },
@@ -374,6 +457,7 @@ export class TicketsPage implements OnInit, OnDestroy {
     this.generationTargetDate = this.targetDate;
     this.generationError = '';
     this.generationMessage = 'Generating ticket...';
+    this.generationOutcome = 'idle';
     this.ticketGenerationLastUpdatedAt = this.nowLabel();
     this.ticketApi.generateTicket({ date: this.targetDate }).subscribe({
       next: (response) => {
@@ -391,6 +475,7 @@ export class TicketsPage implements OnInit, OnDestroy {
         this.generationStatus = 'error';
         this.generationError = this.errorMessage(error);
         this.generationMessage = 'Ticket generation failed to start';
+        this.generationOutcome = 'failed';
         this.ticketGenerationLastUpdatedAt = this.nowLabel();
       }
     });
@@ -416,6 +501,7 @@ export class TicketsPage implements OnInit, OnDestroy {
       this.generationStatus = 'timeout';
       this.generationError = 'Ticket generation timed out after 10 minutes. The run may still finish server-side; refresh tickets later.';
       this.generationMessage = 'Ticket generation timed out';
+      this.generationOutcome = 'failed';
       this.ticketGenerationLastUpdatedAt = this.nowLabel();
       this.stopGenerationPolling();
       return;
@@ -435,6 +521,7 @@ export class TicketsPage implements OnInit, OnDestroy {
         const generatedTicket = this.findGeneratedTicket(tickets, run);
         if (generatedTicket && generatedTicket.picks_count > 0) {
           this.generationMessage = 'Ticket generated successfully';
+          this.generationOutcome = 'ticket_ready';
           this.isGeneratingTicket = false;
           this.stopGenerationPolling();
           this.selectTicket(generatedTicket.ticket_id);
@@ -444,6 +531,7 @@ export class TicketsPage implements OnInit, OnDestroy {
         if (this.isTerminalStatus(run.status)) {
           this.isGeneratingTicket = false;
           this.generationMessage = 'Run completed but no ticket was generated';
+          this.generationOutcome = this.isFailureStatus(run.status) ? 'failed' : 'no_ticket';
           if (generatedTicket) {
             this.selectTicket(generatedTicket.ticket_id);
           }
@@ -462,6 +550,7 @@ export class TicketsPage implements OnInit, OnDestroy {
         this.generationStatus = 'error';
         this.generationError = this.errorMessage(error);
         this.generationMessage = 'Ticket generation polling failed';
+        this.generationOutcome = 'failed';
         this.ticketGenerationLastUpdatedAt = this.nowLabel();
         this.stopGenerationPolling();
       }
@@ -502,7 +591,77 @@ export class TicketsPage implements OnInit, OnDestroy {
   }
 
   protected get showViewRunLink(): boolean {
-    return Boolean(this.generatedRunId && (this.isGeneratingTicket || this.isFailureStatus(this.generationStatus) || this.generationError));
+    return Boolean(this.generatedRunId && (this.isGeneratingTicket || this.isFailureStatus(this.generationStatus) || this.generationError || this.generationOutcome === 'no_ticket'));
+  }
+
+  protected get isGenerationLive(): boolean {
+    return this.isGeneratingTicket || ['starting', 'pending', 'running', 'active'].includes(String(this.generationStatus || '').toLowerCase());
+  }
+
+  protected get isGenerationSuccess(): boolean {
+    return this.generationOutcome === 'ticket_ready';
+  }
+
+  protected get isGenerationFailed(): boolean {
+    return Boolean(this.generationError) || this.generationOutcome === 'failed' || this.isFailureStatus(this.generationStatus);
+  }
+
+  protected get isGenerationNoTicket(): boolean {
+    return this.generationOutcome === 'no_ticket';
+  }
+
+  protected get generationTone(): UiTone {
+    if (this.isGenerationSuccess) {
+      return 'success';
+    }
+    if (this.isGenerationFailed) {
+      return 'danger';
+    }
+    if (this.isGenerationLive) {
+      return 'live';
+    }
+    if (this.isGenerationNoTicket) {
+      return 'warning';
+    }
+    return this.toneFor(this.generationStatus);
+  }
+
+  protected get generationProgress(): number {
+    if (this.isGenerationSuccess || this.isGenerationFailed || this.isGenerationNoTicket) {
+      return 100;
+    }
+    if (this.isGenerationLive) {
+      return this.generatedOrchestratorRunId ? 68 : this.generatedRunId ? 38 : 16;
+    }
+    return this.generationStatus ? 24 : 0;
+  }
+
+  protected get generationDetail(): string {
+    if (this.isGenerationSuccess) {
+      return 'The ticket artifact is ready and selected below.';
+    }
+    if (this.isGenerationFailed) {
+      return 'The generation job stopped before a usable ticket was available.';
+    }
+    if (this.isGenerationNoTicket) {
+      return 'The run is visible for inspection, but no ticket card should be shown for this attempt.';
+    }
+    if (this.isGenerationLive) {
+      return 'Auto-refresh is on. BetAuto is polling the run until a ticket artifact appears or the job settles.';
+    }
+    return 'Generation status will appear here after a ticket request is started.';
+  }
+
+  protected get generationPipClass(): string {
+    const map: Record<UiTone, string> = {
+      default: 'bg-muted',
+      success: 'bg-success shadow-glow-success',
+      warning: 'bg-warning shadow-glow-warning',
+      danger: 'bg-danger',
+      live: 'bg-accent shadow-glow'
+    };
+
+    return map[this.generationTone];
   }
 
   protected get kpis(): TicketKpi[] {

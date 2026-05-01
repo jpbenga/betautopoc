@@ -1,0 +1,31 @@
+{
+  "app": {
+    "name": "BetAuto"
+  },
+  "actions": {
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "refresh": "Actualiser",
+    "retry": "Réessayer",
+    "save": "Enregistrer"
+  },
+  "labels": {
+    "date": "Date",
+    "details": "Détails",
+    "quality": "Qualité",
+    "source": "Source",
+    "status": "Statut"
+  },
+  "data_quality": {
+    "low": "Faible",
+    "medium": "Moyenne",
+    "high": "Élevée",
+    "unknown": "Inconnue"
+  },
+  "states": {
+    "empty": "Aucune donnée disponible.",
+    "loading": "Chargement...",
+    "unknown": "Inconnu"
+  }
+}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,6 +16,7 @@ class ApiError(BaseModel):
     error: str
     detail: str | None = None
     code: str | None = None
+    params: dict[str, Any] | None = None
 
 
 class CapabilityStatus(BaseModel):

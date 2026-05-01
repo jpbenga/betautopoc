@@ -1,0 +1,12 @@
+{
+  "match_winner": "Match winner",
+  "home_away": "Home / Away",
+  "double_chance": "Double chance",
+  "both_teams_to_score": "Both teams to score",
+  "goals_over_under": "Goals over/under",
+  "over_1_5_goals": "Over 1.5 goals",
+  "over_2_5_goals": "Over 2.5 goals",
+  "under_3_5_goals": "Under 3.5 goals",
+  "under_4_5_goals": "Under 4.5 goals",
+  "unknown_market": "Unknown market"
+}

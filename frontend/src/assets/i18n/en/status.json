@@ -1,0 +1,29 @@
+{
+  "active": "Active",
+  "available": "Available",
+  "blocked": "Blocked",
+  "completed": "Completed",
+  "completed_no_data": "Completed with no data",
+  "configured": "Configured",
+  "disabled": "Disabled",
+  "done": "Done",
+  "enabled": "Enabled",
+  "error": "Error",
+  "failed": "Failed",
+  "missing": "Missing",
+  "no_data": "No data",
+  "partial": "Partial",
+  "pending": "Pending",
+  "planned": "Planned",
+  "running": "Running",
+  "skipped": "Skipped",
+  "success": "Success",
+  "unavailable": "Unavailable",
+  "unknown": "Unknown",
+  "watch": "Watch",
+  "capability": {
+    "available": "Available",
+    "partial": "Partial",
+    "planned": "Planned"
+  }
+}

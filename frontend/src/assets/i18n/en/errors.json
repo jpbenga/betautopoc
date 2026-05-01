@@ -1,0 +1,16 @@
+{
+  "generic": "An error occurred.",
+  "request_failed": "The request failed.",
+  "unexpected": "Unexpected error.",
+  "not_found": "Resource not found.",
+  "validation_failed": "Validation failed.",
+  "rejection_reasons": {
+    "low_confidence": "Confidence is too low",
+    "missing_odds": "Missing odds",
+    "low_data_quality": "Data quality is too low",
+    "disallowed_market": "Market is not allowed",
+    "unknown_market": "Unknown market",
+    "strategy_disabled": "Strategy is disabled",
+    "insufficient_candidates": "Not enough candidates"
+  }
+}

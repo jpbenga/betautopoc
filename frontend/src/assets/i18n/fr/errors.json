@@ -1,0 +1,16 @@
+{
+  "generic": "Une erreur est survenue.",
+  "request_failed": "La requête a échoué.",
+  "unexpected": "Erreur inattendue.",
+  "not_found": "Ressource introuvable.",
+  "validation_failed": "Validation impossible.",
+  "rejection_reasons": {
+    "low_confidence": "Confiance insuffisante",
+    "missing_odds": "Cote manquante",
+    "low_data_quality": "Qualité de données insuffisante",
+    "disallowed_market": "Marché non autorisé",
+    "unknown_market": "Marché inconnu",
+    "strategy_disabled": "Stratégie désactivée",
+    "insufficient_candidates": "Candidats insuffisants"
+  }
+}
