@@ -117,6 +117,7 @@ def create_response_with_retry(
     model: str,
     input: str,
     operation_name: str = "openai.responses.create",
+    retry_log_callback: Callable[[str, ExternalApiError, float, int, int], None] | None = None,
     **kwargs: Any,
 ) -> tuple[Any, int]:
     max_retries = int(os.getenv("OPENAI_MAX_RETRIES", "5"))
@@ -143,5 +144,6 @@ def create_response_with_retry(
         max_backoff=max_backoff,
         logger=logger,
         operation_name=operation_name,
+        retry_callback=retry_log_callback,
     )
     return response, retries_used

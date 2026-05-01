@@ -13,11 +13,11 @@ export function statusToTone(status: StepStatus | null | undefined): UiTone {
     return 'danger';
   }
 
-  if (['running', 'active'].includes(normalized)) {
+  if (['running', 'active', 'generating'].includes(normalized)) {
     return 'live';
   }
 
-  if (['pending', 'queued'].includes(normalized)) {
+  if (['pending', 'queued', 'starting', 'partial', 'proxy', 'estimated', 'timeout', 'stopped', 'cancelled', 'interrupted'].includes(normalized)) {
     return 'warning';
   }
 

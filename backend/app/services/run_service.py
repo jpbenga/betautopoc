@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -13,9 +14,37 @@ from openai import OpenAI
 from backend.app.api.schemas.run_schemas import PicksPayload, VerificationOutput
 from backend.app.core.config import env_flag
 from backend.app.core.paths import GENERATED_DIR, PROMPTS_DIR, RUNS_DIR
-from backend.app.services.job_service import JOBS, get_target_date, log, now_iso, set_error, set_step
+from backend.app.services.job_service import (
+    JOBS,
+    get_target_date,
+    is_stop_requested,
+    log,
+    now_iso,
+    set_error,
+    set_step,
+)
 from betauto.market_dictionary.resolver import resolve_pick_market_aliases
 from betauto.orchestrator import run_orchestrated_pipeline
+
+
+class JobLogHandler(logging.Handler):
+    def __init__(self, job_id: str) -> None:
+        super().__init__(level=logging.INFO)
+        self.job_id = job_id
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if not record.name.startswith("betauto"):
+            return
+        if record.name.startswith("betauto.analysis_context.api_football_client") and record.levelno < logging.WARNING:
+            return
+        try:
+            message = self.format(record)
+            if not message:
+                return
+            level = "error" if record.levelno >= logging.ERROR else "warning" if record.levelno >= logging.WARNING else "info"
+            log(self.job_id, message, level=level)
+        except Exception:  # noqa: BLE001
+            return
 
 
 def get_cache_path(target_date: str) -> Path:
@@ -216,15 +245,35 @@ async def run_orchestrated_pipeline_job(
         def on_log(message: str) -> None:
             log(job_id, message)
 
-        run_summary = await asyncio.to_thread(
-            run_orchestrated_pipeline,
-            target_date=date,
-            strategy_file=strategy_file,
-            max_matches=max_matches,
-            sleep_between_matches=sleep_between_matches,
-            with_browser=with_browser,
-            log_callback=on_log,
-        )
+        def on_run_metadata(metadata: dict[str, Any]) -> None:
+            JOBS[job_id]["orchestrator_run_id"] = metadata.get("run_id")
+            JOBS[job_id]["orchestrator_run_dir"] = metadata.get("run_dir")
+
+        def should_stop() -> bool:
+            return is_stop_requested(job_id)
+
+        job_log_handler = JobLogHandler(job_id)
+        job_log_handler.setFormatter(logging.Formatter("%(message)s"))
+        betauto_logger = logging.getLogger("betauto")
+        previous_level = betauto_logger.level
+        betauto_logger.addHandler(job_log_handler)
+        if betauto_logger.level > logging.INFO or betauto_logger.level == logging.NOTSET:
+            betauto_logger.setLevel(logging.INFO)
+        try:
+            run_summary = await asyncio.to_thread(
+                run_orchestrated_pipeline,
+                target_date=date,
+                strategy_file=strategy_file,
+                max_matches=max_matches,
+                sleep_between_matches=sleep_between_matches,
+                with_browser=with_browser,
+                log_callback=on_log,
+                run_metadata_callback=on_run_metadata,
+                stop_requested=should_stop,
+            )
+        finally:
+            betauto_logger.removeHandler(job_log_handler)
+            betauto_logger.setLevel(previous_level)
         run_status = str(run_summary.get("status") or "completed")
 
         selection_file = run_summary.get("files", {}).get("selection")
@@ -241,7 +290,12 @@ async def run_orchestrated_pipeline_job(
         JOBS[job_id]["selection"] = selection_payload
         JOBS[job_id]["picks"] = (selection_payload or {}).get("picks")
 
-        if run_status == "completed_no_data":
+        if run_status == "stopped":
+            message = str(run_summary.get("message") or "Analysis stopped by user.")
+            set_step(job_id, "analysis", "stopped", message)
+            JOBS[job_id]["status"] = "stopped"
+            log(job_id, "[analysis] run stopped cleanly", level="warning")
+        elif run_status == "completed_no_data":
             message = str(run_summary.get("message") or f"No matches found for target date {date}")
             set_step(job_id, "analysis", "skipped", message)
             JOBS[job_id]["status"] = "completed_no_data"

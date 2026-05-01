@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 
 export interface TimelineItem {
+  id?: string;
   title: string;
   meta: string;
   description?: string;
@@ -16,9 +17,17 @@ export interface TimelineItem {
         <h3 class="text-sm font-semibold text-text">{{ title }}</h3>
       }
       <ol class="mt-4 space-y-4">
-        @for (item of items; track item.title + item.meta) {
+        @for (item of items; track item.id || item.title + item.meta; let last = $last) {
           <li class="grid grid-cols-[16px_1fr] gap-3">
-            <span class="mt-1 h-2.5 w-2.5 rounded-full" [class]="dotClass(item.tone || 'default')"></span>
+            <span class="relative mt-1 flex justify-center">
+              @if (item.tone === 'live') {
+                <span class="absolute h-2.5 w-2.5 animate-ping rounded-full bg-success opacity-30"></span>
+              }
+              <span class="relative h-2.5 w-2.5 rounded-full" [class]="dotClass(item.tone || 'default')"></span>
+              @if (!last) {
+                <span class="absolute top-3 h-[calc(100%+1rem)] w-px bg-border/70"></span>
+              }
+            </span>
             <div>
               <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-medium text-text">{{ item.title }}</p>

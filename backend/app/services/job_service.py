@@ -62,6 +62,8 @@ def create_job() -> str:
         "run_summary": None,
         "selection_file": None,
         "selection": None,
+        "stop_requested": False,
+        "stop_requested_at": None,
     }
     return job_id
 
@@ -70,8 +72,11 @@ def get_job(job_id: str) -> dict[str, Any] | None:
     return JOBS.get(job_id)
 
 
-def log(job_id: str, message: str) -> None:
-    JOBS[job_id]["logs"].append({"at": now_iso(), "message": message})
+def log(job_id: str, message: str, level: str | None = None) -> None:
+    entry: dict[str, Any] = {"at": now_iso(), "message": message}
+    if level:
+        entry["level"] = level
+    JOBS[job_id]["logs"].append(entry)
 
 
 def set_step(job_id: str, step: str, status: str, message: str) -> None:
@@ -85,3 +90,18 @@ def set_error(job_id: str, message: str) -> None:
     JOBS[job_id]["status"] = "failed"
     JOBS[job_id]["error"] = message
     log(job_id, f"ERREUR — {message}")
+
+
+def request_stop(job_id: str) -> bool:
+    job = get_job(job_id)
+    if job is None:
+        return False
+    job["stop_requested"] = True
+    job["stop_requested_at"] = now_iso()
+    log(job_id, "[analysis] stop requested by user", level="warning")
+    return True
+
+
+def is_stop_requested(job_id: str) -> bool:
+    job = get_job(job_id)
+    return bool(job and job.get("stop_requested") is True)

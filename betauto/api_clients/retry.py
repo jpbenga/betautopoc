@@ -20,6 +20,7 @@ def retry_with_backoff(
     max_backoff: float,
     logger: logging.Logger,
     operation_name: str,
+    retry_callback: Callable[[str, Exception, float, int, int], None] | None = None,
 ) -> T:
     """Run operation with initial attempt + retries."""
     total_attempts = max_retries + 1
@@ -59,6 +60,8 @@ def retry_with_backoff(
                 max_backoff=max_backoff,
                 retry_after_seconds=retry_after,
             )
+            if retry_callback:
+                retry_callback(operation_name, exc, sleep_seconds, attempt, max_retries)
             logger.info("[%s] waiting %.2fs before retry", operation_name, sleep_seconds)
             time.sleep(sleep_seconds)
 

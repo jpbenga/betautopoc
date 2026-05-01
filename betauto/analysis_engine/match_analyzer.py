@@ -6,7 +6,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from betauto.api_clients.errors import ExternalApiError
 from betauto.api_clients.openai_client import create_response_with_retry
@@ -145,7 +145,12 @@ def _build_strategy_constraints(strategy_cfg: ResolvedStrategyConfig | None) -> 
     )
 
 
-def analyze_match(match_context: dict, llm, strategy_cfg: Optional[ResolvedStrategyConfig] = None) -> dict:
+def analyze_match(
+    match_context: dict,
+    llm,
+    strategy_cfg: Optional[ResolvedStrategyConfig] = None,
+    log_callback: Callable[[str], None] | None = None,
+) -> dict:
     """Analyze one match context with exactly one LLM call."""
     start = time.perf_counter()
     prompt_size_chars = 0
@@ -172,12 +177,24 @@ def analyze_match(match_context: dict, llm, strategy_cfg: Optional[ResolvedStrat
         model_name = getattr(llm, "analysis_model", None) or "gpt-4.1-mini"
         timeout_seconds = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "120"))
 
+        def on_retry(operation_name: str, error: ExternalApiError, sleep_seconds: float, attempt: int, max_retries: int) -> None:
+            if not log_callback:
+                return
+            if error.status_code == 429:
+                log_callback(f"[analysis] fixture_id={fixture_id} rate limited by OpenAI, retry in {sleep_seconds:.1f}s")
+                return
+            log_callback(
+                f"[analysis] fixture_id={fixture_id} retry/backoff {attempt}/{max_retries} "
+                f"after {error.provider} error, retry in {sleep_seconds:.1f}s"
+            )
+
         response, retry_count = create_response_with_retry(
             llm,
             model=model_name,
             input=prompt,
             operation_name=f"openai.responses.create fixture_id={fixture_id}",
             timeout=timeout_seconds,
+            retry_log_callback=on_retry,
         )
 
         raw_text = response.output_text or ""

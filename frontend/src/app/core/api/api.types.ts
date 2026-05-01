@@ -7,6 +7,7 @@ export interface ApiError {
   error: string;
   detail?: string | null;
   code?: string | null;
+  params?: Record<string, unknown> | null;
 }
 
 export type StepStatus = 'pending' | 'running' | 'done' | 'completed' | 'failed' | 'error' | 'skipped' | string;
@@ -125,10 +126,31 @@ export interface AnalysisLogEntry {
 
 export interface AnalysisRun extends AnalysisRunListItem {
   error?: string | null;
+  stop_requested?: boolean;
+  stop_requested_at?: string | null;
   steps: AnalysisTimelineStep[];
   logs: AnalysisLogEntry[];
   run_summary?: Record<string, unknown> | null;
   selection?: unknown;
+}
+
+export interface AnalysisRunArtifact {
+  name: string;
+  filename: string;
+  status: string;
+  path?: string | null;
+  summary: Record<string, unknown>;
+  data?: unknown;
+  error?: string | null;
+}
+
+export interface AnalysisRunOutputs {
+  run_id: string;
+  job_id: string;
+  orchestrator_run_id?: string | null;
+  run_dir?: string | null;
+  progress?: Record<string, unknown>;
+  artifacts: Record<string, AnalysisRunArtifact>;
 }
 
 export interface MatchDataStatus {

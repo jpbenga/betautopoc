@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 
 export interface LogEntry {
+  id?: string;
   time: string;
   level: 'info' | 'success' | 'warning' | 'danger';
   message: string;
@@ -19,8 +20,13 @@ export interface LogEntry {
         <span class="ba-data text-muted">{{ entries.length }} events</span>
       </div>
       <div class="max-h-72 space-y-2 overflow-auto bg-background/80 p-4 font-data text-xs">
-        @for (entry of entries; track entry.time + entry.message) {
-          <p class="grid grid-cols-[72px_72px_1fr] gap-3">
+        @for (entry of entries; track entry.id || entry.time + entry.message; let first = $first) {
+          <p
+            class="grid grid-cols-[72px_72px_1fr] gap-3 rounded-tool px-2 py-1"
+            [class.bg-accent/10]="highlightNewest && first"
+            [class.ring-1]="highlightNewest && first"
+            [class.ring-accent/20]="highlightNewest && first"
+          >
             <span class="text-muted">{{ entry.time }}</span>
             <span [class]="levelClass(entry.level)">{{ entry.level }}</span>
             <span class="text-text">{{ entry.message }}</span>
@@ -37,6 +43,7 @@ export class LogConsoleComponent {
   @Input() title = 'Operational log';
   @Input() entries: LogEntry[] = [];
   @Input() emptyMessage = 'No events recorded.';
+  @Input() highlightNewest = false;
 
   levelClass(level: LogEntry['level']): string {
     const map: Record<LogEntry['level'], string> = {

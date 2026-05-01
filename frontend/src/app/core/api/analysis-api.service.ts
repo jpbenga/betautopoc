@@ -5,6 +5,7 @@ import {
   AnalysisLogEntry,
   AnalysisRun,
   AnalysisRunListItem,
+  AnalysisRunOutputs,
   AnalysisTimelineStep
 } from './api.types';
 
@@ -18,6 +19,14 @@ export class AnalysisApiService {
 
   getRun(runId: string): Observable<AnalysisRun> {
     return this.http.get<AnalysisRun>(`api/analysis/runs/${runId}`);
+  }
+
+  getRunOutputs(runId: string): Observable<AnalysisRunOutputs> {
+    return this.http.get<AnalysisRunOutputs>(`api/analysis/runs/${runId}/outputs`);
+  }
+
+  stopRun(runId: string): Observable<{ run_id: string; status: string; stop_requested: boolean }> {
+    return this.http.post<{ run_id: string; status: string; stop_requested: boolean }>(`api/analysis/runs/${runId}/stop`, {});
   }
 
   getTimeline(runId: string): Observable<AnalysisTimelineStep[]> {

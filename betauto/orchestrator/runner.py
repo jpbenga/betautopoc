@@ -21,6 +21,9 @@ from betauto.runtime_mode import log_runtime_mode
 from betauto.selection_engine import SelectionConfig, select_combo
 from betauto.strategy import load_and_resolve_strategy
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
+COVERAGE_REGISTRY_PATH = ROOT_DIR / "config" / "coverage" / "football_leagues.json"
+
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -29,6 +32,34 @@ def _utc_now_iso() -> str:
 def _emit(log_callback: Callable[[str], None] | None, message: str) -> None:
     if log_callback:
         log_callback(message)
+
+
+def _emit_league_fixture_summary(
+    log_callback: Callable[[str], None] | None,
+    context_trace: dict[str, Any],
+    target_date: str,
+) -> None:
+    rows = context_trace.get("fixtures_fetched_by_league")
+    if not isinstance(rows, list):
+        return
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        league_id = row.get("league_id")
+        name = row.get("competition_name") or f"League {league_id}"
+        country = row.get("country") or "Unknown country"
+        fetched = int(row.get("fixtures_fetched", 0) or 0)
+        in_context = int(row.get("fixtures_in_context", 0) or 0)
+        skipped = int(row.get("matches_skipped_count", 0) or 0)
+        seasons = row.get("seasons_from_fixtures")
+        season_label = ", ".join(str(season) for season in seasons) if isinstance(seasons, list) and seasons else "fixture_date_only"
+        _emit(
+            log_callback,
+            "[coverage] "
+            f"{fetched} matchs trouvés pour {name} ({country}, league_id={league_id}) "
+            f"sur {target_date}; "
+            f"in_context={in_context}; skipped={skipped}; seasons={season_label}",
+        )
 
 
 def _resolve_strategy_file(strategy_file: str | None) -> str:
@@ -43,6 +74,36 @@ def _selection_config_from_strategy(resolved_strategy: Any) -> SelectionConfig:
         min_pick_confidence=resolved_strategy.min_pick_confidence,
         min_global_match_confidence=resolved_strategy.min_global_match_confidence,
     )
+
+
+def _active_coverage_leagues(path: Path = COVERAGE_REGISTRY_PATH) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    leagues = payload.get("leagues") if isinstance(payload, dict) else []
+    if not isinstance(leagues, list):
+        return []
+    active: list[dict[str, Any]] = []
+    for league in leagues:
+        if not isinstance(league, dict):
+            continue
+        league_id = league.get("league_id")
+        if league.get("enabled") is True and isinstance(league_id, int):
+            active.append(league)
+    return active
+
+
+def _league_ids_for_context(resolved_strategy: Any) -> tuple[list[int], list[dict[str, Any]], str]:
+    active_leagues = _active_coverage_leagues()
+    if active_leagues:
+        return [int(league["league_id"]) for league in active_leagues], active_leagues, "coverage_registry"
+
+    strategy_ids = list(resolved_strategy.league_ids_allowed or [])
+    metadata = [
+        {"league_id": league_id, "competition_name": f"Strategy league {league_id}", "country": None}
+        for league_id in strategy_ids
+    ]
+    return strategy_ids, metadata, "strategy_scope"
 
 
 def _date_consistency_metadata(
@@ -117,6 +178,8 @@ def run_orchestrated_pipeline(
     skip_selection: bool = False,
     with_browser: bool = False,
     log_callback: Callable[[str], None] | None = None,
+    run_metadata_callback: Callable[[dict[str, Any]], None] | None = None,
+    stop_requested: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     load_dotenv()
     log_runtime_mode()
@@ -124,9 +187,12 @@ def run_orchestrated_pipeline(
     run_id = uuid.uuid4().hex[:12]
     run_dir = Path(output_dir) / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    if run_metadata_callback:
+        run_metadata_callback({"run_id": run_id, "run_dir": str(run_dir)})
 
     resolved_strategy_file = _resolve_strategy_file(strategy_file)
     resolved_strategy = load_and_resolve_strategy(resolved_strategy_file)
+    active_league_ids, active_league_metadata, league_source = _league_ids_for_context(resolved_strategy)
 
     summary: dict[str, Any] = {
         "run_id": run_id,
@@ -139,6 +205,11 @@ def run_orchestrated_pipeline(
         "date_consistency_status": "unknown",
         "steps": {},
         "files": {},
+        "upstream_trace": {
+            "league_source": league_source,
+            "active_leagues_count": len(active_league_ids),
+            "active_league_ids": active_league_ids,
+        },
     }
 
     write_json(run_dir / "run_summary.json", summary)
@@ -146,6 +217,11 @@ def run_orchestrated_pipeline(
     _emit(log_callback, "[orchestrator] Chargement stratégie")
     write_json(run_dir / "resolved_strategy.json", resolved_strategy.model_dump(mode="json"))
     summary["files"]["resolved_strategy"] = str(run_dir / "resolved_strategy.json")
+    _emit(
+        log_callback,
+        "[orchestrator] "
+        f"{len(active_league_ids)} ligues actives depuis {league_source}: {active_league_ids}",
+    )
 
     if with_browser:
         _emit(log_callback, "Browser execution is not implemented in orchestrator API mode yet.")
@@ -157,13 +233,28 @@ def run_orchestrated_pipeline(
     else:
         _emit(log_callback, "[orchestrator] Construction contexte analyse")
         builder = AnalysisContextBuilder(
-            league_id=(resolved_strategy.league_ids_allowed[0] if resolved_strategy.league_ids_allowed else None),
-            season=resolved_strategy.season,
+            league_id=(active_league_ids[0] if active_league_ids else None),
+            league_ids=active_league_ids or None,
+            league_metadata=active_league_metadata,
             bookmaker_id=resolved_strategy.bookmaker_id,
             bookmaker_name=resolved_strategy.bookmaker_name,
+            log_callback=log_callback,
         )
         context_payload = builder.build(target_date=target_date)
         write_json(context_file, context_payload)
+        context_trace = context_payload.get("pipeline_trace") if isinstance(context_payload.get("pipeline_trace"), dict) else {}
+        summary["upstream_trace"].update(context_trace)
+        fixtures_total = int(context_trace.get("fixtures_fetched_total", 0) or 0)
+        context_count = int(context_trace.get("fixtures_in_context_count", 0) or 0)
+        _emit(
+            log_callback,
+            "[orchestrator] "
+            f"fixtures_fetched_total={fixtures_total} "
+            f"fixtures_in_context_count={context_count} "
+            f"matches_skipped_count={context_trace.get('matches_skipped_count', 0)}",
+        )
+        _emit_league_fixture_summary(log_callback, context_trace, target_date)
+        _emit(log_callback, f"[orchestrator] {context_count} matchs trouvés pour {target_date}")
         if context_payload.get("target_date") != target_date:
             summary.update(
                 _date_consistency_metadata(target_date=target_date, run_dir=run_dir, context_payload=context_payload)
@@ -219,21 +310,94 @@ def run_orchestrated_pipeline(
         llm = OpenAI(api_key=api_key)
         llm.analysis_model = model
 
+        def write_partial_analysis(results: list[dict[str, Any]], stats: dict[str, Any]) -> None:
+            partial_payload = {
+                "generated_at": _utc_now_iso(),
+                "target_date": target_date,
+                "context_file": str(context_file),
+                "model": model,
+                "status": "stopped" if stats.get("stopped") else "running",
+                "partial": True,
+                "stats": stats,
+                "upstream_trace": {
+                    **summary["upstream_trace"],
+                    "matches_analyzed_count": stats.get("matches_analyzed_count", len(results)),
+                    "matches_skipped_count": int(summary["upstream_trace"].get("matches_skipped_count", 0) or 0)
+                    + int(stats.get("matches_skipped_count", 0) or 0),
+                    "matches_skipped_reasons": (summary["upstream_trace"].get("matches_skipped_reasons", []) or [])
+                    + (stats.get("matches_skipped_reasons", []) or []),
+                    "max_matches": stats.get("max_matches"),
+                    "matches_available_before_limit": stats.get("matches_available_before_limit"),
+                },
+                "results": results,
+            }
+            write_json(analysis_file, partial_payload)
+
         results, stats = run_analysis_batch_with_stats(
             context_file=str(context_file),
             llm=llm,
             max_matches=max_matches,
             sleep_between_matches=sleep_between_matches,
+            log_callback=log_callback,
+            stop_requested=stop_requested,
+            partial_callback=write_partial_analysis,
+        )
+        context_skipped_count = int(summary["upstream_trace"].get("matches_skipped_count", 0) or 0)
+        batch_skipped_count = int(stats.get("matches_skipped_count", 0) or 0)
+        context_skipped_reasons = summary["upstream_trace"].get("matches_skipped_reasons", []) or []
+        batch_skipped_reasons = stats.get("matches_skipped_reasons", []) or []
+        summary["upstream_trace"].update(
+            {
+                "matches_analyzed_count": stats.get("matches_analyzed_count", stats.get("total_matches", 0)),
+                "matches_skipped_count": context_skipped_count + batch_skipped_count,
+                "matches_skipped_reasons": context_skipped_reasons + batch_skipped_reasons,
+                "max_matches": stats.get("max_matches"),
+                "matches_available_before_limit": stats.get("matches_available_before_limit"),
+            }
+        )
+        _emit(
+            log_callback,
+            "[orchestrator] "
+            f"matches_analyzed_count={summary['upstream_trace'].get('matches_analyzed_count', 0)} "
+            f"matches_skipped_count={summary['upstream_trace'].get('matches_skipped_count', 0)}",
         )
         analysis_payload = {
             "generated_at": _utc_now_iso(),
             "target_date": target_date,
             "context_file": str(context_file),
             "model": model,
+            "status": "stopped" if stats.get("stopped") else "completed",
+            "partial": bool(stats.get("stopped")),
             "stats": stats,
+            "upstream_trace": summary["upstream_trace"],
             "results": results,
         }
         write_json(analysis_file, analysis_payload)
+        if stats.get("stopped"):
+            stopped_after = int(stats.get("stopped_after_count", len(results)) or 0)
+            total_matches = int(stats.get("total_matches", 0) or 0)
+            message = f"Analysis interrupted after {stopped_after}/{total_matches} matches"
+            _emit(log_callback, f"[analysis] {message}")
+            summary["steps"]["match_analysis"] = "stopped"
+            summary["steps"]["aggregation"] = "skipped"
+            summary["steps"]["filtering"] = "skipped"
+            summary["steps"]["selection"] = "skipped"
+            summary["files"]["match_analysis"] = str(analysis_file)
+            summary.update(
+                _date_consistency_metadata(
+                    target_date=target_date,
+                    run_dir=run_dir,
+                    context_payload=context_payload,
+                    analysis_payload=analysis_payload,
+                )
+            )
+            summary["date_consistency_status"] = "stopped"
+            summary["finished_at"] = _utc_now_iso()
+            summary["status"] = "stopped"
+            summary["message"] = message
+            write_json(run_dir / "run_summary.json", summary)
+            return summary
+
         summary["steps"]["match_analysis"] = "completed"
         summary["files"]["match_analysis"] = str(analysis_file)
 
