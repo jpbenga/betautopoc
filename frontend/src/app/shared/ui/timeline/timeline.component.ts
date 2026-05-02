@@ -5,7 +5,18 @@ export interface TimelineItem {
   title: string;
   meta: string;
   description?: string;
-  tone?: 'default' | 'success' | 'warning' | 'danger' | 'live';
+  tone?:
+    | 'default'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'live'
+    | 'score-70'
+    | 'score-75'
+    | 'score-80'
+    | 'score-85'
+    | 'score-90'
+    | 'score-95-plus';
 }
 
 @Component({
@@ -16,7 +27,7 @@ export interface TimelineItem {
       @if (title) {
         <h3 class="text-sm font-semibold text-text">{{ title }}</h3>
       }
-      <ol class="mt-4 space-y-4">
+      <ol class="mt-4 max-h-[34rem] space-y-4 overflow-y-auto pr-1">
         @for (item of items; track item.id || item.title + item.meta; let last = $last) {
           <li class="grid grid-cols-[16px_1fr] gap-3">
             <span class="relative mt-1 flex justify-center">
@@ -34,7 +45,9 @@ export interface TimelineItem {
                 <time class="ba-data text-muted">{{ item.meta }}</time>
               </div>
               @if (item.description) {
-                <p class="mt-1 text-sm text-muted">{{ item.description }}</p>
+                <div class="mt-1 max-h-24 overflow-y-auto pr-1 text-sm text-muted">
+                  <p>{{ item.description }}</p>
+                </div>
               }
             </div>
           </li>
@@ -56,7 +69,13 @@ export class TimelineComponent {
       success: 'bg-success shadow-glow-success',
       warning: 'bg-warning shadow-glow-warning',
       danger: 'bg-danger',
-      live: 'bg-success shadow-glow-success'
+      live: 'bg-success shadow-glow-success',
+      'score-70': 'bg-[#d97d68]',
+      'score-75': 'bg-[#e5a155]',
+      'score-80': 'bg-[#d4c45a]',
+      'score-85': 'bg-[#86c86d]',
+      'score-90': 'bg-[#41c7a5]',
+      'score-95-plus': 'bg-[#4cd7f6] shadow-glow'
     };
 
     return map[tone];

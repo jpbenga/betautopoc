@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from backend.app.api.schemas.coverage import (
     FootballLeagueRegistryEntry,
     FootballLeagueRegistryResponse,
+    FootballLeagueToggleResponse,
 )
 from backend.app.core.paths import REPO_ROOT
 from betauto.runtime_mode import ensure_latest_allowed
@@ -49,4 +51,38 @@ def football_leagues_response() -> FootballLeagueRegistryResponse:
         total_count=len(leagues),
         enabled_count=sum(1 for league in leagues if league.enabled),
         verified_count=sum(1 for league in leagues if league.league_id is not None),
+    )
+
+
+def update_football_league_enabled(league_id: int, enabled: bool, path: Path = REGISTRY_PATH) -> FootballLeagueToggleResponse:
+    payload = _read_registry(path)
+    if not payload:
+        raise FileNotFoundError(f"Football coverage registry not found at {path}.")
+
+    raw_leagues = payload.get("leagues")
+    if not isinstance(raw_leagues, list):
+        raise ValueError("Football coverage registry is invalid: 'leagues' must be a list.")
+
+    updated_entry: dict[str, Any] | None = None
+    for item in raw_leagues:
+        if not isinstance(item, dict):
+            continue
+        if item.get("league_id") == league_id:
+            item["enabled"] = enabled
+            updated_entry = item
+            break
+
+    if updated_entry is None:
+        raise LookupError(f"League with league_id={league_id} was not found in coverage registry.")
+
+    payload["updated_at"] = datetime.now(timezone.utc).isoformat()
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    leagues = [FootballLeagueRegistryEntry(**item) for item in raw_leagues if isinstance(item, dict)]
+    updated_model = FootballLeagueRegistryEntry(**updated_entry)
+    return FootballLeagueToggleResponse(
+        status="updated",
+        league=updated_model,
+        total_count=len(leagues),
+        enabled_count=sum(1 for league in leagues if league.enabled),
     )

@@ -8,20 +8,32 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from betauto.api_clients.openai_client import create_response_with_retry
+from betauto.api_clients.openai_client import (
+    create_response_with_retry,
+    create_structured_response_with_retry,
+    parse_response_output_json,
+)
+from betauto.api_clients.errors import ExternalApiPermanentError, ExternalApiRateLimitError
 
 from .models import SelectionConfig, SelectionResult
 
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-PROMPT_PATH = BASE_DIR / "prompts" / "combo_selection_prompt.txt"
+PROMPT_PATH = BASE_DIR / "prompts" / "ticket_selection_prompt.txt"
 
 
 def _load_prompt() -> str:
     if not PROMPT_PATH.exists():
         raise FileNotFoundError(f"Prompt introuvable: {PROMPT_PATH}")
     return PROMPT_PATH.read_text(encoding="utf-8")
+
+
+def _env_flag(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 class SelectionJsonParseError(ValueError):
@@ -237,6 +249,28 @@ def _normalize_selection_payload(
             normalized_picks.append(_normalize_pick(raw_pick, idx, normalization_notes))
 
     normalized["picks"] = normalized_picks
+    pick_count = len(normalized_picks)
+    ticket_shape_errors: list[str] = []
+    if pick_count:
+        if pick_count < config.min_picks:
+            ticket_shape_errors.append(f"ticket has {pick_count} pick(s), below min_picks={config.min_picks}")
+        if pick_count > config.max_picks:
+            ticket_shape_errors.append(f"ticket has {pick_count} pick(s), above max_picks={config.max_picks}")
+        if pick_count == 1 and not config.allow_single:
+            ticket_shape_errors.append("single ticket returned while allow_single=false")
+        if pick_count > 1 and not config.allow_combo:
+            ticket_shape_errors.append("combo ticket returned while allow_combo=false")
+    if ticket_shape_errors:
+        normalized["picks"] = []
+        normalized_picks = []
+        normalized["status"] = "failed"
+        normalized["estimated_combo_odds"] = None
+        normalized["combo_in_target_range"] = False
+        normalized["global_confidence_score"] = None
+        normalized["combo_risk_level"] = None
+        normalized["errors"] = list(normalized.get("errors") or [])
+        normalized["errors"].extend(ticket_shape_errors)
+        normalization_notes.append("ticket invalide rejeté par les garde-fous de forme")
 
     if not normalized.get("status"):
         normalized["status"] = "completed" if normalized_picks else "failed"
@@ -250,7 +284,7 @@ def _normalize_selection_payload(
         "generated_at",
         datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
     )
-    normalized.setdefault("selection_config", config.model_dump())
+    normalized["selection_config"] = config.model_dump()
     normalized.setdefault("estimated_combo_odds", None)
 
     if "combo_in_target_range" not in normalized:
@@ -305,16 +339,184 @@ def _fallback_result(config: SelectionConfig, input_file: str, error: str) -> di
     ).model_dump()
 
 
+def _safe_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _candidate_sort_key(candidate: dict[str, Any]) -> tuple[int, float]:
+    confidence = _to_int(candidate.get("confidence_score"), 0)
+    odds = _safe_float(candidate.get("expected_odds_min") or candidate.get("odds")) or 0.0
+    return confidence, odds
+
+
+def _compact_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    reasoning = str(candidate.get("reasoning") or candidate.get("reason") or "")
+    if len(reasoning) > 280:
+        reasoning = reasoning[:277].rstrip() + "..."
+    return {
+        "candidate_id": candidate.get("candidate_id"),
+        "fixture_id": candidate.get("fixture_id"),
+        "event": candidate.get("event"),
+        "competition": candidate.get("competition"),
+        "kickoff": candidate.get("kickoff"),
+        "market_canonical_id": candidate.get("market_canonical_id"),
+        "selection_canonical_id": candidate.get("selection_canonical_id"),
+        "market": candidate.get("market"),
+        "pick": candidate.get("pick"),
+        "confidence_score": candidate.get("confidence_score"),
+        "confidence_tier": candidate.get("confidence_tier"),
+        "risk_level": candidate.get("risk_level"),
+        "data_quality": candidate.get("data_quality"),
+        "expected_odds_min": candidate.get("expected_odds_min") or candidate.get("odds"),
+        "expected_odds_max": candidate.get("expected_odds_max") or candidate.get("odds"),
+        "odds_source": candidate.get("odds_source"),
+        "source_match_analysis_id": candidate.get("source_match_analysis_id"),
+        "reasoning": reasoning,
+    }
+
+
+def _compact_selection_payload(match_analyses: dict[str, Any]) -> dict[str, Any]:
+    candidates = match_analyses.get("candidates") if isinstance(match_analyses.get("candidates"), list) else []
+    rejected = (
+        match_analyses.get("rejected_candidates")
+        if isinstance(match_analyses.get("rejected_candidates"), list)
+        else []
+    )
+    try:
+        max_candidates = int(os.getenv("SELECTION_MAX_CANDIDATES_FOR_LLM", "60"))
+    except ValueError:
+        max_candidates = 60
+    max_candidates = max(1, min(200, max_candidates))
+    sorted_candidates = sorted(
+        [candidate for candidate in candidates if isinstance(candidate, dict)],
+        key=_candidate_sort_key,
+        reverse=True,
+    )
+    selected_candidates = sorted_candidates[:max(1, max_candidates)]
+    return {
+        "generated_at": match_analyses.get("generated_at"),
+        "target_date": match_analyses.get("target_date"),
+        "source_file": match_analyses.get("source_file"),
+        "status": match_analyses.get("status"),
+        "filter_config": match_analyses.get("filter_config") if isinstance(match_analyses.get("filter_config"), dict) else {},
+        "candidate_count": len(candidates),
+        "candidates_sent_count": len(selected_candidates),
+        "rejected_count": len(rejected),
+        "candidate_truncation_applied": len(selected_candidates) < len(candidates),
+        "candidates": [_compact_candidate(candidate) for candidate in selected_candidates],
+        "rejected_summary": {
+            "count": len(rejected),
+            "top_reasons": _top_rejection_reasons(rejected),
+        },
+    }
+
+
+def _top_rejection_reasons(rejected: list[Any]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in rejected:
+        if not isinstance(item, dict):
+            continue
+        reasons = item.get("rejection_reasons") or item.get("filter_reasons") or []
+        if not isinstance(reasons, list):
+            continue
+        for reason in reasons:
+            key = str(reason)
+            counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items(), key=lambda row: row[1], reverse=True)[:8])
+
+
+def _build_selection_input(match_analyses: dict[str, Any], config: SelectionConfig) -> str:
+    analyses_json = json.dumps(_compact_selection_payload(match_analyses), ensure_ascii=False, indent=2)
+    config_json = json.dumps(config.model_dump(), ensure_ascii=False, indent=2)
+    return f"INPUT_SELECTION_CONFIG_JSON:\n{config_json}\n\nINPUT_FILTERED_CANDIDATES_JSON:\n{analyses_json}"
+
+
+def _select_ticket_legacy(
+    *,
+    llm: Any,
+    model_name: str,
+    timeout: float,
+    prompt: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    max_json_retries = 2
+    retry_count = 0
+    parsing_attempts = 0
+    repair_used = False
+    cleaned_json = ""
+    repair_applied = ""
+    last_raw_response = ""
+    current_prompt = prompt
+    parsed: dict[str, Any] | None = None
+
+    while retry_count <= max_json_retries:
+        response, _ = create_response_with_retry(
+            llm,
+            model=model_name,
+            input=current_prompt,
+            operation_name="openai.responses.create selection_engine",
+            timeout=timeout,
+        )
+        raw_response = response.output_text or ""
+        last_raw_response = raw_response
+
+        try:
+            parsed, parse_meta = _safe_parse_json_with_meta(raw_response)
+            parsing_attempts += int(parse_meta.get("parsing_attempts", 0))
+            repair_used = repair_used or bool(parse_meta.get("repair_used"))
+            cleaned_json = str(parse_meta.get("cleaned_json") or cleaned_json)
+            repair_applied = str(parse_meta.get("repair_applied") or repair_applied)
+            logger.info(
+                "Selection JSON parsed successfully | parsing_attempts=%s repair_used=%s retry_count=%s",
+                parsing_attempts,
+                repair_used,
+                retry_count,
+            )
+            break
+        except SelectionJsonParseError as parse_exc:
+            parse_meta = parse_exc.meta
+            parsing_attempts += int(parse_meta.get("parsing_attempts", 0))
+            repair_used = repair_used or bool(parse_meta.get("repair_used"))
+            cleaned_json = str(parse_meta.get("cleaned_json") or cleaned_json)
+            repair_applied = str(parse_meta.get("repair_applied") or repair_applied)
+            retry_count += 1
+            retry_triggered = retry_count <= max_json_retries
+            logger.warning(
+                "Selection JSON parsing failed | parsing_attempts=%s repair_used=%s retry_count=%s retry_triggered=%s raw_llm_response=%s cleaned_json=%s repair_applied=%s",
+                parsing_attempts,
+                repair_used,
+                retry_count,
+                retry_triggered,
+                raw_response[:500],
+                cleaned_json[:500],
+                repair_applied[:500],
+            )
+            if not retry_triggered:
+                raise
+            current_prompt = (
+                "The previous output was not valid JSON. Fix ONLY the JSON.\n\n"
+                f"Previous output:\n{raw_response}"
+            )
+
+    if parsed is None:
+        raise SelectionJsonParseError("Aucune sortie JSON parseable après les retries.")
+
+    return parsed, {
+        "retry_count": retry_count,
+        "parsing_attempts": parsing_attempts,
+        "repair_used": repair_used,
+        "cleaned_json": cleaned_json,
+        "repair_applied": repair_applied,
+        "last_raw_response": last_raw_response,
+    }
+
+
 def select_combo(match_analyses: dict, config: SelectionConfig, llm, *, input_file: str = "") -> dict:
     try:
-        prompt_template = _load_prompt()
-        analyses_json = json.dumps(match_analyses, ensure_ascii=False, indent=2)
-        config_json = json.dumps(config.model_dump(), ensure_ascii=False, indent=2)
-        prompt = (
-            prompt_template.replace("{{SELECTION_CONFIG_JSON}}", config_json)
-            .replace("{{MATCH_ANALYSES_JSON}}", analyses_json)
-            .strip()
-        )
+        instructions = _load_prompt().strip()
+        input_text = _build_selection_input(match_analyses, config)
 
         model_name = getattr(llm, "analysis_model", None) or os.getenv("SELECTION_ENGINE_MODEL") or os.getenv(
             "OPENAI_ANALYSIS_MODEL"
@@ -323,79 +525,61 @@ def select_combo(match_analyses: dict, config: SelectionConfig, llm, *, input_fi
             raise RuntimeError("Modèle OpenAI manquant (SELECTION_ENGINE_MODEL/OPENAI_ANALYSIS_MODEL ou --model).")
 
         timeout = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "120"))
-        max_json_retries = 2
-        retry_count = 0
-        parsing_attempts = 0
-        repair_used = False
-        cleaned_json = ""
-        repair_applied = ""
-        last_raw_response = ""
+        use_structured_outputs = _env_flag("OPENAI_USE_STRUCTURED_OUTPUTS", True)
+        fallback_to_legacy = _env_flag("OPENAI_STRUCTURED_FALLBACK_TO_LEGACY", True)
+        parsed: dict[str, Any]
+        meta: dict[str, Any]
 
-        current_prompt = prompt
-        parsed: dict[str, Any] | None = None
-
-        while retry_count <= max_json_retries:
-            response, _ = create_response_with_retry(
-                llm,
-                model=model_name,
-                input=current_prompt,
-                operation_name="openai.responses.create selection_engine",
+        try:
+            if use_structured_outputs:
+                response, retry_count = create_structured_response_with_retry(
+                    llm,
+                    model=model_name,
+                    instructions=instructions,
+                    input=input_text,
+                    response_model=SelectionResult,
+                    operation_name="openai.responses.create selection_engine",
+                    timeout=timeout,
+                )
+                parsed = parse_response_output_json(response)
+                meta = {
+                    "retry_count": retry_count,
+                    "parsing_attempts": 1,
+                    "repair_used": False,
+                    "cleaned_json": "",
+                    "repair_applied": "",
+                    "last_raw_response": response.output_text or "",
+                }
+            else:
+                parsed, meta = _select_ticket_legacy(
+                    llm=llm,
+                    model_name=model_name,
+                    timeout=timeout,
+                    prompt=f"{instructions}\n\n{input_text}",
+                )
+        except Exception as exc:
+            if isinstance(exc, (ExternalApiPermanentError, ExternalApiRateLimitError)):
+                raise
+            if not (use_structured_outputs and fallback_to_legacy):
+                raise
+            logger.warning("Selection structured output failed, falling back to legacy JSON prompt", exc_info=True)
+            parsed, meta = _select_ticket_legacy(
+                llm=llm,
+                model_name=model_name,
                 timeout=timeout,
+                prompt=f"{instructions}\n\n{input_text}",
             )
-            raw_response = response.output_text or ""
-            last_raw_response = raw_response
-
-            try:
-                parsed, parse_meta = _safe_parse_json_with_meta(raw_response)
-                parsing_attempts += int(parse_meta.get("parsing_attempts", 0))
-                repair_used = repair_used or bool(parse_meta.get("repair_used"))
-                cleaned_json = str(parse_meta.get("cleaned_json") or cleaned_json)
-                repair_applied = str(parse_meta.get("repair_applied") or repair_applied)
-                logger.info(
-                    "Selection JSON parsed successfully | parsing_attempts=%s repair_used=%s retry_count=%s",
-                    parsing_attempts,
-                    repair_used,
-                    retry_count,
-                )
-                break
-            except SelectionJsonParseError as parse_exc:
-                parse_meta = parse_exc.meta
-                parsing_attempts += int(parse_meta.get("parsing_attempts", 0))
-                repair_used = repair_used or bool(parse_meta.get("repair_used"))
-                cleaned_json = str(parse_meta.get("cleaned_json") or cleaned_json)
-                repair_applied = str(parse_meta.get("repair_applied") or repair_applied)
-                retry_count += 1
-                retry_triggered = retry_count <= max_json_retries
-                logger.warning(
-                    "Selection JSON parsing failed | parsing_attempts=%s repair_used=%s retry_count=%s retry_triggered=%s raw_llm_response=%s cleaned_json=%s repair_applied=%s",
-                    parsing_attempts,
-                    repair_used,
-                    retry_count,
-                    retry_triggered,
-                    raw_response[:500],
-                    cleaned_json[:500],
-                    repair_applied[:500],
-                )
-                if not retry_triggered:
-                    raise
-                current_prompt = (
-                    "The previous output was not valid JSON. Fix ONLY the JSON.\n\n"
-                    f"Previous output:\n{raw_response}"
-                )
-
-        if parsed is None:
-            raise SelectionJsonParseError("Aucune sortie JSON parseable après les retries.")
 
         normalized = _normalize_selection_payload(parsed, config=config, input_file=input_file)
         validated = SelectionResult.model_validate(normalized)
         logger.info(
             "Selection completed | parsing_attempts=%s repair_used=%s retry_count=%s raw_llm_response=%s cleaned_json=%s repair_applied=%s",
-            parsing_attempts,
-            repair_used,
-            retry_count,
-            last_raw_response[:500],
-            cleaned_json[:500],
-            repair_applied[:500],
+            meta.get("parsing_attempts"),
+            meta.get("repair_used"),
+            meta.get("retry_count"),
+            str(meta.get("last_raw_response") or "")[:500],
+            str(meta.get("cleaned_json") or "")[:500],
+            str(meta.get("repair_applied") or "")[:500],
         )
         return validated.model_dump()
     except Exception as exc:  # noqa: BLE001

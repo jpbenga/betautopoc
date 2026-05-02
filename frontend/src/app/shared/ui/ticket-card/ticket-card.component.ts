@@ -39,7 +39,18 @@ export class TicketCardComponent {
   @Input() title = 'AI proposal';
   @Input() market = 'Market';
   @Input() status = 'Pending';
-  @Input() tone: 'default' | 'success' | 'warning' | 'danger' | 'live' = 'default';
+  @Input() tone:
+    | 'default'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'live'
+    | 'score-70'
+    | 'score-75'
+    | 'score-80'
+    | 'score-85'
+    | 'score-90'
+    | 'score-95-plus' = 'default';
   @Input() odds = '-';
   @Input() confidence = '-';
   @Input() stake = '-';

@@ -255,6 +255,7 @@ export interface TicketPick {
   risk_level?: string | null;
   reason?: string | null;
   evidence_summary?: Record<string, unknown>;
+  source_match_analysis_id?: string | null;
 }
 
 export interface TicketSummary {
@@ -270,6 +271,7 @@ export interface TicketSummary {
   picks_count: number;
   notes_count: number;
   errors_count: number;
+  competitions: string[];
   source_run_dir: string;
   selection_file: string;
   data_source_mode: string;
@@ -679,6 +681,130 @@ export interface SettingsLogEntry {
 export interface SettingsLogsResponse {
   status: string;
   logs: SettingsLogEntry[];
+}
+
+export interface StrategyCatalogItem {
+  strategy_file: string;
+  strategy_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  enabled?: boolean | null;
+  active: boolean;
+  valid: boolean;
+  updated_at?: string | null;
+  error?: string | null;
+}
+
+export interface StrategyDetailResponse {
+  status: string;
+  strategy_file: string;
+  strategy_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  active: boolean;
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  payload: Record<string, unknown>;
+  resolved?: Record<string, unknown> | null;
+  state_file?: string | null;
+}
+
+export interface StrategyCatalogResponse {
+  status: string;
+  active_strategy_file: string;
+  state_file: string;
+  strategies: StrategyCatalogItem[];
+  active_strategy?: StrategyDetailResponse | null;
+}
+
+export interface StrategyActivateRequest {
+  strategy_file: string;
+}
+
+export interface StrategyActivateResponse {
+  status: string;
+  active_strategy_file: string;
+  active_strategy: StrategyDetailResponse;
+}
+
+export interface StrategySaveRequest {
+  strategy_file: string;
+  payload: Record<string, unknown>;
+  activate?: boolean;
+}
+
+export interface StrategySaveResponse {
+  status: string;
+  strategy_file: string;
+  active_strategy_file: string;
+  strategy: StrategyDetailResponse;
+}
+
+export interface StrategyApplyRequest {
+  run_id: string;
+  strategy_file?: string | null;
+  selection_mode?: 'filter_only' | 'filter_and_select' | string;
+}
+
+export interface StrategyApplyResponse {
+  status: string;
+  application_id: string;
+  run_id: string;
+  target_date?: string | null;
+  strategy_file: string;
+  strategy_id?: string | null;
+  selection_mode: string;
+  source_run_dir: string;
+  application_dir: string;
+  files: Record<string, string>;
+  aggregation_candidate_count: number;
+  filtered_candidate_count: number;
+  rejected_candidate_count: number;
+  picks_count: number;
+  estimated_combo_odds?: number | null;
+  selection_status?: string | null;
+  notes: string[];
+  errors: string[];
+}
+
+export interface FootballLeagueRegistryEntry {
+  sport: 'football';
+  country: string;
+  competition_name: string;
+  competition_type: 'league' | 'cup' | 'international';
+  league_id?: number | null;
+  season_mode: string;
+  tier: number;
+  priority: number;
+  enabled: boolean;
+  agent_profile: string;
+  strategy_profile: string;
+  notes?: string | null;
+}
+
+export interface FootballLeagueRegistryResponse {
+  status: 'available' | 'no_data' | 'error';
+  version?: number | null;
+  source: string;
+  generated_at?: string | null;
+  verification_status?: string | null;
+  notes?: string | null;
+  leagues: FootballLeagueRegistryEntry[];
+  total_count: number;
+  enabled_count: number;
+  verified_count: number;
+}
+
+export interface FootballLeagueToggleRequest {
+  enabled: boolean;
+}
+
+export interface FootballLeagueToggleResponse {
+  status: 'updated';
+  league: FootballLeagueRegistryEntry;
+  total_count: number;
+  enabled_count: number;
 }
 
 export interface PerformanceNoDataResponse {

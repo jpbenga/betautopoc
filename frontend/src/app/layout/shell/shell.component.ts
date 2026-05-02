@@ -10,11 +10,11 @@ import { TopbarComponent } from '../topbar/topbar.component';
   standalone: true,
   imports: [RouterOutlet, SidebarComponent, TopbarComponent, MobileNavComponent],
   template: `
-    <div class="min-h-screen flex bg-background text-text">
+    <div class="flex min-h-screen bg-background text-text">
       <ba-sidebar [items]="navItems"></ba-sidebar>
-      <div class="flex-1 flex flex-col pb-16 md:pb-0">
+      <div class="flex min-w-0 flex-1 flex-col pb-16 md:pb-0">
         <ba-topbar></ba-topbar>
-        <main class="flex-1 p-4 md:p-6">
+        <main class="min-w-0 flex-1 p-3 sm:p-4 md:p-6">
           <router-outlet></router-outlet>
         </main>
       </div>

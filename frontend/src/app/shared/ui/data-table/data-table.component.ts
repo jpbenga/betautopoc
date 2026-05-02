@@ -11,7 +11,18 @@ export interface DataTableColumn {
 export interface DataTableRow {
   cells: Record<string, string | number>;
   status?: string;
-  statusTone?: 'default' | 'success' | 'warning' | 'danger' | 'live';
+  statusTone?:
+    | 'default'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'live'
+    | 'score-70'
+    | 'score-75'
+    | 'score-80'
+    | 'score-85'
+    | 'score-90'
+    | 'score-95-plus';
 }
 
 @Component({
@@ -19,7 +30,7 @@ export interface DataTableRow {
   standalone: true,
   imports: [StatusBadgeComponent],
   template: `
-    <div class="ba-card overflow-hidden">
+    <div class="ba-card min-w-0 overflow-hidden">
       @if (title || subtitle) {
         <div class="ba-card-header">
           @if (title) {
@@ -32,7 +43,7 @@ export interface DataTableRow {
       }
 
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[680px] border-collapse text-left text-sm">
+        <table class="w-full min-w-[42rem] border-collapse text-left text-sm">
           <thead class="bg-surface text-muted">
             <tr>
               @for (column of columns; track column.key) {
@@ -50,7 +61,9 @@ export interface DataTableRow {
               <tr class="border-t border-border/60 transition hover:bg-surface-high/70">
                 @for (column of columns; track column.key) {
                   <td class="px-4 py-3 text-muted" [class]="cellClass(column)">
-                    {{ cellValue(row, column.key) }}
+                    <div class="max-w-[16rem] overflow-hidden text-ellipsis whitespace-nowrap" [title]="stringValue(row, column.key)">
+                      {{ cellValue(row, column.key) }}
+                    </div>
                   </td>
                 }
                 @if (showStatus) {
@@ -99,5 +112,9 @@ export class DataTableComponent {
 
   cellValue(row: DataTableRow, key: string): string | number {
     return row.cells[key] ?? '';
+  }
+
+  stringValue(row: DataTableRow, key: string): string {
+    return String(this.cellValue(row, key));
   }
 }

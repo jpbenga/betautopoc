@@ -70,7 +70,11 @@ def _selection_config_from_strategy(resolved_strategy: Any) -> SelectionConfig:
     return SelectionConfig(
         combo_min_odds=resolved_strategy.combo_min_odds if resolved_strategy.combo_min_odds is not None else 2.8,
         combo_max_odds=resolved_strategy.combo_max_odds if resolved_strategy.combo_max_odds is not None else 3.5,
+        min_picks=resolved_strategy.min_picks,
         max_picks=resolved_strategy.max_picks,
+        allow_single=resolved_strategy.allow_single,
+        allow_combo=resolved_strategy.allow_combo,
+        preferred_ticket_type=resolved_strategy.preferred_ticket_type,
         min_pick_confidence=resolved_strategy.min_pick_confidence,
         min_global_match_confidence=resolved_strategy.min_global_match_confidence,
     )

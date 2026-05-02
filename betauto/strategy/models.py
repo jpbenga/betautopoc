@@ -9,7 +9,7 @@ RiskLevel = Literal["low", "medium", "high"]
 DataQuality = Literal["low", "medium", "high"]
 TicketType = Literal["single", "combo", "mixed"]
 MarketMode = Literal["allowlist", "blocklist", "all"]
-StakingMethod = Literal["flat", "percentage", "kelly_fractional", "manual"]
+StakingMethod = Literal["flat", "percentage", "kelly_fractional", "manual", "cycle_rollover"]
 
 
 class LeagueScope(BaseModel):
@@ -99,6 +99,11 @@ class BankrollPolicy(BaseModel):
     max_stake_percent_per_ticket: float | None = Field(default=None, ge=0, le=100)
     daily_loss_limit_percent: float | None = Field(default=None, ge=0, le=100)
     weekly_loss_limit_percent: float | None = Field(default=None, ge=0, le=100)
+    initial_stake: float | None = Field(default=None, ge=0)
+    target_bankroll: float | None = Field(default=None, ge=0)
+    reset_on_goal: bool = False
+    loss_rule: str | None = None
+    max_cycle_steps: int | None = Field(default=None, ge=1)
 
 
 class StrategyDefinition(BaseModel):

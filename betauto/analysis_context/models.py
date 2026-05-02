@@ -67,7 +67,45 @@ class QuantitativeContext:
 
 
 @dataclass(slots=True)
+class QualitativeSourceContext:
+    source_id: str | None = None
+    media_name: str = ""
+    media_type: str = "press"
+    priority_rank: int | None = None
+    url: str | None = None
+    published_at: str | None = None
+    language: str | None = None
+    scope: str = "match"
+    reliability: str = "unknown"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(slots=True)
+class QualitativeSignalContext:
+    signal_id: str | None = None
+    category: str = ""
+    summary: str = ""
+    impact: str = "neutral"
+    confidence: str = "unknown"
+    team_scope: str = "match"
+    source_ids: list[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(slots=True)
 class QualitativeContext:
+    available: bool = False
+    collection_status: str = "not_collected"
+    preferred_media: list[QualitativeSourceContext] = field(default_factory=list)
+    consulted_sources: list[QualitativeSourceContext] = field(default_factory=list)
+    signals: list[QualitativeSignalContext] = field(default_factory=list)
+    missing_dimensions: list[str] = field(default_factory=list)
+    source_notes: list[str] = field(default_factory=list)
     news: list[str] = field(default_factory=list)
     coach_quotes: list[str] = field(default_factory=list)
     rumors: list[str] = field(default_factory=list)
@@ -78,7 +116,11 @@ class QualitativeContext:
     manual_notes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["preferred_media"] = [source.to_dict() for source in self.preferred_media]
+        payload["consulted_sources"] = [source.to_dict() for source in self.consulted_sources]
+        payload["signals"] = [signal.to_dict() for signal in self.signals]
+        return payload
 
 
 @dataclass(slots=True)

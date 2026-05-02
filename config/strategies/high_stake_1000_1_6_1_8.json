@@ -1,0 +1,109 @@
+{
+  "strategy_id": "high_stake_1000_1_6_1_8",
+  "name": "High stake 1000 cote 1.6-1.8",
+  "description": "Mise forte simulee, un ou deux picks maximum, cible de cote courte et discipline stricte.",
+  "enabled": true,
+  "scope": {
+    "sports": [
+      "football"
+    ],
+    "allow_multi_sport": false,
+    "allow_multi_league": true,
+    "leagues": [
+      {
+        "id": 39,
+        "name": "Premier League",
+        "country": "England",
+        "enabled": true
+      },
+      {
+        "id": 61,
+        "name": "Ligue 1",
+        "country": "France",
+        "enabled": true
+      },
+      {
+        "id": 140,
+        "name": "La Liga",
+        "country": "Spain",
+        "enabled": true
+      }
+    ]
+  },
+  "ticket_policy": {
+    "allow_single": true,
+    "allow_combo": true,
+    "preferred_ticket_type": "mixed",
+    "min_picks": 1,
+    "max_picks": 2,
+    "target_odds": {
+      "enabled": true,
+      "min": 1.6,
+      "max": 1.8
+    }
+  },
+  "market_policy": {
+    "mode": "allowlist",
+    "allowed_markets": [
+      "match_winner",
+      "home_away",
+      "double_chance",
+      "goals_over_under",
+      "over_1_5_goals",
+      "under_3_5_goals"
+    ],
+    "excluded_markets": [
+      "exact_score",
+      "cards",
+      "corners",
+      "player_props"
+    ],
+    "allow_exotic_markets": false
+  },
+  "confidence_policy": {
+    "min_match_analysis_confidence": 78,
+    "min_pick_confidence": 80,
+    "min_combo_confidence": 78
+  },
+  "risk_policy": {
+    "risk_appetite": "low",
+    "max_pick_risk": "low",
+    "max_combo_risk": "medium"
+  },
+  "analysis_policy": {
+    "one_prompt_per_match": true,
+    "use_api_football": true,
+    "use_qualitative_context": true,
+    "require_odds_available": true,
+    "avoid_insufficient_data": true,
+    "min_data_quality": "high"
+  },
+  "data_policy": {
+    "provider": "api_football",
+    "season": 2025,
+    "odds_source": {
+      "bookmaker_id": 16,
+      "bookmaker_name": "Unibet"
+    },
+    "refresh_policy": {
+      "use_cache": true,
+      "force_refresh": false
+    }
+  },
+  "execution_policy": {
+    "platform": "unibet",
+    "prepare_betslip": true,
+    "requires_human_validation": true,
+    "allow_real_bet_submission": false
+  },
+  "bankroll_policy": {
+    "enabled": true,
+    "staking_method": "flat",
+    "initial_stake": 1000,
+    "reset_on_goal": false,
+    "loss_rule": "stop_after_loss",
+    "max_stake_percent_per_ticket": 100,
+    "daily_loss_limit_percent": 100,
+    "weekly_loss_limit_percent": 100
+  }
+}

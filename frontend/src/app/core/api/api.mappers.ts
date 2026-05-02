@@ -1,6 +1,17 @@
 import { FixtureSummary, JobLogEntry, MatchDataNoDataResponse, StepStatus } from './api.types';
 
-export type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
+export type UiTone =
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'live'
+  | 'score-70'
+  | 'score-75'
+  | 'score-80'
+  | 'score-85'
+  | 'score-90'
+  | 'score-95-plus';
 
 export function statusToTone(status: StepStatus | null | undefined): UiTone {
   const normalized = String(status || '').toLowerCase();
@@ -17,7 +28,23 @@ export function statusToTone(status: StepStatus | null | undefined): UiTone {
     return 'live';
   }
 
-  if (['pending', 'queued', 'starting', 'partial', 'proxy', 'estimated', 'timeout', 'stopped', 'cancelled', 'interrupted'].includes(normalized)) {
+  if (
+    [
+      'pending',
+      'queued',
+      'starting',
+      'partial',
+      'proxy',
+      'estimated',
+      'timeout',
+      'stopped',
+      'cancelled',
+      'interrupted',
+      'completed_with_errors',
+      'completed_with_warnings',
+      'completed_filter_only'
+    ].includes(normalized)
+  ) {
     return 'warning';
   }
 
@@ -87,6 +114,34 @@ export function oddsStatusToTone(status: string | null | undefined): UiTone {
   }
 
   return 'default';
+}
+
+export function confidenceScoreToTone(value: number | null | undefined): UiTone {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 70) {
+    return value && value > 0 ? 'danger' : 'default';
+  }
+
+  if (value >= 95) {
+    return 'score-95-plus';
+  }
+
+  if (value >= 90) {
+    return 'score-90';
+  }
+
+  if (value >= 85) {
+    return 'score-85';
+  }
+
+  if (value >= 80) {
+    return 'score-80';
+  }
+
+  if (value >= 75) {
+    return 'score-75';
+  }
+
+  return 'score-70';
 }
 
 export function isMatchDataNoDataResponse(value: unknown): value is MatchDataNoDataResponse {

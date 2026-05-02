@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { UiTone, confidenceScoreToTone } from '../../../core/api/api.mappers';
 import { AnalysisRunArtifact, AnalysisRunOutputs } from '../../../core/api/api.types';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { ErrorStateComponent } from '../error-state/error-state.component';
@@ -6,9 +7,8 @@ import { LoadingStateComponent } from '../loading-state/loading-state.component'
 import { SectionCardComponent } from '../section-card/section-card.component';
 import { StatusBadgeComponent } from '../status-badge/status-badge.component';
 
-type ArtifactKey = 'match_analysis' | 'aggregation_candidates' | 'filtered_candidates' | 'selection';
+type ArtifactKey = 'analysis_context' | 'match_analysis' | 'aggregation_candidates' | 'filtered_candidates' | 'resolved_strategy' | 'strategy_applications' | 'selection';
 type InspectorSection = ArtifactKey | 'raw_json';
-type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
 
 interface SummaryCard {
   label: string;
@@ -22,22 +22,38 @@ interface MatchAnalysisRow {
   event: string;
   competition: string;
   kickoff: string;
+  kickoffDisplay: string;
   summary: string;
+  keyFactors: string[];
+  risks: string[];
   global_confidence: string;
+  global_confidence_value: number;
   data_quality: string;
-  predicted_markets: string[];
+  confidence_tier: string;
+  premium: boolean;
+  predicted_markets: Array<{
+    market_canonical_id: string;
+    selection_canonical_id: string;
+    confidence: number;
+    confidenceLabel: string;
+    reason: string;
+  }>;
 }
 
 interface CandidateRow {
   id: string;
   event: string;
+  competition: string;
+  kickoff: string;
   market: string;
   pick: string;
   confidence: string;
+  confidenceValue: number;
   tier: string;
   risk: string;
   odds: string;
   odds_source: string;
+  reasoning: string;
   reasons: string;
   retained: boolean;
 }
@@ -50,7 +66,10 @@ interface SelectionPickRow {
   market: string;
   pick: string;
   confidence: string;
+  confidenceValue: number;
   risk: string;
+  reason: string;
+  evidence: Array<{ label: string; value: string }>;
 }
 
 interface SelectionSummaryView {
@@ -208,35 +227,126 @@ interface MatchProgressRow {
                           <option [value]="competition">{{ competition }}</option>
                         }
                       </select>
+                      <select
+                        class="ba-tool max-w-56 bg-background text-xs"
+                        [value]="matchProfileFilter"
+                        (change)="setMatchProfileFilter($event)"
+                        aria-label="Match profile filter"
+                      >
+                        <option value="all">All analyses</option>
+                        <option value="premium_only">Premium only (80%+)</option>
+                        <option value="standard_only">Standard only (&lt;80%)</option>
+                      </select>
+                      <select
+                        class="ba-tool max-w-56 bg-background text-xs"
+                        [value]="matchConfidenceFilter"
+                        (change)="setMatchConfidenceFilter($event)"
+                        aria-label="Match confidence filter"
+                      >
+                        <option value="all">All confidence tiers</option>
+                        <option value="elite">Elite (90%+)</option>
+                        <option value="very_strong">Very strong (80-89%)</option>
+                        <option value="strong">Strong (70-79%)</option>
+                        <option value="medium_or_low">Medium / low (&lt;70%)</option>
+                      </select>
                     </div>
 
-                    <div class="grid gap-2">
+                    <div class="grid gap-3">
                       @for (match of visibleMatchRows; track match.id) {
-                        <article class="rounded-card border border-border/60 bg-surface-low">
-                          <button
-                            type="button"
-                            class="flex w-full flex-col gap-2 p-3 text-left lg:flex-row lg:items-start lg:justify-between"
-                            (click)="toggleRow('match:' + match.id)"
-                          >
-                            <span class="min-w-0">
-                              <span class="ba-label">{{ match.competition }} · {{ match.kickoff }}</span>
-                              <span class="mt-1 block truncate text-sm font-semibold text-text">{{ match.event }}</span>
-                            </span>
-                            <span class="flex flex-wrap gap-2">
+                        <article
+                          class="rounded-card border bg-surface-low p-4"
+                          [class.border-accent/40]="match.confidence_tier === 'elite'"
+                          [class.border-success/40]="match.confidence_tier === 'very_strong'"
+                          [class.border-warning/40]="match.confidence_tier === 'strong'"
+                          [class.border-danger/30]="match.confidence_tier === 'medium_or_low'"
+                          [class.border-border/60]="match.confidence_tier === 'unknown'"
+                        >
+                          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div class="min-w-0">
+                              <p class="ba-label">{{ match.competition }}</p>
+                              <h4 class="mt-1 text-base font-semibold text-text">{{ match.event }}</h4>
+                              <p class="mt-1 text-sm text-muted">{{ match.kickoffDisplay }}</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                              <ba-status-badge [label]="match.confidence_tier" [tone]="confidenceTierTone(match.confidence_tier)"></ba-status-badge>
+                              <ba-status-badge [label]="match.global_confidence" [tone]="confidenceTone(match.global_confidence_value)"></ba-status-badge>
                               <ba-status-badge [label]="match.data_quality" [tone]="qualityTone(match.data_quality)"></ba-status-badge>
-                              <ba-status-badge [label]="match.global_confidence" tone="success"></ba-status-badge>
-                            </span>
-                          </button>
-                          @if (isRowOpen('match:' + match.id)) {
-                            <div class="border-t border-border/60 p-3">
-                              <p class="text-sm leading-6 text-muted">{{ match.summary }}</p>
-                              <div class="mt-3 flex flex-wrap gap-2">
-                                @for (market of match.predicted_markets; track market + $index) {
-                                  <span class="rounded-full border border-border/70 bg-background px-2 py-1 text-xs text-muted">{{ market }}</span>
-                                }
+                            </div>
+                          </div>
+
+                          <div class="mt-4 grid gap-3 xl:grid-cols-3">
+                            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                              <p class="ba-label">Event</p>
+                              <p class="mt-2 text-sm text-text">{{ match.event }}</p>
+                            </div>
+                            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                              <p class="ba-label">Competition</p>
+                              <p class="mt-2 text-sm text-text">{{ match.competition }}</p>
+                            </div>
+                            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                              <p class="ba-label">Kickoff</p>
+                              <p class="mt-2 text-sm text-text">{{ match.kickoffDisplay }}</p>
+                            </div>
+                          </div>
+
+                          <div class="mt-3 rounded-card border border-border/60 bg-background/60 p-3">
+                            <p class="ba-label">Analysis summary</p>
+                            <p class="mt-2 text-sm leading-6 text-text">{{ match.summary }}</p>
+                          </div>
+
+                          <div class="mt-3 grid gap-3 xl:grid-cols-[1fr_1fr]">
+                            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                              <p class="ba-label">Key factors</p>
+                              @for (factor of match.keyFactors; track factor + $index) {
+                                <p class="mt-2 text-sm text-text">{{ factor }}</p>
+                              } @empty {
+                                <p class="mt-2 text-sm text-muted">No key factors returned.</p>
+                              }
+                            </div>
+                            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                              <p class="ba-label">Risks</p>
+                              @for (risk of match.risks; track risk + $index) {
+                                <p class="mt-2 text-sm text-text">{{ risk }}</p>
+                              } @empty {
+                                <p class="mt-2 text-sm text-muted">No explicit risks returned.</p>
+                              }
+                            </div>
+                          </div>
+
+                          <div class="mt-3 grid gap-3 xl:grid-cols-2">
+                            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                              <p class="ba-label">Global confidence</p>
+                              <div class="mt-2">
+                                <ba-status-badge [label]="match.global_confidence" [tone]="confidenceTone(match.global_confidence_value)"></ba-status-badge>
                               </div>
                             </div>
-                          }
+                            <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                              <p class="ba-label">Data quality</p>
+                              <div class="mt-2">
+                                <ba-status-badge [label]="match.data_quality" [tone]="qualityTone(match.data_quality)"></ba-status-badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="mt-3 rounded-card border border-border/60 bg-background/60 p-3">
+                            <p class="ba-label">Predicted markets</p>
+                            <div class="mt-3 grid gap-3">
+                              @for (market of match.predicted_markets; track market.market_canonical_id + market.selection_canonical_id + $index) {
+                                <article class="rounded-card border border-border/60 bg-surface-low p-3">
+                                  <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                                    <div class="min-w-0">
+                                      <p class="text-sm font-medium text-text">{{ market.market_canonical_id }}</p>
+                                      <p class="mt-1 text-xs text-muted">{{ market.selection_canonical_id }}</p>
+                                    </div>
+                                    <ba-status-badge [label]="market.confidenceLabel" [tone]="confidenceTone(market.confidence)"></ba-status-badge>
+                                  </div>
+                                  <p class="mt-3 text-sm leading-6 text-text">{{ market.reason }}</p>
+                                </article>
+                              } @empty {
+                                <p class="text-sm text-muted">No predicted market returned for this match.</p>
+                              }
+                            </div>
+                          </div>
                         </article>
                       } @empty {
                         <ba-empty-state label="No match analysis" message="No match matches the current filters."></ba-empty-state>
@@ -299,6 +409,7 @@ interface MatchProgressRow {
                           >
                             <span class="min-w-0">
                               <span class="block truncate text-sm font-medium text-text">{{ candidate.event }}</span>
+                              <span class="mt-1 block truncate text-xs text-muted">{{ candidate.competition }} · {{ candidate.kickoff }}</span>
                               <span class="mt-1 block truncate text-xs text-muted">{{ candidate.market }} · {{ candidate.pick }}</span>
                             </span>
                             <span class="flex flex-wrap gap-2">
@@ -308,12 +419,15 @@ interface MatchProgressRow {
                             <span class="ba-data text-right text-text">{{ candidate.confidence }}</span>
                           </button>
                           @if (isRowOpen('candidate:' + candidate.id)) {
-                            <dl class="grid gap-3 border-t border-border/60 p-3 text-sm sm:grid-cols-4">
+                            <div class="border-t border-border/60 p-3">
+                              <p class="text-sm leading-6 text-text">{{ candidate.reasoning }}</p>
+                              <dl class="mt-3 grid gap-3 text-sm sm:grid-cols-4">
                               <div><dt class="ba-label">Odds</dt><dd class="mt-1 text-text">{{ candidate.odds }}</dd></div>
                               <div><dt class="ba-label">Source</dt><dd class="mt-1 text-muted">{{ candidate.odds_source }}</dd></div>
                               <div><dt class="ba-label">Risk</dt><dd class="mt-1 text-muted">{{ candidate.risk }}</dd></div>
                               <div><dt class="ba-label">Tier</dt><dd class="mt-1 text-muted">{{ candidate.tier }}</dd></div>
-                            </dl>
+                              </dl>
+                            </div>
                           }
                         </article>
                       } @empty {
@@ -382,6 +496,7 @@ interface MatchProgressRow {
                           >
                             <span class="min-w-0">
                               <span class="block truncate text-sm font-medium text-text">{{ candidate.event }} · {{ candidate.pick }}</span>
+                              <span class="mt-1 block truncate text-xs text-muted">{{ candidate.competition }} · {{ candidate.kickoff }}</span>
                               <span class="mt-1 block truncate text-xs text-muted">{{ candidate.market }}</span>
                             </span>
                             <span class="flex flex-wrap gap-2">
@@ -392,7 +507,8 @@ interface MatchProgressRow {
                           </button>
                           @if (isRowOpen('filtered:' + candidate.id)) {
                             <div class="border-t border-border/60 p-3">
-                              <p class="text-sm text-muted">Reasons: {{ candidate.reasons }}</p>
+                              <p class="text-sm leading-6 text-text">{{ candidate.reasoning }}</p>
+                              <p class="mt-2 text-sm text-muted">Reasons: {{ candidate.reasons }}</p>
                               <p class="mt-2 text-xs text-muted">Odds {{ candidate.odds }} · {{ candidate.odds_source }} · {{ candidate.tier }}</p>
                             </div>
                           }
@@ -466,10 +582,23 @@ interface MatchProgressRow {
                               <span class="mt-1 block truncate text-xs text-muted">{{ pick.market }} · {{ pick.pick }}</span>
                             </span>
                             <span class="flex flex-wrap gap-2">
-                              <ba-status-badge [label]="pick.confidence" tone="success"></ba-status-badge>
+                              <ba-status-badge [label]="pick.confidence" [tone]="confidenceTone(pick.confidenceValue)"></ba-status-badge>
                               <ba-status-badge [label]="pick.risk" [tone]="riskTone(pick.risk)"></ba-status-badge>
                             </span>
                           </button>
+                          @if (isRowOpen('pick:' + pick.id)) {
+                            <div class="border-t border-border/60 p-3">
+                              <p class="text-sm leading-6 text-text">{{ pick.reason }}</p>
+                              <div class="mt-3 grid gap-2 lg:grid-cols-2">
+                                @for (item of pick.evidence; track item.label) {
+                                  <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                                    <p class="ba-label">{{ item.label }}</p>
+                                    <p class="mt-2 text-sm text-text">{{ item.value }}</p>
+                                  </div>
+                                }
+                              </div>
+                            </div>
+                          }
                         </article>
                       } @empty {
                         <ba-empty-state label="No final picks" message="selection.json contains no retained picks." tone="warning"></ba-empty-state>
@@ -562,6 +691,8 @@ export class RunOutputInspectorComponent {
   protected readonly progressLimit = 6;
   protected rawArtifactKey: ArtifactKey = 'match_analysis';
   protected competitionFilter = 'all';
+  protected matchProfileFilter: 'all' | 'premium_only' | 'standard_only' = 'all';
+  protected matchConfidenceFilter: 'all' | 'elite' | 'very_strong' | 'strong' | 'medium_or_low' = 'all';
   protected statusFilter = 'all';
   protected marketFilter = 'all';
   protected tierFilter = 'all';
@@ -572,17 +703,23 @@ export class RunOutputInspectorComponent {
   protected showAllFiltered = false;
   protected showAllSelection = false;
   protected expandedSections: Record<InspectorSection, boolean> = {
+    analysis_context: false,
     match_analysis: true,
     aggregation_candidates: false,
     filtered_candidates: false,
+    resolved_strategy: false,
+    strategy_applications: false,
     selection: false,
     raw_json: false
   };
   protected expandedRows: Record<string, boolean> = {};
   protected readonly artifactTabs: Array<{ key: ArtifactKey; label: string }> = [
+    { key: 'analysis_context', label: 'Analysis Context' },
     { key: 'match_analysis', label: 'Match Analysis' },
     { key: 'aggregation_candidates', label: 'Aggregated Candidates' },
     { key: 'filtered_candidates', label: 'Filtered Candidates' },
+    { key: 'resolved_strategy', label: 'Resolved Strategy' },
+    { key: 'strategy_applications', label: 'Strategy Applications' },
     { key: 'selection', label: 'Final Selection' }
   ];
 
@@ -657,15 +794,28 @@ export class RunOutputInspectorComponent {
     return results.map((item, index) => {
       const analysis = this.objectValue(item, 'analysis');
       const predicted = this.arrayFrom(analysis, 'predicted_markets');
+      const globalConfidenceValue = this.numberValue(analysis, 'global_confidence');
       return {
         id: String(this.value(analysis, 'fixture_id') || index),
         event: this.text(analysis, 'event'),
         competition: this.text(analysis, 'competition'),
         kickoff: this.text(analysis, 'kickoff'),
+        kickoffDisplay: this.formatKickoffCompact(this.text(analysis, 'kickoff')),
         summary: this.text(analysis, 'analysis_summary'),
+        keyFactors: this.arrayFrom(analysis, 'key_factors').map((factor) => String(factor)),
+        risks: this.arrayFrom(analysis, 'risks').map((risk) => String(risk)),
         global_confidence: `${this.value(analysis, 'global_confidence') ?? '—'}% confidence`,
+        global_confidence_value: globalConfidenceValue,
         data_quality: this.text(analysis, 'data_quality'),
-        predicted_markets: predicted.map((market) => `${this.text(market, 'market_canonical_id')} · ${this.value(market, 'confidence') ?? '—'}%`)
+        confidence_tier: this.matchConfidenceTier(globalConfidenceValue),
+        premium: globalConfidenceValue >= 80,
+        predicted_markets: predicted.map((market) => ({
+          market_canonical_id: this.text(market, 'market_canonical_id'),
+          selection_canonical_id: this.text(market, 'selection_canonical_id'),
+          confidence: this.numberValue(market, 'confidence'),
+          confidenceLabel: this.formatPercent(this.value(market, 'confidence')),
+          reason: this.text(market, 'reason')
+        }))
       };
     });
   }
@@ -678,9 +828,20 @@ export class RunOutputInspectorComponent {
   }
 
   protected get filteredMatchRows(): MatchAnalysisRow[] {
-    return this.competitionFilter === 'all'
-      ? this.matchRows
-      : this.matchRows.filter((row) => row.competition === this.competitionFilter);
+    return this.matchRows.filter((row) => {
+      const competitionMatches = this.competitionFilter === 'all' || row.competition === this.competitionFilter;
+      const profileMatches =
+        this.matchProfileFilter === 'all'
+        || (this.matchProfileFilter === 'premium_only' && row.premium)
+        || (this.matchProfileFilter === 'standard_only' && !row.premium);
+      const confidenceMatches =
+        this.matchConfidenceFilter === 'all'
+        || (this.matchConfidenceFilter === 'elite' && row.confidence_tier === 'elite')
+        || (this.matchConfidenceFilter === 'very_strong' && row.confidence_tier === 'very_strong')
+        || (this.matchConfidenceFilter === 'strong' && row.confidence_tier === 'strong')
+        || (this.matchConfidenceFilter === 'medium_or_low' && row.confidence_tier === 'medium_or_low');
+      return competitionMatches && profileMatches && confidenceMatches;
+    });
   }
 
   protected get visibleMatchRows(): MatchAnalysisRow[] {
@@ -759,7 +920,10 @@ export class RunOutputInspectorComponent {
       market: this.text(pick, 'market'),
       pick: this.text(pick, 'pick'),
       confidence: this.formatPercent(this.value(pick, 'confidence_score')),
-      risk: this.text(pick, 'risk_level')
+      confidenceValue: this.numberValue(pick, 'confidence_score'),
+      risk: this.text(pick, 'risk_level'),
+      reason: this.text(pick, 'reason'),
+      evidence: this.selectionEvidence(this.objectValue(pick, 'evidence_summary'))
     }));
   }
 
@@ -838,6 +1002,21 @@ export class RunOutputInspectorComponent {
     this.showAllMatches = false;
   }
 
+  protected setMatchProfileFilter(event: Event): void {
+    const value = this.selectValue(event);
+    this.matchProfileFilter = value === 'premium_only' || value === 'standard_only' ? value : 'all';
+    this.showAllMatches = false;
+  }
+
+  protected setMatchConfidenceFilter(event: Event): void {
+    const value = this.selectValue(event);
+    this.matchConfidenceFilter =
+      value === 'elite' || value === 'very_strong' || value === 'strong' || value === 'medium_or_low'
+        ? value
+        : 'all';
+    this.showAllMatches = false;
+  }
+
   protected setStatusFilter(event: Event): void {
     this.statusFilter = this.selectValue(event);
     this.showAllProgress = false;
@@ -883,6 +1062,26 @@ export class RunOutputInspectorComponent {
       return 'warning';
     }
     if (normalized === 'low') {
+      return 'danger';
+    }
+    return 'default';
+  }
+
+  protected confidenceTone(value: number): UiTone {
+    return confidenceScoreToTone(value);
+  }
+
+  protected confidenceTierTone(value: string): UiTone {
+    if (value === 'elite') {
+      return 'live';
+    }
+    if (value === 'very_strong') {
+      return 'success';
+    }
+    if (value === 'strong') {
+      return 'warning';
+    }
+    if (value === 'medium_or_low') {
       return 'danger';
     }
     return 'default';
@@ -935,16 +1134,37 @@ export class RunOutputInspectorComponent {
     return items.map((candidate, index) => ({
       id: this.text(candidate, 'candidate_id') || `${retained ? 'retained' : 'rejected'}-${index}`,
       event: this.text(candidate, 'event'),
+      competition: this.text(candidate, 'competition'),
+      kickoff: this.text(candidate, 'kickoff'),
       market: this.text(candidate, 'market'),
       pick: this.text(candidate, 'pick'),
       confidence: this.formatPercent(this.value(candidate, 'confidence_score')),
+      confidenceValue: this.numberValue(candidate, 'confidence_score'),
       tier: this.text(candidate, 'confidence_tier'),
       risk: this.text(candidate, 'risk_level'),
       odds: this.formatNumber(this.value(candidate, 'odds')),
       odds_source: this.text(candidate, 'odds_source'),
-      reasons: this.arrayFrom(candidate, 'rejection_reasons').join(', ') || '—',
+      reasoning: this.text(candidate, 'reasoning'),
+      reasons:
+        this.arrayFrom(candidate, 'rejection_reasons').join(', ')
+        || this.arrayFrom(candidate, 'filter_reasons').join(', ')
+        || '—',
       retained
     }));
+  }
+
+  private selectionEvidence(source: Record<string, unknown>): Array<{ label: string; value: string }> {
+    return [
+      { label: 'Global confidence', value: this.formatPercent(source['global_confidence']) },
+      { label: 'Confidence tier', value: this.displayValue(source['confidence_tier']) },
+      { label: 'Data quality', value: this.displayValue(source['data_quality']) },
+      { label: 'Odds source', value: this.displayValue(source['odds_source']) },
+      { label: 'Source status', value: this.displayValue(source['source_status']) },
+      {
+        label: 'Expected odds',
+        value: this.oddsRange(source['expected_odds_min'], source['expected_odds_max'])
+      }
+    ];
   }
 
   private progressNumber(key: string): number | null {
@@ -955,6 +1175,22 @@ export class RunOutputInspectorComponent {
   private progressLabel(key: string, fallback: number): string {
     const value = this.progressNumber(key);
     return String(value ?? fallback);
+  }
+
+  private matchConfidenceTier(value: number): string {
+    if (value >= 90) {
+      return 'elite';
+    }
+    if (value >= 80) {
+      return 'very_strong';
+    }
+    if (value >= 70) {
+      return 'strong';
+    }
+    if (value > 0) {
+      return 'medium_or_low';
+    }
+    return 'unknown';
   }
 
   private arrayFrom(source: unknown, key: string): unknown[] {
@@ -975,6 +1211,11 @@ export class RunOutputInspectorComponent {
     return this.objectOrEmpty(source)[key];
   }
 
+  private numberValue(source: unknown, key: string): number {
+    const value = this.value(source, key);
+    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  }
+
   private text(source: unknown, key: string): string {
     const value = this.value(source, key);
     return value === null || value === undefined || value === '' ? '—' : String(value);
@@ -986,6 +1227,36 @@ export class RunOutputInspectorComponent {
 
   private formatPercent(value: unknown): string {
     return typeof value === 'number' && Number.isFinite(value) ? `${Math.round(value)}%` : '—';
+  }
+
+  private oddsRange(min: unknown, max: unknown): string {
+    if (typeof min === 'number' && typeof max === 'number') {
+      return `${min.toFixed(2)} - ${max.toFixed(2)}`;
+    }
+    return this.formatNumber(min ?? max);
+  }
+
+  private displayValue(value: unknown): string {
+    return value === null || value === undefined || value === '' ? '—' : String(value);
+  }
+
+  private formatKickoffCompact(value: string): string {
+    if (!value || value === '—') {
+      return '—';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   }
 
   private selectValue(event: Event): string {

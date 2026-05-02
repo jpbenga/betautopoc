@@ -57,7 +57,7 @@ Fichiers clés:
 - `betauto/selection_engine/selector.py`
 - `betauto/api_clients/openai_client.py`
 - `prompts/match_analysis_prompt.txt`
-- `prompts/combo_selection_prompt.txt`
+- `prompts/ticket_selection_prompt.txt`
 
 ### Points forts actuels
 

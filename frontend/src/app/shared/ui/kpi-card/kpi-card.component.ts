@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { StatusBadgeComponent } from '../status-badge/status-badge.component';
+import { UiTone } from '../../../core/api/api.mappers';
 
 @Component({
   selector: 'ba-kpi-card',
@@ -24,7 +25,7 @@ export class KpiCardComponent {
   @Input({ required: true }) label = '';
   @Input({ required: true }) value = '';
   @Input() status = '';
-  @Input() tone: 'default' | 'success' | 'warning' | 'danger' | 'live' = 'default';
+  @Input() tone: UiTone = 'default';
   @Input() delta = '';
   @Input() deltaTone: 'muted' | 'success' | 'warning' | 'danger' = 'muted';
 

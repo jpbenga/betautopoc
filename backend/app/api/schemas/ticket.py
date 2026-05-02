@@ -23,6 +23,7 @@ class TicketPick(ContractBaseModel):
     risk_level: str | None = None
     reason: str | None = None
     evidence_summary: dict[str, Any] = Field(default_factory=dict)
+    source_match_analysis_id: str | None = None
 
 
 class TicketSummary(ContractBaseModel):
@@ -38,6 +39,7 @@ class TicketSummary(ContractBaseModel):
     picks_count: int = 0
     notes_count: int = 0
     errors_count: int = 0
+    competitions: list[str] = Field(default_factory=list)
     source_run_dir: str
     selection_file: str
     data_source_mode: str = "run_artifacts"

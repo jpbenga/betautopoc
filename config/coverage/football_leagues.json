@@ -336,7 +336,7 @@
       "season_mode": "continental_season",
       "tier": 1,
       "priority": 100,
-      "enabled": false,
+      "enabled": true,
       "agent_profile": "football_uefa_championsleague",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_api_football_exact_match"
@@ -476,7 +476,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 75,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_argentina_ligaprofesional",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -490,7 +490,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 80,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_brazil_serieabresil",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -504,7 +504,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_bulgaria_parvaliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -518,7 +518,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_chile_primeradivisionchili",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -532,7 +532,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_china_superleaguechine",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -546,7 +546,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_colombia_primeraa",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -560,7 +560,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_croatia_hnl",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -588,7 +588,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_ecuador_ligapro",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -602,7 +602,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 55,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_estonia_meistriliiga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -616,7 +616,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 80,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_usa_mls",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -630,7 +630,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 60,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_finland_veikkausliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -644,7 +644,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 55,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_georgia_erovnuliliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -658,7 +658,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 70,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_greece_superleaguegrece",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -672,7 +672,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 60,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_hungary_otpbankliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -714,7 +714,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 55,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_lithuania_alyga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -728,7 +728,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 75,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_mexico_ligamx",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -742,7 +742,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 60,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_paraguay_primeradivisionparaguay",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -770,7 +770,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 70,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_poland_ekstraklasa",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -784,7 +784,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 60,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_czechrepublic_fortunaliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -798,7 +798,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_romania_liga1",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -812,7 +812,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 60,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_serbia_superliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -826,7 +826,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 60,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_slovakia_nikeliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -840,7 +840,7 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 55,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_slovenia_prvaliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -854,10 +854,11 @@
       "season_mode": "domestic_season",
       "tier": 1,
       "priority": 65,
-      "enabled": true,
+      "enabled": false,
       "agent_profile": "football_ukraine_premierleagueukraine",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
     }
-  ]
+  ],
+  "updated_at": "2026-05-01T21:28:11.799080+00:00"
 }

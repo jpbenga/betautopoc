@@ -1,12 +1,11 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { AnalysisApiService } from '../../core/api/analysis-api.service';
 import { TicketApiService } from '../../core/api/ticket-api.service';
-import { statusToTone } from '../../core/api/api.mappers';
-import { AnalysisRun, TicketAuditLog, TicketDetail, TicketSummary } from '../../core/api/api.types';
-import { DataTableColumn, DataTableComponent, DataTableRow } from '../../shared/ui/data-table/data-table.component';
+import { UiTone, confidenceScoreToTone, statusToTone } from '../../core/api/api.mappers';
+import { AnalysisRun, AnalysisRunOutputs, TicketAuditLog, TicketDetail, TicketPick, TicketSummary } from '../../core/api/api.types';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../shared/ui/error-state/error-state.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
@@ -15,9 +14,6 @@ import { LogConsoleComponent, LogEntry } from '../../shared/ui/log-console/log-c
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge.component';
-import { TicketCardComponent } from '../../shared/ui/ticket-card/ticket-card.component';
-
-type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
 
 interface TicketKpi {
   label: string;
@@ -26,11 +22,34 @@ interface TicketKpi {
   tone: UiTone;
 }
 
+interface TicketMatchAnalysisDetail {
+  id: string;
+  fixtureId: number | null;
+  sourceId: string;
+  event: string;
+  competition: string;
+  kickoff: string;
+  kickoffDisplay: string;
+  summary: string;
+  keyFactors: string[];
+  risks: string[];
+  globalConfidence: number;
+  globalConfidenceLabel: string;
+  dataQuality: string;
+  confidenceTier: string;
+  predictedMarkets: Array<{
+    marketCanonicalId: string;
+    selectionCanonicalId: string;
+    confidence: number;
+    confidenceLabel: string;
+    reason: string;
+  }>;
+}
+
 @Component({
   selector: 'ba-tickets-page',
   standalone: true,
   imports: [
-    DataTableComponent,
     EmptyStateComponent,
     ErrorStateComponent,
     KpiCardComponent,
@@ -39,8 +58,7 @@ interface TicketKpi {
     PageHeaderComponent,
     RouterLink,
     SectionCardComponent,
-    StatusBadgeComponent,
-    TicketCardComponent
+    StatusBadgeComponent
   ],
   template: `
     <ba-page-header
@@ -202,7 +220,7 @@ interface TicketKpi {
       <section class="mt-4">
         <ba-empty-state
           label="No tickets yet"
-          message="No selection.json artifact was found under data/orchestrator_runs. Generate or complete an orchestrated run first."
+          message="Aucun selection.json de run ou d'application de stratégie n'a été trouvé sous data/orchestrator_runs."
         ></ba-empty-state>
       </section>
     } @else {
@@ -217,38 +235,40 @@ interface TicketKpi {
         }
       </section>
 
-      <section class="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
         <ba-section-card>
           <div class="ba-card-header flex items-center justify-between gap-3">
-            <div>
-              <p class="ba-label">Tickets from artifacts</p>
-              <h3 class="mt-1 text-sm font-semibold text-text">Strict orchestrator selections</h3>
+            <div class="min-w-0">
+              <p class="ba-label">Tickets sauvegardés</p>
+              <h3 class="mt-1 truncate text-sm font-semibold text-text">{{ tickets.length }} tickets disponibles</h3>
             </div>
-            <ba-status-badge label="run_artifacts" tone="success"></ba-status-badge>
+            <ba-status-badge label="persisted" tone="success"></ba-status-badge>
           </div>
-          <div class="space-y-3 p-4">
+          <div class="max-h-[28rem] space-y-2 overflow-y-auto p-3">
             @for (ticket of tickets; track ticket.ticket_id) {
               <button
                 type="button"
-                class="w-full rounded-card border p-4 text-left transition hover:border-accent/60 hover:bg-surface-high/50"
+                class="w-full rounded-card border px-3 py-2 text-left transition hover:border-accent/60 hover:bg-surface-high/50"
                 [class.border-accent]="ticket.ticket_id === selectedTicketId"
-                [class.bg-accent]="ticket.ticket_id === selectedTicketId"
-                [class.text-background]="ticket.ticket_id === selectedTicketId"
+                [class.bg-accent/10]="ticket.ticket_id === selectedTicketId"
                 [class.border-border]="ticket.ticket_id !== selectedTicketId"
                 [class.bg-background]="ticket.ticket_id !== selectedTicketId"
                 (click)="selectTicket(ticket.ticket_id)"
               >
-                <div class="flex items-start justify-between gap-4">
-                  <div>
-                    <p class="ba-data">{{ ticket.ticket_id }}</p>
-                    <p class="mt-1 text-xs opacity-80">Run {{ ticket.run_id }} · {{ ticket.target_date || 'no date' }}</p>
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="ba-data truncate text-text">{{ shortId(ticket.ticket_id) }}</p>
+                    <p class="mt-1 truncate text-xs text-muted">{{ ticket.target_date || 'no date' }} · {{ competitionSummary(ticket.competitions) }}</p>
                   </div>
                   <ba-status-badge [label]="ticket.status" [tone]="toneFor(ticket.status)"></ba-status-badge>
                 </div>
-                <div class="mt-3 grid grid-cols-3 gap-3 text-xs">
-                  <span>{{ ticket.picks_count }} picks</span>
-                  <span>{{ formatOdds(ticket.estimated_combo_odds) }} odds</span>
-                  <span>{{ formatPercent(ticket.global_confidence_score) }}</span>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <span class="text-xs text-muted">{{ ticket.picks_count }} picks</span>
+                  <span class="text-xs text-muted">{{ formatOdds(ticket.estimated_combo_odds) }} odds</span>
+                  <ba-status-badge
+                    [label]="formatPercent(ticket.global_confidence_score)"
+                    [tone]="confidenceTone(ticket.global_confidence_score)"
+                  ></ba-status-badge>
                 </div>
               </button>
             }
@@ -264,25 +284,35 @@ interface TicketKpi {
             @if (isDetailLoading) {
               <ba-loading-state message="Loading selected ticket..."></ba-loading-state>
             } @else if (selectedTicket) {
-              <ba-ticket-card
-                [title]="selectedTicket.picks_count + '-pick AI proposal'"
-                [market]="selectedTicket.target_date || 'Target date unknown'"
-                [status]="selectedTicket.status"
-                [tone]="toneFor(selectedTicket.status)"
-                [odds]="formatOdds(selectedTicket.estimated_combo_odds)"
-                [confidence]="formatPercent(selectedTicket.global_confidence_score)"
-                [stake]="selectedTicket.combo_risk_level || 'unknown risk'"
-                [summary]="targetRangeSummary(selectedTicket)"
-              ></ba-ticket-card>
-
-              <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                <div class="rounded-card border border-border/60 bg-background/60 p-3">
-                  <p class="ba-label">Data source</p>
-                  <p class="mt-2 text-sm text-text">{{ selectedTicket.data_source_mode }}</p>
+              <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div class="min-w-0">
+                    <p class="ba-label">{{ selectedTicket.target_date || 'Target date unknown' }}</p>
+                    <h4 class="mt-1 truncate text-base font-semibold text-text">{{ shortId(selectedTicket.ticket_id) }}</h4>
+                    <p class="mt-1 text-sm text-muted">{{ competitionSummary(selectedTicket.competitions) }}</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <ba-status-badge [label]="selectedTicket.status" [tone]="toneFor(selectedTicket.status)"></ba-status-badge>
+                    <ba-status-badge [label]="formatPercent(selectedTicket.global_confidence_score)" [tone]="confidenceTone(selectedTicket.global_confidence_score)"></ba-status-badge>
+                  </div>
                 </div>
-                <div class="rounded-card border border-border/60 bg-background/60 p-3">
-                  <p class="ba-label">Date consistency</p>
-                  <p class="mt-2 text-sm text-text">{{ selectedTicket.date_consistency_status || 'unknown' }}</p>
+                <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <p class="ba-label">Picks</p>
+                    <p class="mt-1 text-sm text-text">{{ selectedTicket.picks_count }}</p>
+                  </div>
+                  <div>
+                    <p class="ba-label">Odds</p>
+                    <p class="mt-1 text-sm text-text">{{ formatOdds(selectedTicket.estimated_combo_odds) }}</p>
+                  </div>
+                  <div>
+                    <p class="ba-label">Risk</p>
+                    <p class="mt-1 text-sm text-text">{{ selectedTicket.combo_risk_level || 'unknown' }}</p>
+                  </div>
+                  <div>
+                    <p class="ba-label">Target</p>
+                    <p class="mt-1 text-sm text-text">{{ comboTargetLabel(selectedTicket) }}</p>
+                  </div>
                 </div>
               </div>
             } @else {
@@ -293,21 +323,73 @@ interface TicketKpi {
       </section>
 
       <section class="mt-4">
-        <ba-data-table
-          title="Ticket proposals"
-          subtitle="Selection artifacts exposed by the Ticketing API."
-          [columns]="ticketColumns"
-          [rows]="ticketRows"
-        ></ba-data-table>
+        <ba-section-card>
+          <div class="ba-card-header flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="ba-label">Ticket proposals</p>
+              <h3 class="mt-1 text-sm font-semibold text-text">Résumé compact des sélections</h3>
+            </div>
+            <ba-status-badge [label]="tickets.length + ' proposals'" tone="default"></ba-status-badge>
+          </div>
+          <div class="grid max-h-[24rem] gap-2 overflow-y-auto p-3 sm:grid-cols-2 xl:grid-cols-3">
+            @for (ticket of tickets; track ticket.ticket_id) {
+              <button
+                type="button"
+                class="rounded-card border border-border/60 bg-background/60 p-3 text-left transition hover:border-accent/60 hover:bg-surface-high/50"
+                [class.border-accent]="ticket.ticket_id === selectedTicketId"
+                [class.bg-accent/10]="ticket.ticket_id === selectedTicketId"
+                (click)="selectTicket(ticket.ticket_id)"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-text">{{ ticket.target_date || 'No date' }}</p>
+                    <p class="mt-1 truncate text-xs text-muted">{{ competitionSummary(ticket.competitions) }}</p>
+                  </div>
+                  <ba-status-badge [label]="formatPercent(ticket.global_confidence_score)" [tone]="confidenceTone(ticket.global_confidence_score)"></ba-status-badge>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2 text-xs text-muted">
+                  <span>{{ ticket.picks_count }} picks</span>
+                  <span>{{ formatOdds(ticket.estimated_combo_odds) }} odds</span>
+                  <span>{{ ticket.combo_risk_level || 'risk —' }}</span>
+                </div>
+              </button>
+            }
+          </div>
+        </ba-section-card>
       </section>
 
       <section class="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <ba-data-table
-          title="Selected picks"
-          subtitle="Picks read directly from selection.json."
-          [columns]="pickColumns"
-          [rows]="pickRows"
-        ></ba-data-table>
+        <ba-section-card>
+          <div class="ba-card-header">
+            <p class="ba-label">Selected picks</p>
+            <h3 class="mt-1 text-sm font-semibold text-text">Clique un pick pour ouvrir son détail</h3>
+          </div>
+          <div class="grid gap-2 p-3">
+            @for (pick of selectedTicket?.picks || []; track pick.pick_id || $index) {
+              <button
+                type="button"
+                class="rounded-card border border-border/60 bg-background/60 p-3 text-left transition hover:border-accent/60 hover:bg-surface-high/50"
+                (click)="openPickModal(pick)"
+              >
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-text">{{ pick.event || 'Event unknown' }}</p>
+                    <p class="mt-1 truncate text-xs text-muted">{{ pick.competition || 'Competition unknown' }} · {{ compactDate(pick.kickoff) }}</p>
+                    <p class="mt-1 truncate text-xs text-muted">{{ pick.market || 'Market unknown' }} · {{ pick.pick || 'Pick unknown' }}</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2 sm:justify-end">
+                    <ba-status-badge [label]="formatPercent(pick.confidence_score)" [tone]="confidenceTone(pick.confidence_score)"></ba-status-badge>
+                    <ba-status-badge [label]="pick.risk_level || 'risk —'" [tone]="riskTone(pick.risk_level)"></ba-status-badge>
+                  </div>
+                </div>
+              </button>
+            } @empty {
+              <div class="p-4">
+                <ba-empty-state label="No selected picks" message="The selected ticket contains no pick."></ba-empty-state>
+              </div>
+            }
+          </div>
+        </ba-section-card>
 
         <ba-section-card>
           <div class="ba-card-header">
@@ -329,19 +411,181 @@ interface TicketKpi {
         </ba-section-card>
       </section>
     }
+
+    @if (selectedPickForModal) {
+      <div
+        class="fixed inset-0 z-50 flex items-end bg-background/80 p-3 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+        role="dialog"
+        aria-modal="true"
+        (click)="closePickModal()"
+      >
+        <section
+          class="max-h-[92vh] w-full overflow-y-auto rounded-card border border-border/80 bg-surface-low shadow-glow sm:max-w-5xl"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border/60 bg-surface-low px-4 py-3">
+            <div class="min-w-0">
+              <p class="ba-label">{{ selectedPickForModal.competition || 'Competition unknown' }} · {{ compactDate(selectedPickForModal.kickoff) }}</p>
+              <h3 class="mt-1 truncate text-base font-semibold text-text">{{ selectedPickForModal.event || 'Event unknown' }}</h3>
+              <p class="mt-1 text-sm text-muted">{{ selectedPickForModal.market || 'Market unknown' }} · {{ selectedPickForModal.pick || 'Pick unknown' }}</p>
+            </div>
+            <button type="button" class="ba-tool shrink-0" (click)="closePickModal()">Close</button>
+          </div>
+
+          <div class="grid gap-3 p-4">
+            @if (selectedPickMatchAnalysis; as matchAnalysis) {
+              <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div class="min-w-0">
+                  <p class="ba-label">{{ matchAnalysis.competition }}</p>
+                  <h4 class="mt-1 text-base font-semibold text-text">{{ matchAnalysis.event }}</h4>
+                  <p class="mt-1 text-sm text-muted">{{ matchAnalysis.kickoffDisplay }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <ba-status-badge [label]="matchAnalysis.confidenceTier" [tone]="confidenceTierTone(matchAnalysis.confidenceTier)"></ba-status-badge>
+                  <ba-status-badge [label]="matchAnalysis.globalConfidenceLabel" [tone]="confidenceTone(matchAnalysis.globalConfidence)"></ba-status-badge>
+                  <ba-status-badge [label]="matchAnalysis.dataQuality" [tone]="qualityTone(matchAnalysis.dataQuality)"></ba-status-badge>
+                </div>
+              </div>
+
+              <div class="grid gap-3 xl:grid-cols-3">
+                <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                  <p class="ba-label">Event</p>
+                  <p class="mt-2 text-sm text-text">{{ matchAnalysis.event }}</p>
+                </div>
+                <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                  <p class="ba-label">Competition</p>
+                  <p class="mt-2 text-sm text-text">{{ matchAnalysis.competition }}</p>
+                </div>
+                <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                  <p class="ba-label">Kickoff</p>
+                  <p class="mt-2 text-sm text-text">{{ matchAnalysis.kickoffDisplay }}</p>
+                </div>
+              </div>
+
+              <div class="rounded-card border border-accent/30 bg-accent/5 p-3">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p class="ba-label">Selected pick</p>
+                    <p class="mt-2 text-sm font-semibold text-text">{{ selectedPickForModal.market || 'Market unknown' }} · {{ selectedPickForModal.pick || 'Pick unknown' }}</p>
+                    <p class="mt-2 text-sm leading-6 text-text">{{ selectedPickForModal.reason || 'No reason provided in selection.json.' }}</p>
+                  </div>
+                  <div class="flex shrink-0 flex-wrap gap-2">
+                    <ba-status-badge [label]="formatPercent(selectedPickForModal.confidence_score)" [tone]="confidenceTone(selectedPickForModal.confidence_score)"></ba-status-badge>
+                    <ba-status-badge [label]="selectedPickForModal.risk_level || 'risk unknown'" [tone]="riskTone(selectedPickForModal.risk_level)"></ba-status-badge>
+                    <ba-status-badge [label]="pickOdds(selectedPickForModal.expected_odds_min, selectedPickForModal.expected_odds_max)" tone="default"></ba-status-badge>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                <p class="ba-label">Analysis summary</p>
+                <p class="mt-2 text-sm leading-6 text-text">{{ matchAnalysis.summary }}</p>
+              </div>
+
+              <div class="grid gap-3 xl:grid-cols-2">
+                <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                  <p class="ba-label">Key factors</p>
+                  @for (factor of matchAnalysis.keyFactors; track factor + $index) {
+                    <p class="mt-2 text-sm leading-6 text-text">{{ factor }}</p>
+                  } @empty {
+                    <p class="mt-2 text-sm text-muted">No key factors returned.</p>
+                  }
+                </div>
+                <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                  <p class="ba-label">Risks</p>
+                  @for (risk of matchAnalysis.risks; track risk + $index) {
+                    <p class="mt-2 text-sm leading-6 text-text">{{ risk }}</p>
+                  } @empty {
+                    <p class="mt-2 text-sm text-muted">No explicit risks returned.</p>
+                  }
+                </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                  <p class="ba-label">Global confidence</p>
+                  <div class="mt-2">
+                    <ba-status-badge [label]="matchAnalysis.globalConfidenceLabel" [tone]="confidenceTone(matchAnalysis.globalConfidence)"></ba-status-badge>
+                  </div>
+                </div>
+                <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                  <p class="ba-label">Data quality</p>
+                  <div class="mt-2">
+                    <ba-status-badge [label]="matchAnalysis.dataQuality" [tone]="qualityTone(matchAnalysis.dataQuality)"></ba-status-badge>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                <p class="ba-label">Tous les predicted markets</p>
+                <div class="mt-3 grid gap-3">
+                  @for (market of matchAnalysis.predictedMarkets; track market.marketCanonicalId + market.selectionCanonicalId + $index) {
+                    <article
+                      class="rounded-card border p-3"
+                      [class.border-accent/60]="isSelectedPredictedMarket(selectedPickForModal, market.marketCanonicalId, market.selectionCanonicalId)"
+                      [class.bg-accent/5]="isSelectedPredictedMarket(selectedPickForModal, market.marketCanonicalId, market.selectionCanonicalId)"
+                      [class.border-border/60]="!isSelectedPredictedMarket(selectedPickForModal, market.marketCanonicalId, market.selectionCanonicalId)"
+                      [class.bg-surface-low]="!isSelectedPredictedMarket(selectedPickForModal, market.marketCanonicalId, market.selectionCanonicalId)"
+                    >
+                      <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="min-w-0">
+                          <p class="break-words text-sm font-medium text-text">{{ market.marketCanonicalId }}</p>
+                          <p class="mt-1 break-words text-xs text-muted">{{ market.selectionCanonicalId }}</p>
+                        </div>
+                        <div class="flex shrink-0 flex-wrap gap-2">
+                          @if (isSelectedPredictedMarket(selectedPickForModal, market.marketCanonicalId, market.selectionCanonicalId)) {
+                            <ba-status-badge label="selected" tone="live"></ba-status-badge>
+                          }
+                          <ba-status-badge [label]="market.confidenceLabel" [tone]="confidenceTone(market.confidence)"></ba-status-badge>
+                        </div>
+                      </div>
+                      <p class="mt-3 text-sm leading-6 text-text">{{ market.reason }}</p>
+                    </article>
+                  } @empty {
+                    <p class="text-sm text-muted">No predicted market returned for this match.</p>
+                  }
+                </div>
+              </div>
+
+              <div class="rounded-card border border-border/60 bg-background/60 p-3">
+                <p class="ba-label">Evidence summary</p>
+                <div class="mt-2 grid gap-2 text-sm text-muted sm:grid-cols-2">
+                  <p>Market IDs: <span class="break-words text-text">{{ selectedPickForModal.market_canonical_id || '—' }} · {{ selectedPickForModal.selection_canonical_id || '—' }}</span></p>
+                  <p>Source analysis: <span class="text-text">{{ selectedPickForModal.source_match_analysis_id || matchAnalysis.sourceId || '—' }}</span></p>
+                  <p>Evidence confidence: <span class="text-text">{{ formatPercent(evidenceNumber(selectedPickForModal.evidence_summary, 'global_confidence')) }}</span></p>
+                  <p>Data quality: <span class="text-text">{{ evidenceText(selectedPickForModal.evidence_summary, 'data_quality') }}</span></p>
+                  <p>Odds source: <span class="text-text">{{ evidenceText(selectedPickForModal.evidence_summary, 'odds_source') }}</span></p>
+                  <p>Expected odds: <span class="text-text">{{ pickOdds(evidenceNumber(selectedPickForModal.evidence_summary, 'expected_odds_min'), evidenceNumber(selectedPickForModal.evidence_summary, 'expected_odds_max')) }}</span></p>
+                </div>
+              </div>
+            } @else {
+              <ba-empty-state
+                label="Match analysis unavailable"
+                [message]="selectedTicketOutputsError || 'No matching match_analysis entry was found for this pick in the ticket run outputs.'"
+                tone="warning"
+              ></ba-empty-state>
+            }
+          </div>
+        </section>
+      </div>
+    }
   `
 })
 export class TicketsPage implements OnInit, OnDestroy {
   private readonly ticketApi = inject(TicketApiService);
   private readonly analysisApi = inject(AnalysisApiService);
+  private readonly route = inject(ActivatedRoute);
   private generationPollId: ReturnType<typeof setInterval> | null = null;
   private generationPollInFlight = false;
   private generationStartedAt = 0;
   private readonly generationTimeoutMs = 10 * 60 * 1000;
+  private requestedTicketId = '';
 
   protected tickets: TicketSummary[] = [];
   protected selectedTicketId = '';
   protected selectedTicket: TicketDetail | null = null;
+  protected selectedTicketRunOutputs: AnalysisRunOutputs | null = null;
+  protected selectedTicketOutputsError = '';
   protected auditLog: TicketAuditLog | null = null;
   protected targetDate = this.today();
   protected isLoading = true;
@@ -357,6 +601,7 @@ export class TicketsPage implements OnInit, OnDestroy {
   protected generationMessage = '';
   protected generationOutcome: 'idle' | 'ticket_ready' | 'no_ticket' | 'failed' = 'idle';
   protected ticketGenerationLastUpdatedAt = '';
+  protected selectedPickForModal: TicketPick | null = null;
   protected error = '';
 
   protected readonly stateBadges: Array<{ label: string; tone: UiTone }> = [
@@ -372,25 +617,8 @@ export class TicketsPage implements OnInit, OnDestroy {
     { label: 'unavailable', tone: 'default' }
   ];
 
-  protected readonly ticketColumns: DataTableColumn[] = [
-    { key: 'id', label: 'Ticket ID', data: true },
-    { key: 'date', label: 'Date', data: true },
-    { key: 'picks', label: 'Picks', align: 'right', data: true },
-    { key: 'odds', label: 'Odds', align: 'right', data: true },
-    { key: 'confidence', label: 'Confidence', align: 'right', data: true },
-    { key: 'risk', label: 'Risk' }
-  ];
-
-  protected readonly pickColumns: DataTableColumn[] = [
-    { key: 'event', label: 'Match' },
-    { key: 'market', label: 'Market' },
-    { key: 'pick', label: 'Pick' },
-    { key: 'odds', label: 'Odds', align: 'right', data: true },
-    { key: 'confidence', label: 'Confidence', align: 'right', data: true },
-    { key: 'risk', label: 'Risk' }
-  ];
-
   ngOnInit(): void {
+    this.requestedTicketId = this.route.snapshot.queryParamMap.get('ticket_id') || '';
     this.refreshTickets();
   }
 
@@ -409,7 +637,13 @@ export class TicketsPage implements OnInit, OnDestroy {
       next: (tickets) => {
         this.tickets = tickets;
         this.isLoading = false;
-        if (tickets.length && !this.selectedTicketId) {
+        const requestedTicket = this.requestedTicketId
+          ? tickets.find((ticket) => ticket.ticket_id === this.requestedTicketId)
+          : undefined;
+        if (requestedTicket) {
+          this.requestedTicketId = '';
+          this.selectTicket(requestedTicket.ticket_id);
+        } else if (tickets.length && !this.selectedTicketId) {
           this.selectTicket(tickets[0].ticket_id);
         } else if (this.selectedTicketId && tickets.some((ticket) => ticket.ticket_id === this.selectedTicketId)) {
           this.selectTicket(this.selectedTicketId);
@@ -426,13 +660,28 @@ export class TicketsPage implements OnInit, OnDestroy {
     this.selectedTicketId = ticketId;
     this.isDetailLoading = true;
     this.isAuditLoading = true;
+    this.selectedTicketRunOutputs = null;
+    this.selectedTicketOutputsError = '';
+    const runId = this.tickets.find((ticket) => ticket.ticket_id === ticketId)?.run_id || '';
     forkJoin({
       ticket: this.ticketApi.getTicket(ticketId),
-      auditLog: this.ticketApi.getAuditLog(ticketId)
+      auditLog: this.ticketApi.getAuditLog(ticketId),
+      outputs: runId
+        ? this.analysisApi.getRunOutputs(runId).pipe(
+          catchError((error: unknown) => {
+            this.selectedTicketOutputsError = this.errorMessage(error);
+            return of(null);
+          })
+        )
+        : of(null)
     }).subscribe({
-      next: ({ ticket, auditLog }) => {
+      next: ({ ticket, auditLog, outputs }) => {
         this.selectedTicket = ticket;
         this.auditLog = auditLog;
+        this.selectedTicketRunOutputs = outputs;
+        if (this.selectedPickForModal && !ticket.picks.some((pick) => pick.pick_id === this.selectedPickForModal?.pick_id)) {
+          this.selectedPickForModal = null;
+        }
         this.isDetailLoading = false;
         this.isAuditLoading = false;
       },
@@ -658,7 +907,13 @@ export class TicketsPage implements OnInit, OnDestroy {
       success: 'bg-success shadow-glow-success',
       warning: 'bg-warning shadow-glow-warning',
       danger: 'bg-danger',
-      live: 'bg-accent shadow-glow'
+      live: 'bg-accent shadow-glow',
+      'score-70': 'bg-[#d97d68]',
+      'score-75': 'bg-[#e5a155]',
+      'score-80': 'bg-[#d4c45a]',
+      'score-85': 'bg-[#86c86d]',
+      'score-90': 'bg-[#41c7a5]',
+      'score-95-plus': 'bg-[#4cd7f6] shadow-glow'
     };
 
     return map[this.generationTone];
@@ -679,42 +934,24 @@ export class TicketsPage implements OnInit, OnDestroy {
     ];
   }
 
-  protected get ticketRows(): DataTableRow[] {
-    return this.tickets.map((ticket) => ({
-      cells: {
-        id: ticket.ticket_id,
-        date: ticket.target_date || '—',
-        picks: ticket.picks_count,
-        odds: this.formatOdds(ticket.estimated_combo_odds),
-        confidence: this.formatPercent(ticket.global_confidence_score),
-        risk: ticket.combo_risk_level || '—'
-      },
-      status: ticket.status,
-      statusTone: this.toneFor(ticket.status)
-    }));
-  }
-
-  protected get pickRows(): DataTableRow[] {
-    return (this.selectedTicket?.picks || []).map((pick) => ({
-      cells: {
-        event: pick.event || '—',
-        market: pick.market || '—',
-        pick: pick.pick || '—',
-        odds: this.pickOdds(pick.expected_odds_min, pick.expected_odds_max),
-        confidence: this.formatPercent(pick.confidence_score),
-        risk: pick.risk_level || '—'
-      },
-      status: pick.pick_id || 'pick',
-      statusTone: this.riskTone(pick.risk_level)
-    }));
-  }
-
   protected get auditEntries(): LogEntry[] {
     return (this.auditLog?.entries || []).map((entry, index) => ({
       time: String(index + 1).padStart(2, '0'),
       level: this.logLevel(entry.level),
       message: entry.message
     }));
+  }
+
+  protected get selectedPickMatchAnalysis(): TicketMatchAnalysisDetail | null {
+    return this.matchAnalysisForPick(this.selectedPickForModal);
+  }
+
+  protected openPickModal(pick: TicketPick): void {
+    this.selectedPickForModal = pick;
+  }
+
+  protected closePickModal(): void {
+    this.selectedPickForModal = null;
   }
 
   protected toneFor(status: string | null | undefined): UiTone {
@@ -735,6 +972,40 @@ export class TicketsPage implements OnInit, OnDestroy {
     return 'default';
   }
 
+  protected confidenceTone(value: number | null | undefined): UiTone {
+    return confidenceScoreToTone(value);
+  }
+
+  protected confidenceTierTone(value: string): UiTone {
+    if (value === 'elite') {
+      return 'live';
+    }
+    if (value === 'very_strong') {
+      return 'success';
+    }
+    if (value === 'strong') {
+      return 'warning';
+    }
+    if (value === 'medium_or_low') {
+      return 'danger';
+    }
+    return 'default';
+  }
+
+  protected qualityTone(value: string): UiTone {
+    const normalized = value.toLowerCase();
+    if (normalized === 'high') {
+      return 'success';
+    }
+    if (normalized === 'medium') {
+      return 'warning';
+    }
+    if (normalized === 'low') {
+      return 'danger';
+    }
+    return 'default';
+  }
+
   protected formatOdds(value: number | null | undefined): string {
     return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '—';
   }
@@ -750,13 +1021,226 @@ export class TicketsPage implements OnInit, OnDestroy {
     return this.formatOdds(min || max);
   }
 
+  protected compactDate(value: string | null | undefined): string {
+    if (!value) {
+      return 'Kickoff unknown';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  }
+
+  protected shortId(value: string | null | undefined): string {
+    const text = String(value || '');
+    if (text.length <= 28) {
+      return text || '—';
+    }
+    return `${text.slice(0, 14)}…${text.slice(-10)}`;
+  }
+
   protected targetRangeSummary(ticket: TicketDetail): string {
-    const range = ticket.combo_in_target_range ? 'within target range' : 'outside target range';
-    return `${ticket.picks_count} picks, ${range}. Source: ${ticket.selection_file}`;
+    const range = ticket.combo_in_target_range ? 'dans la cible de cote' : 'hors cible de cote';
+    return `${ticket.picks_count} picks, ${range}.`;
+  }
+
+  protected competitionSummary(competitions: string[] | null | undefined): string {
+    const items = (competitions || []).filter(Boolean);
+    if (!items.length) {
+      return 'Ligues non disponibles';
+    }
+    if (items.length <= 2) {
+      return items.join(' · ');
+    }
+    return `${items.slice(0, 2).join(' · ')} +${items.length - 2}`;
+  }
+
+  protected selectionModeLabel(ticket: TicketDetail): string {
+    return this.metadataLabel(ticket, 'selection_mode');
+  }
+
+  protected comboTargetLabel(ticket: TicketDetail): string {
+    const config = ticket.selection_config || {};
+    const min = typeof config['combo_min_odds'] === 'number' ? Number(config['combo_min_odds']).toFixed(2) : '—';
+    const max = typeof config['combo_max_odds'] === 'number' ? Number(config['combo_max_odds']).toFixed(2) : '—';
+    return `${min} - ${max}`;
+  }
+
+  protected metadataLabel(ticket: TicketDetail, key: string): string {
+    const value = ticket.metadata?.[key];
+    return value === null || value === undefined || value === '' ? '—' : String(value);
+  }
+
+  protected evidenceText(source: Record<string, unknown> | null | undefined, key: string): string {
+    const value = source?.[key];
+    return value === null || value === undefined || value === '' ? '—' : String(value);
+  }
+
+  protected evidenceNumber(source: Record<string, unknown> | null | undefined, key: string): number | null {
+    const value = source?.[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  protected sourceLabel(mode: string | null | undefined): string {
+    if (mode === 'strategy_application') {
+      return 'Application stratégie';
+    }
+    if (mode === 'run_artifacts') {
+      return 'Run principal';
+    }
+    return mode || 'Source inconnue';
   }
 
   protected inputValue(event: Event): string {
     return (event.target as HTMLInputElement).value;
+  }
+
+  protected isSelectedPredictedMarket(pick: TicketPick | null, marketCanonicalId: string, selectionCanonicalId: string): boolean {
+    if (!pick) {
+      return false;
+    }
+    const pickMarket = String(pick.market_canonical_id || '');
+    const pickSelection = String(pick.selection_canonical_id || '');
+    return Boolean(
+      pickMarket
+      && pickSelection
+      && pickMarket === marketCanonicalId
+      && pickSelection === selectionCanonicalId
+    );
+  }
+
+  private matchAnalysisForPick(pick: TicketPick | null): TicketMatchAnalysisDetail | null {
+    if (!pick) {
+      return null;
+    }
+
+    const rows = this.matchAnalysisRows();
+    const sourceId = pick.source_match_analysis_id || (pick.fixture_id ? `fixture_${pick.fixture_id}` : '');
+    const bySource = sourceId ? rows.find((row) => row.sourceId === sourceId) : undefined;
+    if (bySource) {
+      return bySource;
+    }
+
+    const byFixture = pick.fixture_id
+      ? rows.find((row) => row.fixtureId === pick.fixture_id)
+      : undefined;
+    if (byFixture) {
+      return byFixture;
+    }
+
+    const event = String(pick.event || '').toLowerCase();
+    const kickoff = String(pick.kickoff || '');
+    return rows.find((row) => row.event.toLowerCase() === event && row.kickoff === kickoff) || null;
+  }
+
+  private matchAnalysisRows(): TicketMatchAnalysisDetail[] {
+    const artifact = this.selectedTicketRunOutputs?.artifacts?.['match_analysis'];
+    if (artifact?.status !== 'available') {
+      return [];
+    }
+
+    return this.arrayFrom(artifact.data, 'results').map((item, index) => {
+      const analysis = this.objectValue(item, 'analysis');
+      const fixtureId = this.numberOrNull(this.value(analysis, 'fixture_id'));
+      const globalConfidence = this.numberValue(analysis, 'global_confidence');
+      const sourceId = fixtureId ? `fixture_${fixtureId}` : String(this.value(analysis, 'id') || index);
+      return {
+        id: sourceId,
+        fixtureId,
+        sourceId,
+        event: this.text(analysis, 'event'),
+        competition: this.text(analysis, 'competition'),
+        kickoff: this.text(analysis, 'kickoff'),
+        kickoffDisplay: this.formatKickoffLong(this.text(analysis, 'kickoff')),
+        summary: this.text(analysis, 'analysis_summary'),
+        keyFactors: this.arrayFrom(analysis, 'key_factors').map((factor) => String(factor)),
+        risks: this.arrayFrom(analysis, 'risks').map((risk) => String(risk)),
+        globalConfidence,
+        globalConfidenceLabel: `${this.formatPercent(globalConfidence)} confidence`,
+        dataQuality: this.text(analysis, 'data_quality'),
+        confidenceTier: this.matchConfidenceTier(globalConfidence),
+        predictedMarkets: this.arrayFrom(analysis, 'predicted_markets').map((market) => {
+          const confidence = this.numberValue(market, 'confidence');
+          return {
+            marketCanonicalId: this.text(market, 'market_canonical_id'),
+            selectionCanonicalId: this.text(market, 'selection_canonical_id'),
+            confidence,
+            confidenceLabel: this.formatPercent(confidence),
+            reason: this.text(market, 'reason')
+          };
+        })
+      };
+    });
+  }
+
+  private matchConfidenceTier(value: number): string {
+    if (value >= 90) {
+      return 'elite';
+    }
+    if (value >= 80) {
+      return 'very_strong';
+    }
+    if (value >= 70) {
+      return 'strong';
+    }
+    if (value > 0) {
+      return 'medium_or_low';
+    }
+    return 'unknown';
+  }
+
+  private arrayFrom(source: unknown, key: string): unknown[] {
+    const obj = this.objectOrEmpty(source);
+    return Array.isArray(obj[key]) ? obj[key] as unknown[] : [];
+  }
+
+  private objectValue(source: unknown, key: string): Record<string, unknown> {
+    return this.objectOrEmpty(this.value(source, key));
+  }
+
+  private objectOrEmpty(source: unknown): Record<string, unknown> {
+    return source && typeof source === 'object' && !Array.isArray(source) ? source as Record<string, unknown> : {};
+  }
+
+  private value(source: unknown, key: string): unknown {
+    return this.objectOrEmpty(source)[key];
+  }
+
+  private numberValue(source: unknown, key: string): number {
+    return this.numberOrNull(this.value(source, key)) ?? 0;
+  }
+
+  private numberOrNull(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  private text(source: unknown, key: string): string {
+    const value = this.value(source, key);
+    return value === null || value === undefined || value === '' ? '—' : String(value);
+  }
+
+  private formatKickoffLong(value: string): string {
+    if (!value || value === '—') {
+      return '—';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   }
 
   private today(): string {

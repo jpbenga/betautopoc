@@ -2,10 +2,9 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@an
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, catchError, forkJoin, interval, of } from 'rxjs';
 import { AnalysisApiService } from '../../core/api/analysis-api.service';
-import { formatApiDate, statusToTone } from '../../core/api/api.mappers';
+import { UiTone, formatApiDate, statusToTone } from '../../core/api/api.mappers';
 import { AnalysisLogEntry, AnalysisRun, AnalysisRunListItem, AnalysisRunOutputs, AnalysisTimelineStep } from '../../core/api/api.types';
 import { BetautoApiService } from '../../core/api/betauto-api.service';
-import { DataTableColumn, DataTableRow } from '../../shared/ui/data-table/data-table.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../shared/ui/error-state/error-state.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
@@ -23,8 +22,6 @@ interface AnalysisKpi {
   status?: string;
   tone?: 'default' | 'success' | 'warning' | 'danger' | 'live';
 }
-
-type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
 
 @Component({
   selector: 'ba-analysis-page',
@@ -47,11 +44,11 @@ type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
       title="Analysis Queue"
       subtitle="Suivi des analyses programmées et des runs d’orchestrateur."
     >
-      <div class="flex flex-wrap gap-2">
-        <label class="ba-tool flex items-center gap-2">
+      <div class="flex w-full flex-wrap gap-2 md:w-auto md:justify-end">
+        <label class="ba-tool flex min-w-0 flex-1 items-center gap-2 md:flex-none">
           <span class="ba-label normal-case tracking-normal">Target</span>
           <input
-            class="bg-transparent font-data text-text outline-none"
+            class="min-w-0 bg-transparent font-data text-text outline-none"
             type="date"
             [value]="targetDate"
             (change)="setTargetDate($event)"
@@ -60,27 +57,27 @@ type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
         </label>
         <button
           type="button"
-          class="ba-tool border-accent/60 bg-accent text-background hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60"
+          class="ba-tool min-w-[8.5rem] flex-1 border-accent/60 bg-accent text-background hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60 md:flex-none"
           [disabled]="isStartingRun"
           (click)="startRun()"
         >
           {{ isStartingRun ? 'Starting run...' : 'Run Analysis' }}
         </button>
-        <button type="button" class="ba-tool" (click)="viewLogs()">
+        <button type="button" class="ba-tool flex-1 md:flex-none" (click)="viewLogs()">
           View Logs
         </button>
       </div>
     </ba-page-header>
 
     @if (selectedRunId || isPolling || lastUpdatedAt || startRunError) {
-      <section class="mb-4 grid gap-3 md:grid-cols-4">
+      <section class="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-card border border-border/60 bg-surface-low p-3">
           <p class="ba-label">Target date</p>
           <p class="ba-data mt-2 text-text">{{ targetDate }}</p>
         </div>
         <div class="rounded-card border border-border/60 bg-surface-low p-3">
           <p class="ba-label">Active run</p>
-          <p class="ba-data mt-2 text-text">{{ selectedRunId || '—' }}</p>
+          <p class="ba-data mt-2 truncate text-text" [title]="selectedRunId">{{ shortId(selectedRunId) }}</p>
         </div>
         <div class="rounded-card border border-border/60 bg-surface-low p-3">
           <p class="ba-label">Polling</p>
@@ -193,8 +190,8 @@ type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
       </div>
     }
 
-    <section class="mb-4 rounded-card border border-border/60 bg-surface-low p-3">
-      <div class="flex flex-wrap items-center gap-2">
+    <section class="mb-4 overflow-hidden rounded-card border border-border/60 bg-surface-low p-3">
+      <div class="flex items-center gap-2 overflow-x-auto pb-1">
         <span class="ba-label mr-2">State vocabulary</span>
         @for (state of stateBadges; track state.label) {
           <ba-status-badge
@@ -237,7 +234,7 @@ type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
         message="Aucun job n’est présent en mémoire. Lance un run via l’API pour alimenter cette page."
       ></ba-empty-state>
     } @else {
-      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         @for (kpi of kpis; track kpi.label) {
           <ba-kpi-card
             [label]="kpi.label"
@@ -248,7 +245,7 @@ type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
         }
       </section>
 
-      <section class="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
         <ba-section-card>
           <div class="ba-card-header flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -262,13 +259,13 @@ type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
           </div>
 
           @if (activeRuns.length > 0) {
-            <div class="grid gap-4 p-4 md:grid-cols-2">
+            <div class="grid max-h-[26rem] gap-3 overflow-y-auto p-3 md:grid-cols-2">
               @for (run of activeRuns; track run.run_id) {
-                <article class="rounded-card border border-border/60 bg-background/60 p-4">
+                <article class="rounded-card border border-border/60 bg-background/60 p-3">
                   <div class="flex items-start justify-between gap-4">
-                    <div>
+                    <div class="min-w-0">
                       <p class="ba-label">Run ID</p>
-                      <h4 class="ba-data mt-2 text-base text-text">{{ run.run_id }}</h4>
+                      <h4 class="ba-data mt-2 truncate text-text" [title]="run.run_id">{{ shortId(run.run_id) }}</h4>
                     </div>
                     <ba-status-badge
                       [label]="run.status"
@@ -333,94 +330,45 @@ type UiTone = 'default' | 'success' | 'warning' | 'danger' | 'live';
         </ba-section-card>
       </section>
 
-      <section class="mt-4 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div class="space-y-4">
-          <ba-section-card>
-            <div class="ba-card-header">
-              <h3 class="text-sm font-semibold text-text">Runs table</h3>
-              <p class="mt-1 text-xs text-muted">Clique une ligne pour charger son détail, sa timeline et ses logs.</p>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full min-w-[760px] border-collapse text-left text-sm">
-                <thead class="bg-surface text-muted">
-                  <tr>
-                    @for (column of runColumns; track column.key) {
-                      <th class="ba-label px-4 py-3" [class.text-right]="column.align === 'right'">
-                        {{ column.label }}
-                      </th>
-                    }
-                    <th class="ba-label px-4 py-3 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of runRows; track row.runId) {
-                    <tr
-                      class="cursor-pointer border-t border-border/60 transition hover:bg-surface-high/70"
-                      [class.bg-accent/10]="row.runId === selectedRunId"
-                      [class.outline]="row.runId === selectedRunId"
-                      [class.outline-1]="row.runId === selectedRunId"
-                      [class.outline-accent/40]="row.runId === selectedRunId"
-                      (click)="selectRun(row.runId)"
-                    >
-                      <td class="px-4 py-3 font-data text-text">{{ row.cells['id'] }}</td>
-                      <td class="px-4 py-3 font-data text-text">{{ row.cells['date'] }}</td>
-                      <td class="px-4 py-3 font-data text-text">{{ row.cells['target'] }}</td>
-                      <td class="px-4 py-3 text-right font-data text-text">{{ row.cells['progress'] }}</td>
-                      <td class="px-4 py-3 text-right font-data text-text">{{ row.cells['steps'] }}</td>
-                      <td class="px-4 py-3 text-right font-data text-text">{{ row.cells['picks'] }}</td>
-                      <td class="px-4 py-3 text-right">
-                        <ba-status-badge
-                          [label]="row.status || 'unknown'"
-                          [tone]="row.statusTone || 'default'"
-                          [pulse]="isLiveStatus(row.status)"
-                          [showPip]="true"
-                        ></ba-status-badge>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td class="px-4 py-8 text-center text-sm text-muted" colspan="7">
-                        No rows available.
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </ba-section-card>
-
-          @if (failedRuns.length > 0) {
-            <ba-error-state
-              label="Failed run detected"
-              [message]="failedRuns.length + ' run(s) en erreur ou échoués dans les jobs connus.'"
-            ></ba-error-state>
-          }
-        </div>
-
+      <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(18rem,0.85fr)_minmax(0,1.15fr)]">
         <ba-section-card>
-          <div class="ba-card-header">
-            <p class="ba-label">Scheduled scans</p>
-            <h3 class="mt-1 text-sm font-semibold text-text">Planned for a later Lot 1 slice</h3>
+          <div class="ba-card-header flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <p class="ba-label">Runs</p>
+              <h3 class="mt-1 truncate text-sm font-semibold text-text">{{ runs.length }} known runs</h3>
+            </div>
+            <ba-status-badge [label]="failedRuns.length + ' failed'" [tone]="failedRuns.length ? 'danger' : 'success'"></ba-status-badge>
           </div>
-          <div class="p-4">
-            <ba-empty-state
-              label="Schedule API planned"
-              message="La façade actuelle couvre runs, timeline et logs. Les scans planifiés seront ajoutés ensuite."
-            ></ba-empty-state>
-          </div>
-        </ba-section-card>
-      </section>
-
-      <section class="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <ba-section-card>
-          <div class="ba-card-header">
-            <p class="ba-label">Filters</p>
-            <h3 class="mt-1 text-sm font-semibold text-text">Client-side view</h3>
-          </div>
-          <div class="grid gap-3 p-4 sm:grid-cols-3 xl:grid-cols-1">
-            <button type="button" class="ba-tool text-left">Status: all</button>
-            <button type="button" class="ba-tool text-left">Runs: {{ runs.length }}</button>
-            <button type="button" class="ba-tool text-left">Selected: {{ selectedRunId || 'none' }}</button>
+          <div class="max-h-[30rem] space-y-2 overflow-y-auto p-3">
+            @for (run of runs; track run.run_id) {
+              <button
+                type="button"
+                class="w-full rounded-card border px-3 py-2 text-left transition hover:border-accent/60 hover:bg-surface-high/50"
+                [class.border-accent]="run.run_id === selectedRunId"
+                [class.bg-accent/10]="run.run_id === selectedRunId"
+                [class.border-border]="run.run_id !== selectedRunId"
+                [class.bg-background]="run.run_id !== selectedRunId"
+                (click)="selectRun(run.run_id)"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="ba-data truncate text-text" [title]="run.run_id">{{ shortId(run.run_id) }}</p>
+                    <p class="mt-1 truncate text-xs text-muted">{{ run.target_date || '—' }} · {{ formatRunDate(run.created_at) }}</p>
+                  </div>
+                  <ba-status-badge
+                    [label]="run.status"
+                    [tone]="toneFor(run.status)"
+                    [pulse]="isLiveStatus(run.status)"
+                    [showPip]="true"
+                  ></ba-status-badge>
+                </div>
+                <div class="mt-2 flex flex-wrap gap-2 text-xs text-muted">
+                  <span>{{ run.progress }}%</span>
+                  <span>{{ run.completed_steps }}/{{ run.step_count }} steps</span>
+                  <span>{{ run.picks_count ?? '—' }} picks</span>
+                </div>
+              </button>
+            }
           </div>
         </ba-section-card>
 
@@ -487,15 +435,6 @@ export class AnalysisPage implements OnInit, OnDestroy {
   protected isOutputsLoading = false;
   protected outputsError = '';
 
-  protected readonly runColumns: DataTableColumn[] = [
-    { key: 'id', label: 'Run ID', data: true },
-    { key: 'date', label: 'Created', data: true },
-    { key: 'target', label: 'Target', data: true },
-    { key: 'progress', label: 'Progress', align: 'right', data: true },
-    { key: 'steps', label: 'Steps', align: 'right', data: true },
-    { key: 'picks', label: 'Picks', align: 'right', data: true }
-  ];
-
   protected readonly stateBadges: Array<{ label: string; tone: UiTone }> = [
     { label: 'idle', tone: 'default' },
     { label: 'pending', tone: 'warning' },
@@ -548,22 +487,6 @@ export class AnalysisPage implements OnInit, OnDestroy {
       { label: 'Failed runs', value: String(this.failedRuns.length), status: this.failedRuns.length ? 'Review' : 'Clear', tone: this.failedRuns.length ? 'danger' : 'success' },
       { label: 'Avg progress', value: `${averageProgress}%`, status: 'Jobs', tone: 'default' }
     ];
-  }
-
-  protected get runRows(): Array<DataTableRow & { runId: string }> {
-    return this.runs.map((run) => ({
-      runId: run.run_id,
-      cells: {
-        id: run.run_id,
-        date: formatApiDate(run.created_at),
-        target: run.target_date || '—',
-        progress: `${run.progress}%`,
-        steps: `${run.completed_steps}/${run.step_count}`,
-        picks: run.picks_count ?? '—'
-      },
-      status: run.status,
-      statusTone: this.toneFor(run.status)
-    }));
   }
 
   protected get selectedRunTitle(): string {
@@ -708,7 +631,13 @@ export class AnalysisPage implements OnInit, OnDestroy {
       success: 'bg-success shadow-glow-success',
       warning: 'bg-warning shadow-glow-warning',
       danger: 'bg-danger',
-      live: 'bg-accent shadow-glow'
+      live: 'bg-accent shadow-glow',
+      'score-70': 'bg-[#d97d68]',
+      'score-75': 'bg-[#e5a155]',
+      'score-80': 'bg-[#d4c45a]',
+      'score-85': 'bg-[#86c86d]',
+      'score-90': 'bg-[#41c7a5]',
+      'score-95-plus': 'bg-[#4cd7f6] shadow-glow'
     };
 
     return map[this.selectedRunTone];
@@ -716,6 +645,21 @@ export class AnalysisPage implements OnInit, OnDestroy {
 
   protected toneFor(status: string): UiTone {
     return statusToTone(status);
+  }
+
+  protected formatRunDate(value: string | null | undefined): string {
+    return formatApiDate(value);
+  }
+
+  protected shortId(value: string | null | undefined): string {
+    const text = String(value || '');
+    if (!text) {
+      return '—';
+    }
+    if (text.length <= 28) {
+      return text;
+    }
+    return `${text.slice(0, 14)}…${text.slice(-10)}`;
   }
 
   protected startRun(): void {

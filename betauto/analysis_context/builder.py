@@ -244,7 +244,7 @@ class AnalysisContextBuilder:
                     fixture_statistics=fixture_stats_raw.get("response", []),
                     fixture_events=fixture_events_raw.get("response", []),
                     quantitative_summary=QuantitativeContext(available=odds_ready, notes=quantitative_notes),
-                    qualitative_context=empty_qualitative_context(),
+                    qualitative_context=empty_qualitative_context(league_id),
                     analysis_readiness=readiness,
                 )
                 matches.append(match)

@@ -12,6 +12,7 @@ Ce dossier contient la documentation officielle API-Football fournie pour BetAut
 
 - [endpoint-reference.md](endpoint-reference.md): reference structuree des endpoints presents dans les extraits officiels.
 - [usage-rules.md](usage-rules.md): regles de developpement BetAuto pour eviter les erreurs recurrentes avec API-Football.
+- [../football_league_media_directory.md](../football_league_media_directory.md): annuaire des médias sportifs associés aux ligues API-Football, réservé à une future couche qualitative.
 - [01-partie-1-raw.md](01-partie-1-raw.md): timezones, pays, ligues, saisons, equipes, stades, standings, rounds, fixtures.
 - [02-partie-2-raw.md](02-partie-2-raw.md): head-to-head, details fixture, injuries, predictions, coachs, players seasons/profiles.
 - [03-partie-3-raw.md](03-partie-3-raw.md): statistiques joueurs, squads, transfers, trophies, sidelined, odds live et pre-match.

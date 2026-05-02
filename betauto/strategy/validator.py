@@ -19,11 +19,11 @@ def _collect_issues(strategy: StrategyDefinition) -> tuple[list[str], list[str]]
     if not enabled_leagues:
         errors.append("Au moins une ligue active (enabled=true) est requise dans scope.leagues.")
 
-    if strategy.ticket_policy.allow_combo:
+    if strategy.ticket_policy.allow_combo and not strategy.ticket_policy.allow_single:
         if strategy.ticket_policy.min_picks < 2:
-            errors.append("ticket_policy.min_picks doit être >= 2 quand allow_combo=true.")
-        if strategy.ticket_policy.max_picks < strategy.ticket_policy.min_picks:
-            errors.append("ticket_policy.max_picks doit être >= ticket_policy.min_picks.")
+            errors.append("ticket_policy.min_picks doit être >= 2 quand allow_combo=true et allow_single=false.")
+    if strategy.ticket_policy.max_picks < strategy.ticket_policy.min_picks:
+        errors.append("ticket_policy.max_picks doit être >= ticket_policy.min_picks.")
 
     target_odds = strategy.ticket_policy.target_odds
     if target_odds.enabled:

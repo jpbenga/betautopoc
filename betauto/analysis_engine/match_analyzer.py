@@ -9,7 +9,11 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from betauto.api_clients.errors import ExternalApiError
-from betauto.api_clients.openai_client import create_response_with_retry
+from betauto.api_clients.openai_client import (
+    create_response_with_retry,
+    create_structured_response_with_retry,
+    parse_response_output_json,
+)
 from betauto.strategy import ResolvedStrategyConfig
 
 from .models import MatchAnalysis, MatchAnalysisResult
@@ -145,6 +149,24 @@ def _build_strategy_constraints(strategy_cfg: ResolvedStrategyConfig | None) -> 
     )
 
 
+def _env_flag(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _build_analysis_instructions(prompt_template: str, strategy_cfg: ResolvedStrategyConfig | None) -> str:
+    strategy_constraints = _build_strategy_constraints(strategy_cfg)
+    return prompt_template.replace("{{STRATEGY_CONSTRAINTS}}", strategy_constraints).strip()
+
+
+def _build_analysis_input(match_context: dict[str, Any]) -> str:
+    compact_context = compact_match_context_for_llm(match_context)
+    match_json = json.dumps(compact_context, ensure_ascii=False, indent=2)
+    return f"INPUT_MATCH_JSON:\n{match_json}"
+
+
 def analyze_match(
     match_context: dict,
     llm,
@@ -157,14 +179,9 @@ def analyze_match(
     retry_count = 0
     try:
         prompt_template = _load_prompt()
-        compact_context = compact_match_context_for_llm(match_context)
-        match_json = json.dumps(compact_context, ensure_ascii=False, indent=2)
-        strategy_constraints = _build_strategy_constraints(strategy_cfg)
-        prompt = (
-            prompt_template.replace("{{STRATEGY_CONSTRAINTS}}", strategy_constraints)
-            .replace("{{MATCH_CONTEXT_JSON}}", match_json)
-        )
-        prompt_size_chars = len(prompt)
+        instructions = _build_analysis_instructions(prompt_template, strategy_cfg)
+        input_text = _build_analysis_input(match_context)
+        prompt_size_chars = len(instructions) + len(input_text)
 
         fixture_id = match_context.get("fixture_id", "unknown")
         logger.info(
@@ -188,17 +205,54 @@ def analyze_match(
                 f"after {error.provider} error, retry in {sleep_seconds:.1f}s"
             )
 
-        response, retry_count = create_response_with_retry(
-            llm,
-            model=model_name,
-            input=prompt,
-            operation_name=f"openai.responses.create fixture_id={fixture_id}",
-            timeout=timeout_seconds,
-            retry_log_callback=on_retry,
-        )
+        use_structured_outputs = _env_flag("OPENAI_USE_STRUCTURED_OUTPUTS", True)
+        fallback_to_legacy = _env_flag("OPENAI_STRUCTURED_FALLBACK_TO_LEGACY", True)
 
-        raw_text = response.output_text or ""
-        parsed = _extract_json_from_text(raw_text)
+        try:
+            if use_structured_outputs:
+                response, retry_count = create_structured_response_with_retry(
+                    llm,
+                    model=model_name,
+                    instructions=instructions,
+                    input=input_text,
+                    response_model=MatchAnalysis,
+                    operation_name=f"openai.responses.create fixture_id={fixture_id}",
+                    timeout=timeout_seconds,
+                    retry_log_callback=on_retry,
+                )
+                parsed = parse_response_output_json(response)
+            else:
+                legacy_prompt = f"{instructions}\n\n{input_text}"
+                response, retry_count = create_response_with_retry(
+                    llm,
+                    model=model_name,
+                    input=legacy_prompt,
+                    operation_name=f"openai.responses.create fixture_id={fixture_id}",
+                    timeout=timeout_seconds,
+                    retry_log_callback=on_retry,
+                )
+                raw_text = response.output_text or ""
+                parsed = _extract_json_from_text(raw_text)
+        except Exception:
+            if not (use_structured_outputs and fallback_to_legacy):
+                raise
+            logger.warning(
+                "[analysis] fixture_id=%s structured output failed, falling back to legacy JSON prompt",
+                fixture_id,
+                exc_info=True,
+            )
+            legacy_prompt = f"{instructions}\n\n{input_text}"
+            response, retry_count = create_response_with_retry(
+                llm,
+                model=model_name,
+                input=legacy_prompt,
+                operation_name=f"openai.responses.create fixture_id={fixture_id}",
+                timeout=timeout_seconds,
+                retry_log_callback=on_retry,
+            )
+            raw_text = response.output_text or ""
+            parsed = _extract_json_from_text(raw_text)
+
         validated = MatchAnalysis.model_validate(parsed)
 
         usage = getattr(response, "usage", None)

@@ -40,6 +40,17 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def _normalize_market_id(value: str) -> str:
+    market = str(value or "").lower()
+    if market in {"1x2", "winner", "match_winner_1x2"} or market.startswith("match_winner"):
+        return "match_winner"
+    if market == "btts" or market.startswith("both_teams_score") or market.startswith("both_teams_to_score"):
+        return "both_teams_to_score"
+    if "over_under" in market or "total_goals" in market or market.startswith("goals_over_under"):
+        return "goals_over_under"
+    return market
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     ensure_latest_allowed(path)
     return json.loads(path.read_text(encoding="utf-8"))
@@ -130,7 +141,7 @@ def aggregate_candidates(match_analysis: dict[str, Any], *, run_dir: Path) -> di
             global_confidence = max(0, min(100, _safe_int(analysis.get("global_confidence"), predicted_confidence)))
             effective_confidence = min(predicted_confidence, global_confidence)
             data_quality = str(analysis.get("data_quality") or "low")
-            market_canonical_id = str(market.get("market_canonical_id") or "unknown_market")
+            market_canonical_id = _normalize_market_id(str(market.get("market_canonical_id") or "unknown_market"))
             selection_canonical_id = str(market.get("selection_canonical_id") or "unknown_selection")
             market_label = _market_label(market_canonical_id)
             pick_label = _pick_label(selection_canonical_id)

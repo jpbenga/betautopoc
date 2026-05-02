@@ -1,16 +1,22 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class PredictedMarket(BaseModel):
+class StrictBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class PredictedMarket(StrictBaseModel):
     market_canonical_id: str
     selection_canonical_id: str
     confidence: int = Field(ge=0, le=100)
     reason: str
 
 
-class MatchAnalysis(BaseModel):
+class MatchAnalysis(StrictBaseModel):
     fixture_id: int
     event: str
     competition: str
@@ -20,10 +26,10 @@ class MatchAnalysis(BaseModel):
     risks: list[str] = Field(default_factory=list)
     predicted_markets: list[PredictedMarket] = Field(default_factory=list)
     global_confidence: int = Field(ge=0, le=100)
-    data_quality: str = Field(pattern="^(high|medium|low)$")
+    data_quality: Literal["high", "medium", "low"]
 
 
-class MatchAnalysisResult(BaseModel):
+class MatchAnalysisResult(StrictBaseModel):
     status: str = Field(pattern="^(success|failed)$")
     analysis: MatchAnalysis
     error: str | None = None
@@ -35,7 +41,7 @@ class MatchAnalysisResult(BaseModel):
     prompt_size_chars: int | None = None
 
 
-class AnalysisCandidate(BaseModel):
+class AnalysisCandidate(StrictBaseModel):
     candidate_id: str
     fixture_id: int
     event: str

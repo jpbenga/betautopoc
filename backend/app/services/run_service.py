@@ -23,6 +23,7 @@ from backend.app.services.job_service import (
     set_error,
     set_step,
 )
+from backend.app.services.strategy_service import get_active_strategy_file
 from betauto.market_dictionary.resolver import resolve_pick_market_aliases
 from betauto.orchestrator import run_orchestrated_pipeline
 
@@ -310,7 +311,7 @@ async def run_orchestrated_pipeline_job(
 
 def queue_job_run(job_id: str, data: dict[str, Any], background_tasks: Any, requested_date: str) -> None:
     force_regenerate = bool(data.get("force", False))
-    strategy_file = data.get("strategy_file") or os.getenv("BETAUTO_STRATEGY_FILE") or "config/strategies/default.json"
+    strategy_file = data.get("strategy_file") or get_active_strategy_file()
     max_matches = data.get("max_matches")
     sleep_between_matches = data.get("sleep_between_matches")
 

@@ -33,3 +33,14 @@ class FootballLeagueRegistryResponse(ContractBaseModel):
     total_count: int = 0
     enabled_count: int = 0
     verified_count: int = 0
+
+
+class FootballLeagueToggleRequest(ContractBaseModel):
+    enabled: bool
+
+
+class FootballLeagueToggleResponse(ContractBaseModel):
+    status: Literal["updated"]
+    league: FootballLeagueRegistryEntry
+    total_count: int = 0
+    enabled_count: int = 0

@@ -18,6 +18,7 @@ from backend.app.api.schemas.settings import (
     StrategySettings,
 )
 from backend.app.core.config import CORS_ORIGINS, env_flag
+from backend.app.services.strategy_service import get_active_strategy_file
 from betauto.strategy import load_and_resolve_strategy
 
 DEFAULT_STRATEGY_FILE = "config/strategies/default.json"
@@ -41,7 +42,7 @@ def _env_flag(name: str, default: bool) -> bool:
 
 
 def _strategy_file() -> str:
-    return os.getenv("BETAUTO_STRATEGY_FILE") or DEFAULT_STRATEGY_FILE
+    return get_active_strategy_file() or os.getenv("BETAUTO_STRATEGY_FILE") or DEFAULT_STRATEGY_FILE
 
 
 def _optional_int_env(name: str) -> int | None:

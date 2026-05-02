@@ -12,11 +12,11 @@ QUALITY_RANK = {"low": 0, "medium": 1, "high": 2}
 
 def _market_key(value: Any) -> str:
     market = str(value or "").lower()
-    if market.startswith("match_winner"):
+    if market in {"1x2", "winner", "match_winner_1x2"} or market.startswith("match_winner"):
         return "match_winner"
-    if market.startswith("goals_over_under"):
+    if "over_under" in market or "total_goals" in market or market.startswith("goals_over_under"):
         return "goals_over_under"
-    if market.startswith("both_teams_score") or market.startswith("both_teams_to_score"):
+    if market == "btts" or market.startswith("both_teams_score") or market.startswith("both_teams_to_score"):
         return "both_teams_to_score"
     return market
 
