@@ -18,7 +18,7 @@ Pour un match de Ligue 1 ou de J1 League, le prompt ne doit pas contenir d'annua
 
 1. BetAuto identifie la competition via `league_id`.
 2. BetAuto associe les medias prioritaires de cette competition dans `qualitative_context.preferred_media`.
-3. Une future brique de collecte qualitative tente d'abord de chercher du contexte dans ces sources prioritaires.
+3. La brique `qualitative_researcher` tente d'abord de chercher du contexte dans ces sources prioritaires.
 4. Si des signaux fiables sont trouves, ils sont normalises dans `qualitative_context.consulted_sources` et `qualitative_context.signals`.
 5. Le prompt consomme uniquement ce qui existe deja dans `qualitative_context`.
 
@@ -100,5 +100,6 @@ Liste des angles qualitatifs encore absents, par exemple:
 Dans l'etat actuel du projet:
 
 - `preferred_media` peut etre pre-rempli a partir de la ligue;
-- `consulted_sources` et `signals` sont encore vides par defaut;
-- le pipeline quantitatif reste la seule source active pour l'analyse match par match.
+- `consulted_sources` et `signals` sont remplis avant l'analyse si `use_qualitative_context=true` et si la recherche web OpenAI trouve des sources exploitables;
+- un signal qualitatif sans source reste ignore;
+- le pipeline quantitatif reste la source factuelle principale, le qualitatif sert a contextualiser les lectures betting.

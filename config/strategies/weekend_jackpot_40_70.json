@@ -34,7 +34,7 @@
     "allow_single": false,
     "allow_combo": true,
     "preferred_ticket_type": "combo",
-    "min_picks": 5,
+    "min_picks": 4,
     "max_picks": 8,
     "target_odds": {
       "enabled": true,

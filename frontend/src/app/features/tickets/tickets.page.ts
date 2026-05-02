@@ -5,7 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { AnalysisApiService } from '../../core/api/analysis-api.service';
 import { TicketApiService } from '../../core/api/ticket-api.service';
 import { UiTone, confidenceScoreToTone, statusToTone } from '../../core/api/api.mappers';
-import { AnalysisRun, AnalysisRunOutputs, TicketAuditLog, TicketDetail, TicketPick, TicketSummary } from '../../core/api/api.types';
+import { AnalysisRun, AnalysisRunOutputs, TicketAuditLog, TicketDetail, TicketPick, TicketSummary, TicketVariant } from '../../core/api/api.types';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../shared/ui/error-state/error-state.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
@@ -264,6 +264,7 @@ interface TicketMatchAnalysisDetail {
                 </div>
                 <div class="mt-2 flex flex-wrap items-center gap-2">
                   <span class="text-xs text-muted">{{ ticket.picks_count }} picks</span>
+                  <span class="text-xs text-muted">{{ ticket.variants_count || 0 }} variants</span>
                   <span class="text-xs text-muted">{{ formatOdds(ticket.estimated_combo_odds) }} odds</span>
                   <ba-status-badge
                     [label]="formatPercent(ticket.global_confidence_score)"
@@ -296,10 +297,14 @@ interface TicketMatchAnalysisDetail {
                     <ba-status-badge [label]="formatPercent(selectedTicket.global_confidence_score)" [tone]="confidenceTone(selectedTicket.global_confidence_score)"></ba-status-badge>
                   </div>
                 </div>
-                <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                   <div>
                     <p class="ba-label">Picks</p>
                     <p class="mt-1 text-sm text-text">{{ selectedTicket.picks_count }}</p>
+                  </div>
+                  <div>
+                    <p class="ba-label">Variants</p>
+                    <p class="mt-1 text-sm text-text">{{ selectedTicket.variants_count || 0 }}</p>
                   </div>
                   <div>
                     <p class="ba-label">Odds</p>
@@ -349,6 +354,7 @@ interface TicketMatchAnalysisDetail {
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2 text-xs text-muted">
                   <span>{{ ticket.picks_count }} picks</span>
+                  <span>{{ ticket.variants_count || 0 }} variants</span>
                   <span>{{ formatOdds(ticket.estimated_combo_odds) }} odds</span>
                   <span>{{ ticket.combo_risk_level || 'risk —' }}</span>
                 </div>
@@ -358,11 +364,93 @@ interface TicketMatchAnalysisDetail {
         </ba-section-card>
       </section>
 
+      <section class="mt-4">
+        <ba-section-card>
+          <div class="ba-card-header flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p class="ba-label">Ticket variants</p>
+              <h3 class="mt-1 text-sm font-semibold text-text">Jusqu'à 3 propositions générées par l'agent</h3>
+              @if (selectedTicket?.selection_reason) {
+                <p class="mt-1 text-xs leading-5 text-muted">{{ selectedTicket?.selection_reason }}</p>
+              }
+            </div>
+            <ba-status-badge [label]="ticketVariants.length + ' variants'" [tone]="ticketVariants.length ? 'success' : 'default'"></ba-status-badge>
+          </div>
+          <div class="grid gap-3 p-3 xl:grid-cols-3">
+            @for (variant of ticketVariants; track variant.variant_id) {
+              <article
+                class="rounded-card border p-3"
+                [class.border-accent/60]="variant.selected"
+                [class.bg-accent/5]="variant.selected"
+                [class.border-border/60]="!variant.selected"
+                [class.bg-background/60]="!variant.selected"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="ba-label">{{ variant.variant_id }}</p>
+                    <h4 class="mt-1 truncate text-sm font-semibold text-text">{{ variant.label || 'Variant' }}</h4>
+                  </div>
+                  <div class="flex shrink-0 flex-wrap justify-end gap-2">
+                    @if (variant.selected) {
+                      <ba-status-badge label="best" tone="live"></ba-status-badge>
+                    }
+                    <ba-status-badge [label]="formatPercent(variant.strategy_fit_score)" [tone]="confidenceTone(variant.strategy_fit_score)"></ba-status-badge>
+                  </div>
+                </div>
+
+                <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-muted">
+                  <span>{{ variant.picks.length }} picks</span>
+                  <span>{{ formatOdds(variant.estimated_combo_odds) }} odds</span>
+                  <span>{{ formatPercent(variant.global_confidence_score) }} confidence</span>
+                  <span>{{ variant.combo_risk_level || 'risk —' }}</span>
+                </div>
+
+                <p class="mt-3 text-sm leading-6 text-text">{{ variant.reason || 'No variant reason provided.' }}</p>
+
+                @if (variant.tradeoffs.length) {
+                  <div class="mt-3 rounded-card border border-border/60 bg-surface-low p-2">
+                    <p class="ba-label">Tradeoffs</p>
+                    @for (tradeoff of variant.tradeoffs; track tradeoff + $index) {
+                      <p class="mt-1 text-xs leading-5 text-muted">{{ tradeoff }}</p>
+                    }
+                  </div>
+                }
+
+                <div class="mt-3 grid gap-2">
+                  @for (pick of variant.picks; track pick.pick_id || $index) {
+                    <button
+                      type="button"
+                      class="rounded-card border border-border/60 bg-surface-low p-2 text-left transition hover:border-accent/60 hover:bg-surface-high/50"
+                      (click)="openPickModal(pick)"
+                    >
+                      <p class="truncate text-xs font-semibold text-text">{{ pick.event || 'Event unknown' }}</p>
+                      <p class="mt-1 truncate text-[11px] text-muted">{{ pick.market || 'Market unknown' }} · {{ pick.pick || 'Pick unknown' }}</p>
+                      <div class="mt-2 flex flex-wrap gap-2">
+                        <ba-status-badge [label]="formatPercent(pick.confidence_score)" [tone]="confidenceTone(pick.confidence_score)"></ba-status-badge>
+                        <ba-status-badge [label]="pick.risk_level || 'risk —'" [tone]="riskTone(pick.risk_level)"></ba-status-badge>
+                      </div>
+                    </button>
+                  }
+                </div>
+              </article>
+            } @empty {
+              <div class="p-4 xl:col-span-3">
+                <ba-empty-state
+                  label="No variants"
+                  message="Cette sélection vient probablement d'un ancien artifact ou aucune variante exploitable n'a été produite."
+                  tone="warning"
+                ></ba-empty-state>
+              </div>
+            }
+          </div>
+        </ba-section-card>
+      </section>
+
       <section class="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <ba-section-card>
           <div class="ba-card-header">
             <p class="ba-label">Selected picks</p>
-            <h3 class="mt-1 text-sm font-semibold text-text">Clique un pick pour ouvrir son détail</h3>
+            <h3 class="mt-1 text-sm font-semibold text-text">Picks de la meilleure variante</h3>
           </div>
           <div class="grid gap-2 p-3">
             @for (pick of selectedTicket?.picks || []; track pick.pick_id || $index) {
@@ -679,7 +767,8 @@ export class TicketsPage implements OnInit, OnDestroy {
         this.selectedTicket = ticket;
         this.auditLog = auditLog;
         this.selectedTicketRunOutputs = outputs;
-        if (this.selectedPickForModal && !ticket.picks.some((pick) => pick.pick_id === this.selectedPickForModal?.pick_id)) {
+        const visiblePicks = [...ticket.picks, ...ticket.variants.flatMap((variant) => variant.picks)];
+        if (this.selectedPickForModal && !visiblePicks.some((pick) => pick.pick_id === this.selectedPickForModal?.pick_id)) {
           this.selectedPickForModal = null;
         }
         this.isDetailLoading = false;
@@ -940,6 +1029,10 @@ export class TicketsPage implements OnInit, OnDestroy {
       level: this.logLevel(entry.level),
       message: entry.message
     }));
+  }
+
+  protected get ticketVariants(): TicketVariant[] {
+    return this.selectedTicket?.variants || [];
   }
 
   protected get selectedPickMatchAnalysis(): TicketMatchAnalysisDetail | null {

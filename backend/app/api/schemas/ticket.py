@@ -26,6 +26,20 @@ class TicketPick(ContractBaseModel):
     source_match_analysis_id: str | None = None
 
 
+class TicketVariant(ContractBaseModel):
+    variant_id: str
+    label: str
+    picks: list[TicketPick] = Field(default_factory=list)
+    estimated_combo_odds: float | None = None
+    combo_in_target_range: bool | None = None
+    global_confidence_score: int | None = None
+    combo_risk_level: str | None = None
+    strategy_fit_score: int | None = None
+    reason: str | None = None
+    tradeoffs: list[str] = Field(default_factory=list)
+    selected: bool = False
+
+
 class TicketSummary(ContractBaseModel):
     ticket_id: str
     run_id: str
@@ -37,6 +51,8 @@ class TicketSummary(ContractBaseModel):
     combo_risk_level: str | None = None
     combo_in_target_range: bool | None = None
     picks_count: int = 0
+    variants_count: int = 0
+    selected_variant_id: str | None = None
     notes_count: int = 0
     errors_count: int = 0
     competitions: list[str] = Field(default_factory=list)
@@ -48,6 +64,8 @@ class TicketSummary(ContractBaseModel):
 
 class TicketDetail(TicketSummary):
     picks: list[TicketPick] = Field(default_factory=list)
+    variants: list[TicketVariant] = Field(default_factory=list)
+    selection_reason: str | None = None
     notes: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     selection_config: dict[str, Any] = Field(default_factory=dict)

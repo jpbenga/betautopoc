@@ -467,7 +467,7 @@ const MARKET_LABELS_FR: Record<string, string> = {
                 <span class="ba-label">Analyse sauvegardée</span>
                 <select class="ba-tool mt-2 w-full bg-background" [value]="selectedRunId" (change)="selectAnalysisRun(textValue($event))">
                   @for (run of analysisRuns; track run.run_id) {
-                    <option [value]="run.run_id">{{ shortId(run.run_id) }} · {{ run.target_date || 'no date' }} · {{ run.status }}</option>
+                    <option [value]="runArtifactId(run)">{{ runOptionLabel(run) }}</option>
                   }
                 </select>
               </label>
@@ -537,7 +537,14 @@ const MARKET_LABELS_FR: Record<string, string> = {
                   <p class="text-sm text-muted">Retenus : <span class="text-text">{{ applicationResult.filtered_candidate_count }}</span></p>
                   <p class="text-sm text-muted">Rejetés : <span class="text-text">{{ applicationResult.rejected_candidate_count }}</span></p>
                   <p class="text-sm text-muted">Picks : <span class="text-text">{{ applicationResult.picks_count }}</span></p>
+                  <p class="text-sm text-muted">Variants : <span class="text-text">{{ applicationResult.variants_count || 0 }}</span></p>
+                  <p class="truncate text-sm text-muted">Meilleure variante : <span class="text-text">{{ applicationResult.selected_variant_id || '—' }}</span></p>
                 </div>
+                @if (applicationResult.selection_reason) {
+                  <div class="mt-3 rounded-card border border-accent/30 bg-accent/10 p-2 text-xs leading-5 text-text">
+                    {{ applicationResult.selection_reason }}
+                  </div>
+                }
                 @if (applicationResult.errors.length) {
                   <div class="mt-3 rounded-card border border-danger/40 bg-danger/10 p-2 text-xs text-danger">
                     @for (error of applicationResult.errors; track error) {
@@ -993,6 +1000,18 @@ export class StrategyPage implements OnInit {
     return `${text.slice(0, 14)}…${text.slice(-10)}`;
   }
 
+  protected runArtifactId(run: AnalysisRunListItem): string {
+    return run.orchestrator_run_id || run.run_id;
+  }
+
+  protected runOptionLabel(run: AnalysisRunListItem): string {
+    const artifactId = this.runArtifactId(run);
+    const jobLabel = run.orchestrator_run_id && run.run_id !== run.orchestrator_run_id
+      ? ` · job ${this.shortId(run.run_id)}`
+      : '';
+    return `${this.shortId(artifactId)} · ${run.target_date || 'no date'} · ${run.status}${jobLabel}`;
+  }
+
   protected textValue(event: Event): string {
     return (($eventTarget(event).value || '') as string).toString();
   }
@@ -1100,7 +1119,14 @@ export class StrategyPage implements OnInit {
     this.analysisApi.getRuns().subscribe({
       next: (runs) => {
         this.analysisRuns = runs.filter((run) => ['completed', 'stopped'].includes(String(run.status || '').toLowerCase()));
-        const nextRunId = this.selectedRunId || this.analysisRuns[0]?.run_id || '';
+        const selectedRun = this.analysisRuns.find((run) =>
+          run.run_id === this.selectedRunId || run.orchestrator_run_id === this.selectedRunId
+        );
+        const nextRunId = selectedRun
+          ? this.runArtifactId(selectedRun)
+          : this.analysisRuns[0]
+            ? this.runArtifactId(this.analysisRuns[0])
+            : '';
         this.selectedRunId = nextRunId;
         if (nextRunId) {
           this.loadScoredMarketsForRun(nextRunId);

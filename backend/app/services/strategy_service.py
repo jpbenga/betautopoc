@@ -18,6 +18,7 @@ from backend.app.api.schemas.strategy import (
     StrategySaveResponse,
 )
 from backend.app.core.paths import REPO_ROOT
+from backend.app.services.job_service import get_job
 from betauto.analysis_engine.aggregator import aggregate_candidates_from_file
 from betauto.analysis_engine.filters import filter_candidates_from_file
 from betauto.selection_engine import SelectionConfig, select_combo
@@ -231,14 +232,45 @@ def save_strategy(strategy_file: str, payload: dict[str, Any], *, activate: bool
 def _safe_run_dir(run_id: str) -> Path:
     if Path(run_id).name != run_id:
         raise ValueError("run_id must be a single run directory name.")
+
     run_dir = (ORCHESTRATOR_RUNS_DIR / run_id).resolve()
     try:
         run_dir.relative_to(ORCHESTRATOR_RUNS_DIR.resolve())
     except ValueError as exc:
         raise ValueError("run_id must point inside data/orchestrator_runs.") from exc
-    if not run_dir.exists() or not run_dir.is_dir():
-        raise FileNotFoundError(f"Run introuvable: {run_id}")
-    return run_dir
+    if run_dir.exists() and run_dir.is_dir():
+        return run_dir
+
+    job = get_job(run_id)
+    if job:
+        raw_run_dir = job.get("orchestrator_run_dir")
+        if raw_run_dir:
+            candidate = Path(str(raw_run_dir))
+            if not candidate.is_absolute():
+                candidate = REPO_ROOT / candidate
+            candidate = candidate.resolve()
+            try:
+                candidate.relative_to(ORCHESTRATOR_RUNS_DIR.resolve())
+            except ValueError as exc:
+                raise ValueError("orchestrator_run_dir must point inside data/orchestrator_runs.") from exc
+            if candidate.exists() and candidate.is_dir():
+                return candidate
+
+        orchestrator_run_id = job.get("orchestrator_run_id")
+        if orchestrator_run_id:
+            candidate = (ORCHESTRATOR_RUNS_DIR / str(orchestrator_run_id)).resolve()
+            if candidate.exists() and candidate.is_dir():
+                return candidate
+
+    prefix_matches = [
+        path.resolve()
+        for path in ORCHESTRATOR_RUNS_DIR.glob(f"{run_id}*")
+        if path.is_dir()
+    ]
+    if len(prefix_matches) == 1:
+        return prefix_matches[0]
+
+    raise FileNotFoundError(f"Run introuvable: {run_id}")
 
 
 def _selection_config_from_strategy(resolved_strategy: Any) -> SelectionConfig:
@@ -292,6 +324,7 @@ def apply_strategy_to_run(
         raise ValueError("selection_mode must be filter_only or filter_and_select.")
 
     run_dir = _safe_run_dir(run_id)
+    resolved_run_id = run_dir.name
     detail = strategy_detail(strategy_file or get_active_strategy_file())
     if not detail.valid:
         raise ValueError("Stratégie invalide: " + " | ".join(detail.errors))
@@ -354,6 +387,7 @@ def apply_strategy_to_run(
 
     run_summary = _read_json_or_empty(run_dir / "run_summary.json")
     picks = selection_payload.get("picks") if isinstance(selection_payload.get("picks"), list) else []
+    variants = selection_payload.get("variants") if isinstance(selection_payload.get("variants"), list) else []
     selection_errors = selection_payload.get("errors") if isinstance(selection_payload.get("errors"), list) else []
     selection_notes = selection_payload.get("notes") if isinstance(selection_payload.get("notes"), list) else []
     selection_status = str(selection_payload.get("status") or "unknown")
@@ -365,7 +399,7 @@ def apply_strategy_to_run(
     summary = {
         "status": application_status,
         "application_id": application_id,
-        "run_id": run_id,
+        "run_id": resolved_run_id,
         "target_date": run_summary.get("target_date") or aggregation_payload.get("target_date"),
         "strategy_file": detail.strategy_file,
         "strategy_id": strategy.strategy_id,
@@ -386,8 +420,11 @@ def apply_strategy_to_run(
         "filtered_candidate_count": int(filtered_payload.get("candidate_count", 0) or 0),
         "rejected_candidate_count": int(filtered_payload.get("rejected_count", 0) or 0),
         "picks_count": len(picks),
+        "variants_count": len(variants),
+        "selected_variant_id": selection_payload.get("selected_variant_id"),
         "estimated_combo_odds": selection_payload.get("estimated_combo_odds"),
         "selection_status": selection_status,
+        "selection_reason": selection_payload.get("selection_reason"),
         "notes": selection_notes,
         "errors": selection_errors,
         "generated_at": _utc_now_iso(),

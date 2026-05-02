@@ -242,6 +242,7 @@ def run_orchestrated_pipeline(
             league_metadata=active_league_metadata,
             bookmaker_id=resolved_strategy.bookmaker_id,
             bookmaker_name=resolved_strategy.bookmaker_name,
+            use_qualitative_context=resolved_strategy.use_qualitative_context,
             log_callback=log_callback,
         )
         context_payload = builder.build(target_date=target_date)
@@ -258,6 +259,14 @@ def run_orchestrated_pipeline(
             f"matches_skipped_count={context_trace.get('matches_skipped_count', 0)}",
         )
         _emit_league_fixture_summary(log_callback, context_trace, target_date)
+        _emit(
+            log_callback,
+            "[qualitative] "
+            f"enabled={context_trace.get('qualitative_context_enabled', False)} "
+            f"media_directory_matches={context_trace.get('qualitative_media_directory_matches_count', 0)} "
+            f"preferred_media_entries={context_trace.get('qualitative_preferred_media_entries_count', 0)} "
+            f"signals={context_trace.get('qualitative_signals_matches_count', 0)}",
+        )
         _emit(log_callback, f"[orchestrator] {context_count} matchs trouvés pour {target_date}")
         if context_payload.get("target_date") != target_date:
             summary.update(
@@ -340,6 +349,7 @@ def run_orchestrated_pipeline(
         results, stats = run_analysis_batch_with_stats(
             context_file=str(context_file),
             llm=llm,
+            strategy_cfg=resolved_strategy,
             max_matches=max_matches,
             sleep_between_matches=sleep_between_matches,
             log_callback=log_callback,

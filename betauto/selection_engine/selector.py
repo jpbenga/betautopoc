@@ -230,51 +230,510 @@ def _normalize_pick(raw_pick: dict[str, Any], index: int, normalization_notes: l
     return pick
 
 
+def _ticket_shape_errors(pick_count: int, config: SelectionConfig) -> list[str]:
+    errors: list[str] = []
+    if pick_count:
+        if pick_count < config.min_picks:
+            errors.append(f"ticket has {pick_count} pick(s), below min_picks={config.min_picks}")
+        if pick_count > config.max_picks:
+            errors.append(f"ticket has {pick_count} pick(s), above max_picks={config.max_picks}")
+        if pick_count == 1 and not config.allow_single:
+            errors.append("single ticket returned while allow_single=false")
+        if pick_count > 1 and not config.allow_combo:
+            errors.append("combo ticket returned while allow_combo=false")
+    return errors
+
+
+def _normalize_picks(raw_picks: Any, normalization_notes: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(raw_picks, list):
+        return []
+    normalized_picks: list[dict[str, Any]] = []
+    for idx, raw_pick in enumerate(raw_picks, start=1):
+        if isinstance(raw_pick, dict):
+            normalized_picks.append(_normalize_pick(raw_pick, idx, normalization_notes))
+    return normalized_picks
+
+
+def _estimated_odds_from_picks(picks: list[dict[str, Any]]) -> float | None:
+    if not picks:
+        return None
+    estimated = 1.0
+    for pick in picks:
+        odd = _safe_float(pick.get("expected_odds_min") or pick.get("expected_odds_max"))
+        if odd is None:
+            return None
+        estimated *= odd
+    return round(estimated, 2)
+
+
+def _in_target_range(estimated_combo_odds: float | None, config: SelectionConfig) -> bool:
+    return estimated_combo_odds is not None and config.combo_min_odds <= estimated_combo_odds <= config.combo_max_odds
+
+
+def _confidence_from_picks(picks: list[dict[str, Any]]) -> int | None:
+    if not picks:
+        return None
+    return int(round(sum(_to_int(pick.get("confidence_score"), 0) for pick in picks) / len(picks)))
+
+
+def _risk_from_picks(picks: list[dict[str, Any]]) -> str | None:
+    if not picks:
+        return None
+    risks = {str(pick.get("risk_level") or "").lower() for pick in picks}
+    if "high" in risks:
+        return "high"
+    if "medium" in risks:
+        return "medium"
+    return "low"
+
+
+def _strategy_fit_score(
+    *,
+    picks: list[dict[str, Any]],
+    estimated_combo_odds: float | None,
+    combo_in_target_range: bool,
+    combo_risk_level: str | None,
+) -> int:
+    confidence = _confidence_from_picks(picks) or 0
+    risk_penalty = {"low": 0, "medium": 6, "high": 16}.get(str(combo_risk_level or "").lower(), 10)
+    odds_bonus = 8 if combo_in_target_range else -8 if estimated_combo_odds is not None else -12
+    pick_count_penalty = max(0, len(picks) - 2) * 2
+    return max(0, min(100, confidence + odds_bonus - risk_penalty - pick_count_penalty))
+
+
+def _normalize_variant(
+    raw_variant: dict[str, Any],
+    index: int,
+    config: SelectionConfig,
+    normalization_notes: list[str],
+) -> dict[str, Any] | None:
+    variant = dict(raw_variant)
+    variant_id = str(variant.get("variant_id") or f"variant_{index:03d}")
+    label = str(variant.get("label") or f"Variant {index}")
+    picks = _normalize_picks(variant.get("picks"), normalization_notes)
+    shape_errors = _ticket_shape_errors(len(picks), config)
+    if shape_errors:
+        normalization_notes.append(f"{variant_id}: variante rejetée ({'; '.join(shape_errors)})")
+        return None
+    if not picks:
+        normalization_notes.append(f"{variant_id}: variante vide ignorée")
+        return None
+
+    raw_estimated_combo_odds = _safe_float(variant.get("estimated_combo_odds"))
+    computed_estimated_combo_odds = _estimated_odds_from_picks(picks)
+    estimated_combo_odds = computed_estimated_combo_odds if computed_estimated_combo_odds is not None else raw_estimated_combo_odds
+    if (
+        raw_estimated_combo_odds is not None
+        and computed_estimated_combo_odds is not None
+        and abs(raw_estimated_combo_odds - computed_estimated_combo_odds) > 0.01
+    ):
+        normalization_notes.append(
+            f"{variant_id}: estimated_combo_odds corrigé de {raw_estimated_combo_odds} à {computed_estimated_combo_odds}"
+        )
+
+    combo_in_target_range = _in_target_range(estimated_combo_odds, config)
+    if "combo_in_target_range" in variant and bool(variant.get("combo_in_target_range")) != combo_in_target_range:
+        normalization_notes.append(f"{variant_id}: combo_in_target_range recalculé depuis les cotes des picks")
+    global_confidence_score = max(
+        0,
+        min(100, _to_int(variant.get("global_confidence_score"), _confidence_from_picks(picks) or 0)),
+    )
+    combo_risk_level = str(variant.get("combo_risk_level") or _risk_from_picks(picks) or "medium").lower()
+    if combo_risk_level not in {"low", "medium", "high"}:
+        combo_risk_level = _risk_from_picks(picks) or "medium"
+    computed_strategy_fit_score = _strategy_fit_score(
+        picks=picks,
+        estimated_combo_odds=estimated_combo_odds,
+        combo_in_target_range=combo_in_target_range,
+        combo_risk_level=combo_risk_level,
+    )
+    raw_strategy_fit_score = variant.get("strategy_fit_score")
+    if (
+        raw_strategy_fit_score is not None
+        and _to_int(raw_strategy_fit_score, computed_strategy_fit_score) != computed_strategy_fit_score
+    ):
+        normalization_notes.append(f"{variant_id}: strategy_fit_score recalculé par garde-fou BetAuto")
+    strategy_fit_score = computed_strategy_fit_score
+    tradeoffs = variant.get("tradeoffs") if isinstance(variant.get("tradeoffs"), list) else []
+
+    return {
+        "variant_id": variant_id,
+        "label": label,
+        "picks": picks,
+        "estimated_combo_odds": estimated_combo_odds,
+        "combo_in_target_range": combo_in_target_range,
+        "global_confidence_score": global_confidence_score,
+        "combo_risk_level": combo_risk_level,
+        "strategy_fit_score": strategy_fit_score,
+        "reason": str(variant.get("reason") or "Variante générée depuis les candidats filtrés."),
+        "tradeoffs": [str(item) for item in tradeoffs if item is not None],
+    }
+
+
+def _candidate_to_pick(candidate: dict[str, Any], pick_id: str) -> dict[str, Any]:
+    expected_odds = _safe_float(candidate.get("expected_odds_min") or candidate.get("odds"))
+    confidence_score = max(0, min(100, _to_int(candidate.get("confidence_score"), 0)))
+    return _normalize_pick(
+        {
+            "pick_id": pick_id,
+            "fixture_id": candidate.get("fixture_id"),
+            "event": candidate.get("event") or "Unknown event",
+            "competition": candidate.get("competition"),
+            "kickoff": candidate.get("kickoff"),
+            "market_canonical_id": candidate.get("market_canonical_id") or "unknown_market",
+            "selection_canonical_id": candidate.get("selection_canonical_id") or "unknown_selection",
+            "market": candidate.get("market"),
+            "pick": candidate.get("pick"),
+            "expected_odds_min": expected_odds,
+            "expected_odds_max": _safe_float(candidate.get("expected_odds_max") or candidate.get("odds"))
+            or expected_odds,
+            "confidence_score": confidence_score,
+            "risk_level": candidate.get("risk_level") or _risk_from_confidence(confidence_score),
+            "reason": candidate.get("reasoning") or candidate.get("reason") or "Candidat retenu par filtrage stratégique.",
+            "evidence_summary": {
+                "global_confidence": confidence_score,
+                "confidence_tier": candidate.get("confidence_tier"),
+                "data_quality": candidate.get("data_quality"),
+                "odds_source": candidate.get("odds_source"),
+                "source_status": candidate.get("source_status"),
+                "expected_odds_min": expected_odds,
+                "expected_odds_max": _safe_float(candidate.get("expected_odds_max") or candidate.get("odds"))
+                or expected_odds,
+            },
+            "source_match_analysis_id": candidate.get("source_match_analysis_id"),
+        },
+        index=1,
+        normalization_notes=[],
+    )
+
+
+def _variant_signature(variant: dict[str, Any]) -> tuple[str, ...]:
+    picks = variant.get("picks") if isinstance(variant.get("picks"), list) else []
+    keys = []
+    for pick in picks:
+        if not isinstance(pick, dict):
+            continue
+        keys.append(
+            "|".join(
+                [
+                    str(pick.get("fixture_id") or ""),
+                    str(pick.get("market_canonical_id") or ""),
+                    str(pick.get("selection_canonical_id") or ""),
+                ]
+            )
+        )
+    return tuple(sorted(keys))
+
+
+def _unique_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[tuple[str, str, str]] = set()
+    unique: list[dict[str, Any]] = []
+    for candidate in candidates:
+        key = (
+            str(candidate.get("fixture_id") or ""),
+            str(candidate.get("market_canonical_id") or ""),
+            str(candidate.get("selection_canonical_id") or ""),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(candidate)
+    return unique
+
+
+def _pick_count_for_variant(config: SelectionConfig) -> int:
+    if config.preferred_ticket_type == "single" and config.allow_single:
+        return 1
+    return min(config.max_picks, max(config.min_picks, 1))
+
+
+def _select_candidate_window(candidates: list[dict[str, Any]], pick_count: int, offset: int = 0) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+    used_fixtures: set[str] = set()
+    for candidate in candidates[offset:] + candidates[:offset]:
+        fixture_id = str(candidate.get("fixture_id") or "")
+        if fixture_id and fixture_id in used_fixtures:
+            continue
+        selected.append(candidate)
+        if fixture_id:
+            used_fixtures.add(fixture_id)
+        if len(selected) >= pick_count:
+            break
+    return selected
+
+
+def _build_variant_from_candidates(
+    *,
+    variant_id: str,
+    label: str,
+    candidates: list[dict[str, Any]],
+    config: SelectionConfig,
+    reason: str,
+    tradeoffs: list[str],
+) -> dict[str, Any] | None:
+    pick_count = _pick_count_for_variant(config)
+    if len(candidates) < pick_count:
+        return None
+    picks = [
+        _candidate_to_pick(candidate, f"{variant_id}_pick_{index:03d}")
+        for index, candidate in enumerate(candidates[:pick_count], start=1)
+    ]
+    shape_errors = _ticket_shape_errors(len(picks), config)
+    if shape_errors:
+        return None
+    estimated_combo_odds = _estimated_odds_from_picks(picks)
+    combo_risk_level = _risk_from_picks(picks)
+    combo_in_target_range = _in_target_range(estimated_combo_odds, config)
+    global_confidence_score = _confidence_from_picks(picks)
+    return {
+        "variant_id": variant_id,
+        "label": label,
+        "picks": picks,
+        "estimated_combo_odds": estimated_combo_odds,
+        "combo_in_target_range": combo_in_target_range,
+        "global_confidence_score": global_confidence_score,
+        "combo_risk_level": combo_risk_level,
+        "strategy_fit_score": _strategy_fit_score(
+            picks=picks,
+            estimated_combo_odds=estimated_combo_odds,
+            combo_in_target_range=combo_in_target_range,
+            combo_risk_level=combo_risk_level,
+        ),
+        "reason": reason,
+        "tradeoffs": tradeoffs,
+    }
+
+
+def _fallback_variants_from_candidates(
+    match_analyses: dict[str, Any] | None,
+    config: SelectionConfig,
+    existing_variants: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    candidates = (
+        match_analyses.get("candidates")
+        if isinstance(match_analyses, dict) and isinstance(match_analyses.get("candidates"), list)
+        else []
+    )
+    usable = [
+        candidate
+        for candidate in candidates
+        if isinstance(candidate, dict)
+        and _safe_float(candidate.get("expected_odds_min") or candidate.get("odds")) is not None
+        and _to_int(candidate.get("confidence_score"), 0) >= config.min_pick_confidence
+    ]
+    usable = _unique_candidates(usable)
+    if len(usable) < _pick_count_for_variant(config):
+        return []
+
+    low_risk_rank = {"low": 0, "medium": 1, "high": 2}
+    recipes: list[tuple[str, str, list[dict[str, Any]], str, list[str]]] = [
+        (
+            "variant_safe",
+            "Prudente",
+            sorted(
+                usable,
+                key=lambda candidate: (
+                    low_risk_rank.get(str(candidate.get("risk_level") or "").lower(), 2),
+                    -_to_int(candidate.get("confidence_score"), 0),
+                    _safe_float(candidate.get("expected_odds_min") or candidate.get("odds")) or 99,
+                ),
+            ),
+            "Variante générée automatiquement depuis les candidats les plus robustes après filtrage stratégique.",
+            ["Priorise la confiance et le risque faible, parfois au détriment du rendement."],
+        ),
+        (
+            "variant_balanced",
+            "Équilibrée",
+            sorted(
+                usable,
+                key=lambda candidate: (
+                    -_to_int(candidate.get("confidence_score"), 0),
+                    abs((_safe_float(candidate.get("expected_odds_min") or candidate.get("odds")) or 0) - 1.65),
+                ),
+            ),
+            "Variante générée automatiquement avec un compromis confiance/cote autour d'une zone de rendement modérée.",
+            ["Peut conserver des risques medium si la confiance et la cote restent cohérentes."],
+        ),
+        (
+            "variant_yield",
+            "Rendement",
+            sorted(
+                usable,
+                key=lambda candidate: (
+                    -(_safe_float(candidate.get("expected_odds_min") or candidate.get("odds")) or 0),
+                    -_to_int(candidate.get("confidence_score"), 0),
+                ),
+            ),
+            "Variante générée automatiquement pour tester une construction à rendement plus élevé sous les seuils de stratégie.",
+            ["Plus volatile: elle privilégie des cotes plus hautes parmi les candidats encore éligibles."],
+        ),
+    ]
+
+    variants: list[dict[str, Any]] = []
+    signatures = {_variant_signature(variant) for variant in existing_variants}
+    for variant_id, label, sorted_candidates, reason, tradeoffs in recipes:
+        for offset in range(0, min(5, len(sorted_candidates))):
+            selected_candidates = _select_candidate_window(
+                sorted_candidates,
+                _pick_count_for_variant(config),
+                offset=offset,
+            )
+            variant = _build_variant_from_candidates(
+                variant_id=variant_id,
+                label=label,
+                candidates=selected_candidates,
+                config=config,
+                reason=reason,
+                tradeoffs=tradeoffs,
+            )
+            if not variant:
+                continue
+            signature = _variant_signature(variant)
+            if signature in signatures:
+                continue
+            variant["variant_id"] = f"variant_{len(existing_variants) + len(variants) + 1:03d}"
+            signatures.add(signature)
+            variants.append(variant)
+            break
+        if len(existing_variants) + len(variants) >= 3:
+            break
+
+    return variants
+
+
+def _variant_from_top_level(
+    normalized: dict[str, Any],
+    picks: list[dict[str, Any]],
+    config: SelectionConfig,
+) -> dict[str, Any]:
+    estimated_combo_odds = _estimated_odds_from_picks(picks) or _safe_float(
+        normalized.get("estimated_combo_odds")
+    )
+    combo_in_target_range = _in_target_range(estimated_combo_odds, config)
+    combo_risk_level = str(normalized.get("combo_risk_level") or _risk_from_picks(picks) or "medium").lower()
+    if combo_risk_level not in {"low", "medium", "high"}:
+        combo_risk_level = _risk_from_picks(picks) or "medium"
+    return {
+        "variant_id": str(normalized.get("selected_variant_id") or "variant_001"),
+        "label": "Best ticket",
+        "picks": picks,
+        "estimated_combo_odds": estimated_combo_odds,
+        "combo_in_target_range": combo_in_target_range,
+        "global_confidence_score": _to_int(
+            normalized.get("global_confidence_score"),
+            _confidence_from_picks(picks) or 0,
+        ),
+        "combo_risk_level": combo_risk_level,
+        "strategy_fit_score": _strategy_fit_score(
+            picks=picks,
+            estimated_combo_odds=estimated_combo_odds,
+            combo_in_target_range=combo_in_target_range,
+            combo_risk_level=combo_risk_level,
+        ),
+        "reason": str(normalized.get("selection_reason") or "Ticket final sélectionné par le moteur de sélection."),
+        "tradeoffs": [],
+    }
+
+
+def _best_variant(variants: list[dict[str, Any]], selected_variant_id: str | None) -> dict[str, Any] | None:
+    if selected_variant_id:
+        for variant in variants:
+            if variant.get("variant_id") == selected_variant_id and variant.get("combo_in_target_range"):
+                return variant
+    if not variants:
+        return None
+    risk_rank = {"low": 2, "medium": 1, "high": 0}
+    return max(
+        variants,
+        key=lambda variant: (
+            _to_int(variant.get("strategy_fit_score"), 0),
+            1 if variant.get("combo_in_target_range") else 0,
+            _to_int(variant.get("global_confidence_score"), 0),
+            risk_rank.get(str(variant.get("combo_risk_level") or "").lower(), 0),
+        ),
+    )
+
+
 def _normalize_selection_payload(
     parsed: dict[str, Any],
     config: SelectionConfig,
     input_file: str,
+    match_analyses: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     normalized = dict(parsed)
     normalization_notes: list[str] = []
 
-    picks = normalized.get("picks")
-    if not isinstance(picks, list):
-        picks = []
+    if not isinstance(normalized.get("picks"), list):
         normalization_notes.append("picks absent ou invalide: [] injecté")
+    normalized_picks = _normalize_picks(normalized.get("picks"), normalization_notes)
 
-    normalized_picks: list[dict[str, Any]] = []
-    for idx, raw_pick in enumerate(picks, start=1):
-        if isinstance(raw_pick, dict):
-            normalized_picks.append(_normalize_pick(raw_pick, idx, normalization_notes))
+    raw_variants = normalized.get("variants") if isinstance(normalized.get("variants"), list) else []
+    variants: list[dict[str, Any]] = []
+    for idx, raw_variant in enumerate(raw_variants, start=1):
+        if isinstance(raw_variant, dict):
+            variant = _normalize_variant(raw_variant, idx, config, normalization_notes)
+            if variant:
+                variants.append(variant)
+        if len(variants) >= 3:
+            break
 
-    normalized["picks"] = normalized_picks
-    pick_count = len(normalized_picks)
-    ticket_shape_errors: list[str] = []
-    if pick_count:
-        if pick_count < config.min_picks:
-            ticket_shape_errors.append(f"ticket has {pick_count} pick(s), below min_picks={config.min_picks}")
-        if pick_count > config.max_picks:
-            ticket_shape_errors.append(f"ticket has {pick_count} pick(s), above max_picks={config.max_picks}")
-        if pick_count == 1 and not config.allow_single:
-            ticket_shape_errors.append("single ticket returned while allow_single=false")
-        if pick_count > 1 and not config.allow_combo:
-            ticket_shape_errors.append("combo ticket returned while allow_combo=false")
-    if ticket_shape_errors:
+    if not variants and normalized_picks:
+        ticket_shape_errors = _ticket_shape_errors(len(normalized_picks), config)
+        if ticket_shape_errors:
+            normalized_picks = []
+            normalized["status"] = "failed"
+            normalized["estimated_combo_odds"] = None
+            normalized["combo_in_target_range"] = False
+            normalized["global_confidence_score"] = None
+            normalized["combo_risk_level"] = None
+            normalized["selected_variant_id"] = None
+            normalized["selection_reason"] = None
+            normalization_notes.append("ticket invalide rejeté par les garde-fous de forme")
+        else:
+            variants.append(_variant_from_top_level(normalized, normalized_picks, config))
+
+    if len(variants) < 3:
+        added_variants = _fallback_variants_from_candidates(match_analyses, config, variants)
+        if added_variants:
+            variants_to_add = added_variants[: 3 - len(variants)]
+            variants.extend(variants_to_add)
+            normalization_notes.append(
+                f"{len(variants_to_add)} variante(s) alternative(s) ajoutée(s) depuis les candidats filtrés"
+            )
+
+    selected_variant = _best_variant(variants, normalized.get("selected_variant_id"))
+    if selected_variant:
+        normalized["selected_variant_id"] = selected_variant["variant_id"]
+        normalized["selection_reason"] = str(
+            normalized.get("selection_reason") or selected_variant.get("reason") or "Meilleure variante retenue."
+        )
+        normalized["picks"] = selected_variant["picks"]
+        normalized["estimated_combo_odds"] = selected_variant["estimated_combo_odds"]
+        normalized["combo_in_target_range"] = selected_variant["combo_in_target_range"]
+        normalized["global_confidence_score"] = selected_variant["global_confidence_score"]
+        normalized["combo_risk_level"] = selected_variant["combo_risk_level"]
+    else:
+        normalized["selected_variant_id"] = None
+        normalized["selection_reason"] = None
         normalized["picks"] = []
-        normalized_picks = []
-        normalized["status"] = "failed"
         normalized["estimated_combo_odds"] = None
         normalized["combo_in_target_range"] = False
         normalized["global_confidence_score"] = None
         normalized["combo_risk_level"] = None
-        normalized["errors"] = list(normalized.get("errors") or [])
-        normalized["errors"].extend(ticket_shape_errors)
-        normalization_notes.append("ticket invalide rejeté par les garde-fous de forme")
 
-    if not normalized.get("status"):
-        normalized["status"] = "completed" if normalized_picks else "failed"
+    normalized["variants"] = variants
+    if variants and not any(variant.get("combo_in_target_range") for variant in variants):
+        normalization_notes.append("Aucune variante ne respecte la plage de cote cible après recalcul des cotes.")
+
+    if not selected_variant and normalized_picks:
+        normalized["errors"] = list(normalized.get("errors") or [])
+        normalized["errors"].append("Aucune variante valide n'a pu être conservée.")
+
+    if normalized.get("status") not in {"completed", "partial", "failed"}:
+        normalized["status"] = "completed" if selected_variant else "failed"
         normalization_notes.append("status injecté automatiquement")
+    if not selected_variant:
+        normalized["status"] = "failed"
 
     if normalized.get("input_file") != input_file:
         normalized["input_file"] = input_file
@@ -285,29 +744,6 @@ def _normalize_selection_payload(
         datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
     )
     normalized["selection_config"] = config.model_dump()
-    normalized.setdefault("estimated_combo_odds", None)
-
-    if "combo_in_target_range" not in normalized:
-        estimated = normalized.get("estimated_combo_odds")
-        in_range = False
-        if isinstance(estimated, (int, float)):
-            in_range = config.combo_min_odds <= float(estimated) <= config.combo_max_odds
-        normalized["combo_in_target_range"] = in_range
-
-    if normalized.get("global_confidence_score") is None and normalized_picks:
-        avg_score = round(sum(p["confidence_score"] for p in normalized_picks) / len(normalized_picks))
-        normalized["global_confidence_score"] = int(avg_score)
-        normalization_notes.append("global_confidence_score déduit depuis les picks")
-
-    if not normalized.get("combo_risk_level") and normalized_picks:
-        risks = {p.get("risk_level") for p in normalized_picks}
-        if "high" in risks:
-            normalized["combo_risk_level"] = "high"
-        elif "medium" in risks:
-            normalized["combo_risk_level"] = "medium"
-        else:
-            normalized["combo_risk_level"] = "low"
-        normalization_notes.append("combo_risk_level déduit depuis les picks")
 
     normalized.setdefault("rejected_candidates", [])
     normalized.setdefault("notes", [])
@@ -329,6 +765,9 @@ def _fallback_result(config: SelectionConfig, input_file: str, error: str) -> di
         selection_config=config.model_dump(),
         input_file=input_file,
         picks=[],
+        variants=[],
+        selected_variant_id=None,
+        selection_reason=None,
         estimated_combo_odds=None,
         combo_in_target_range=False,
         global_confidence_score=None,
@@ -570,7 +1009,12 @@ def select_combo(match_analyses: dict, config: SelectionConfig, llm, *, input_fi
                 prompt=f"{instructions}\n\n{input_text}",
             )
 
-        normalized = _normalize_selection_payload(parsed, config=config, input_file=input_file)
+        normalized = _normalize_selection_payload(
+            parsed,
+            config=config,
+            input_file=input_file,
+            match_analyses=match_analyses,
+        )
         validated = SelectionResult.model_validate(normalized)
         logger.info(
             "Selection completed | parsing_attempts=%s repair_used=%s retry_count=%s raw_llm_response=%s cleaned_json=%s repair_applied=%s",

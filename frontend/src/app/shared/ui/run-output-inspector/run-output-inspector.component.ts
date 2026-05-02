@@ -31,6 +31,27 @@ interface MatchAnalysisRow {
   data_quality: string;
   confidence_tier: string;
   premium: boolean;
+  qualitative_status: string;
+  qualitative_usage_note: string;
+  qualitative_used_as_evidence: boolean;
+  qualitative_media: string[];
+  qualitative_signals_count: number;
+  qualitative_consulted_sources_count: number;
+  qualitative_signals: Array<{
+    category: string;
+    summary: string;
+    impact: string;
+    confidence: string;
+    team_scope: string;
+    evidence: string[];
+    source_ids: string[];
+  }>;
+  qualitative_sources: Array<{
+    source_id: string;
+    media_name: string;
+    url: string;
+    published_at: string;
+  }>;
   predicted_markets: Array<{
     market_canonical_id: string;
     selection_canonical_id: string;
@@ -77,6 +98,23 @@ interface SelectionSummaryView {
   estimated_combo_odds: string;
   global_confidence_score: string;
   combo_risk_level: string;
+  selected_variant_id: string;
+  selection_reason: string;
+}
+
+interface SelectionVariantRow {
+  id: string;
+  label: string;
+  selected: boolean;
+  picks: SelectionPickRow[];
+  estimated_combo_odds: string;
+  global_confidence_score: string;
+  global_confidence_value: number;
+  combo_risk_level: string;
+  strategy_fit_score: string;
+  strategy_fit_value: number;
+  reason: string;
+  tradeoffs: string[];
 }
 
 interface MatchProgressRow {
@@ -328,6 +366,63 @@ interface MatchProgressRow {
                             </div>
                           </div>
 
+                          @if (match.qualitative_status !== '—' || match.qualitative_media.length) {
+                            <div class="mt-3 rounded-card border border-border/60 bg-background/60 p-3">
+                              <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                  <p class="ba-label">Qualitative media context</p>
+                                  <p class="mt-2 text-sm leading-6 text-text">
+                                    {{ match.qualitative_media.length ? match.qualitative_media.join(' · ') : 'No preferred media directory attached.' }}
+                                  </p>
+                                  <p class="mt-1 text-xs text-muted">
+                                    {{ match.qualitative_usage_note }} · {{ match.qualitative_consulted_sources_count }} consulted sources · {{ match.qualitative_signals_count }} signals
+                                  </p>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                  <ba-status-badge [label]="match.qualitative_status" [tone]="qualitativeTone(match)"></ba-status-badge>
+                                  <ba-status-badge [label]="match.qualitative_used_as_evidence ? 'used as evidence' : 'directory only'" [tone]="qualitativeEvidenceTone(match)"></ba-status-badge>
+                                </div>
+                              </div>
+                              @if (match.qualitative_signals.length) {
+                                <div class="mt-3 grid gap-2">
+                                  @for (signal of match.qualitative_signals; track signal.category + signal.summary + $index) {
+                                    <article class="rounded-card border border-border/60 bg-surface-low p-3">
+                                      <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                                        <div>
+                                          <p class="text-sm font-medium text-text">{{ signal.category }} · {{ signal.team_scope }}</p>
+                                          <p class="mt-2 text-sm leading-6 text-text">{{ signal.summary }}</p>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                          <ba-status-badge [label]="signal.impact" [tone]="qualitativeImpactTone(signal.impact)"></ba-status-badge>
+                                          <ba-status-badge [label]="signal.confidence" [tone]="qualitativeConfidenceTone(signal.confidence)"></ba-status-badge>
+                                        </div>
+                                      </div>
+                                      @if (signal.evidence.length) {
+                                        <div class="mt-2">
+                                          @for (evidence of signal.evidence; track evidence + $index) {
+                                            <p class="text-xs leading-5 text-muted">{{ evidence }}</p>
+                                          }
+                                        </div>
+                                      }
+                                    </article>
+                                  }
+                                </div>
+                              }
+                              @if (match.qualitative_sources.length) {
+                                <div class="mt-3 rounded-card border border-border/60 bg-surface-low p-3">
+                                  <p class="ba-label">Consulted sources</p>
+                                  <div class="mt-2 grid gap-2">
+                                    @for (source of match.qualitative_sources; track source.source_id + source.url + $index) {
+                                      <a class="text-xs leading-5 text-accent underline-offset-4 hover:underline" [href]="source.url" target="_blank" rel="noreferrer">
+                                        {{ source.media_name }} · {{ source.published_at }} · {{ source.url }}
+                                      </a>
+                                    }
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+
                           <div class="mt-3 rounded-card border border-border/60 bg-background/60 p-3">
                             <p class="ba-label">Predicted markets</p>
                             <div class="mt-3 grid gap-3">
@@ -536,7 +631,7 @@ interface MatchProgressRow {
               >
                 <span>
                   <span class="ba-label">Final Selection</span>
-                  <span class="mt-1 block text-sm font-semibold text-text">{{ selectionPicks.length }} final picks · {{ selectionSummary.status }}</span>
+                  <span class="mt-1 block text-sm font-semibold text-text">{{ selectionPicks.length }} final picks · {{ selectionVariants.length }} variants · {{ selectionSummary.status }}</span>
                 </span>
                 <ba-status-badge [label]="sectionStateLabel('selection')" [tone]="artifactTone(artifact('selection'))" [showPip]="true"></ba-status-badge>
               </button>
@@ -567,6 +662,73 @@ interface MatchProgressRow {
                         <p class="ba-data mt-2 text-text">{{ selectionSummary.status }}</p>
                       </div>
                     </div>
+
+                    @if (selectionVariants.length) {
+                      <div class="mt-3 rounded-card border border-border/60 bg-background/60 p-3">
+                        <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                          <div>
+                            <p class="ba-label">Ticket variants</p>
+                            <h4 class="mt-1 text-sm font-semibold text-text">{{ selectionVariants.length }} variants generated</h4>
+                            @if (selectionSummary.selection_reason !== '—') {
+                              <p class="mt-1 text-xs leading-5 text-muted">{{ selectionSummary.selection_reason }}</p>
+                            }
+                          </div>
+                          <ba-status-badge [label]="selectionSummary.selected_variant_id" tone="live"></ba-status-badge>
+                        </div>
+
+                        <div class="mt-3 grid gap-3 xl:grid-cols-3">
+                          @for (variant of selectionVariants; track variant.id) {
+                            <article
+                              class="rounded-card border p-3"
+                              [class.border-accent/60]="variant.selected"
+                              [class.bg-accent/5]="variant.selected"
+                              [class.border-border/60]="!variant.selected"
+                              [class.bg-surface-low]="!variant.selected"
+                            >
+                              <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                  <p class="ba-label">{{ variant.id }}</p>
+                                  <h5 class="mt-1 truncate text-sm font-semibold text-text">{{ variant.label }}</h5>
+                                </div>
+                                <div class="flex flex-wrap justify-end gap-2">
+                                  @if (variant.selected) {
+                                    <ba-status-badge label="best" tone="live"></ba-status-badge>
+                                  }
+                                  <ba-status-badge [label]="variant.strategy_fit_score" [tone]="confidenceTone(variant.strategy_fit_value)"></ba-status-badge>
+                                </div>
+                              </div>
+                              <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-muted">
+                                <span>{{ variant.picks.length }} picks</span>
+                                <span>{{ variant.estimated_combo_odds }} odds</span>
+                                <span>{{ variant.global_confidence_score }} confidence</span>
+                                <span>{{ variant.combo_risk_level }}</span>
+                              </div>
+                              <p class="mt-3 text-sm leading-6 text-text">{{ variant.reason }}</p>
+                              <div class="mt-3 grid gap-2">
+                                @for (pick of variant.picks; track pick.id + $index) {
+                                  <div class="rounded-card border border-border/60 bg-background/60 p-2">
+                                    <p class="truncate text-xs font-semibold text-text">{{ pick.event }}</p>
+                                    <p class="mt-1 truncate text-[11px] text-muted">{{ pick.market }} · {{ pick.pick }}</p>
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                      <ba-status-badge [label]="pick.confidence" [tone]="confidenceTone(pick.confidenceValue)"></ba-status-badge>
+                                      <ba-status-badge [label]="pick.risk" [tone]="riskTone(pick.risk)"></ba-status-badge>
+                                    </div>
+                                  </div>
+                                }
+                              </div>
+                              @if (variant.tradeoffs.length) {
+                                <div class="mt-3 rounded-card border border-border/60 bg-background/60 p-2">
+                                  <p class="ba-label">Tradeoffs</p>
+                                  @for (tradeoff of variant.tradeoffs; track tradeoff + $index) {
+                                    <p class="mt-1 text-xs leading-5 text-muted">{{ tradeoff }}</p>
+                                  }
+                                </div>
+                              }
+                            </article>
+                          }
+                        </div>
+                      </div>
+                    }
 
                     <div class="mt-3 grid gap-2">
                       @for (pick of visibleSelectionPicks; track pick.id) {
@@ -740,7 +902,7 @@ export class RunOutputInspectorComponent {
       { label: 'Matches analyzed', value: this.progressLabel('analyzed_matches', this.matchRows.length), tone: 'success', detail: `${this.filteredMatchRows.length} visible after filters` },
       { label: 'Aggregated candidates', value: String(this.aggregationRows.length), tone: 'default', detail: `${this.filteredAggregationRows.length} visible` },
       { label: 'Filtered candidates', value: String(this.retainedRows.length + this.rejectedRows.length), tone: 'warning', detail: `${this.retainedRows.length} retained · ${this.rejectedRows.length} rejected` },
-      { label: 'Final picks', value: String(this.selectionPicks.length), tone: this.selectionPicks.length ? 'success' : 'default', detail: this.selectionSummary.status },
+      { label: 'Final picks', value: String(this.selectionPicks.length), tone: this.selectionPicks.length ? 'success' : 'default', detail: `${this.selectionVariants.length} variants · ${this.selectionSummary.status}` },
       { label: 'Errors / skips', value: String(errors + (skipped || 0)), tone: errors || skipped ? 'danger' : 'success', detail: `${errors} errors · ${skipped || 0} skips` }
     ];
   }
@@ -793,7 +955,26 @@ export class RunOutputInspectorComponent {
     const results = this.arrayFrom(this.artifact('match_analysis')?.data, 'results');
     return results.map((item, index) => {
       const analysis = this.objectValue(item, 'analysis');
+      const qualitativeTrace = this.objectValue(item, 'qualitative_trace');
       const predicted = this.arrayFrom(analysis, 'predicted_markets');
+      const qualitativeMedia = this.arrayFrom(qualitativeTrace, 'preferred_media')
+        .map((media) => this.text(media, 'media_name'))
+        .filter((media) => media !== '—');
+      const qualitativeSignals = this.arrayFrom(qualitativeTrace, 'signals').map((signal) => ({
+        category: this.text(signal, 'category'),
+        summary: this.text(signal, 'summary'),
+        impact: this.text(signal, 'impact'),
+        confidence: this.text(signal, 'confidence'),
+        team_scope: this.text(signal, 'team_scope'),
+        evidence: this.arrayFrom(signal, 'evidence').map((evidence) => String(evidence)),
+        source_ids: this.arrayFrom(signal, 'source_ids').map((sourceId) => String(sourceId))
+      }));
+      const qualitativeSources = this.arrayFrom(qualitativeTrace, 'consulted_sources').map((source) => ({
+        source_id: this.text(source, 'source_id'),
+        media_name: this.text(source, 'media_name'),
+        url: this.text(source, 'url'),
+        published_at: this.text(source, 'published_at')
+      }));
       const globalConfidenceValue = this.numberValue(analysis, 'global_confidence');
       return {
         id: String(this.value(analysis, 'fixture_id') || index),
@@ -809,6 +990,14 @@ export class RunOutputInspectorComponent {
         data_quality: this.text(analysis, 'data_quality'),
         confidence_tier: this.matchConfidenceTier(globalConfidenceValue),
         premium: globalConfidenceValue >= 80,
+        qualitative_status: this.text(qualitativeTrace, 'collection_status'),
+        qualitative_usage_note: this.text(qualitativeTrace, 'usage_note'),
+        qualitative_used_as_evidence: this.value(qualitativeTrace, 'used_as_evidence') === true,
+        qualitative_media: qualitativeMedia,
+        qualitative_signals_count: this.numberValue(qualitativeTrace, 'signals_count'),
+        qualitative_consulted_sources_count: this.numberValue(qualitativeTrace, 'consulted_sources_count'),
+        qualitative_signals: qualitativeSignals,
+        qualitative_sources: qualitativeSources.filter((source) => source.url !== '—'),
         predicted_markets: predicted.map((market) => ({
           market_canonical_id: this.text(market, 'market_canonical_id'),
           selection_canonical_id: this.text(market, 'selection_canonical_id'),
@@ -907,24 +1096,38 @@ export class RunOutputInspectorComponent {
       status: String(data['status'] ?? 'unknown'),
       estimated_combo_odds: this.formatNumber(data['estimated_combo_odds']),
       global_confidence_score: this.formatPercent(data['global_confidence_score']),
-      combo_risk_level: String(data['combo_risk_level'] ?? '—')
+      combo_risk_level: String(data['combo_risk_level'] ?? '—'),
+      selected_variant_id: this.displayValue(data['selected_variant_id']),
+      selection_reason: this.displayValue(data['selection_reason'])
     };
   }
 
   protected get selectionPicks(): SelectionPickRow[] {
-    return this.arrayFrom(this.artifact('selection')?.data, 'picks').map((pick, index) => ({
-      id: this.text(pick, 'pick_id') || String(index),
-      event: this.text(pick, 'event'),
-      competition: this.text(pick, 'competition'),
-      kickoff: this.text(pick, 'kickoff'),
-      market: this.text(pick, 'market'),
-      pick: this.text(pick, 'pick'),
-      confidence: this.formatPercent(this.value(pick, 'confidence_score')),
-      confidenceValue: this.numberValue(pick, 'confidence_score'),
-      risk: this.text(pick, 'risk_level'),
-      reason: this.text(pick, 'reason'),
-      evidence: this.selectionEvidence(this.objectValue(pick, 'evidence_summary'))
-    }));
+    return this.arrayFrom(this.artifact('selection')?.data, 'picks').map((pick, index) => this.selectionPickRow(pick, index));
+  }
+
+  protected get selectionVariants(): SelectionVariantRow[] {
+    const selectedVariantId = this.selectionSummary.selected_variant_id;
+    return this.arrayFrom(this.artifact('selection')?.data, 'variants').map((variant, index) => {
+      const id = this.text(variant, 'variant_id') || `variant_${index + 1}`;
+      const picks = this.arrayFrom(variant, 'picks').map((pick, pickIndex) => this.selectionPickRow(pick, pickIndex));
+      const strategyFitValue = this.numberValue(variant, 'strategy_fit_score');
+      const confidenceValue = this.numberValue(variant, 'global_confidence_score');
+      return {
+        id,
+        label: this.text(variant, 'label'),
+        selected: id === selectedVariantId || (selectedVariantId === '—' && index === 0),
+        picks,
+        estimated_combo_odds: this.formatNumber(this.value(variant, 'estimated_combo_odds')),
+        global_confidence_score: this.formatPercent(this.value(variant, 'global_confidence_score')),
+        global_confidence_value: confidenceValue,
+        combo_risk_level: this.text(variant, 'combo_risk_level'),
+        strategy_fit_score: this.formatPercent(strategyFitValue),
+        strategy_fit_value: strategyFitValue,
+        reason: this.text(variant, 'reason'),
+        tradeoffs: this.arrayFrom(variant, 'tradeoffs').map((tradeoff) => String(tradeoff))
+      };
+    });
   }
 
   protected get visibleSelectionPicks(): SelectionPickRow[] {
@@ -1101,6 +1304,48 @@ export class RunOutputInspectorComponent {
     return 'default';
   }
 
+  protected qualitativeTone(match: MatchAnalysisRow): UiTone {
+    if (match.qualitative_used_as_evidence) {
+      return 'success';
+    }
+    if (match.qualitative_media.length) {
+      return 'warning';
+    }
+    return 'default';
+  }
+
+  protected qualitativeEvidenceTone(match: MatchAnalysisRow): UiTone {
+    return match.qualitative_used_as_evidence ? 'success' : 'warning';
+  }
+
+  protected qualitativeImpactTone(value: string): UiTone {
+    const normalized = value.toLowerCase();
+    if (normalized === 'positive') {
+      return 'success';
+    }
+    if (normalized === 'negative') {
+      return 'danger';
+    }
+    if (normalized === 'mixed') {
+      return 'warning';
+    }
+    return 'default';
+  }
+
+  protected qualitativeConfidenceTone(value: string): UiTone {
+    const normalized = value.toLowerCase();
+    if (normalized === 'high') {
+      return 'success';
+    }
+    if (normalized === 'medium') {
+      return 'warning';
+    }
+    if (normalized === 'low') {
+      return 'danger';
+    }
+    return 'default';
+  }
+
   protected progressTone(value: string): UiTone {
     const normalized = value.toLowerCase();
     if (normalized === 'completed') {
@@ -1151,6 +1396,22 @@ export class RunOutputInspectorComponent {
         || '—',
       retained
     }));
+  }
+
+  private selectionPickRow(pick: unknown, index: number): SelectionPickRow {
+    return {
+      id: this.text(pick, 'pick_id') || String(index),
+      event: this.text(pick, 'event'),
+      competition: this.text(pick, 'competition'),
+      kickoff: this.text(pick, 'kickoff'),
+      market: this.text(pick, 'market'),
+      pick: this.text(pick, 'pick'),
+      confidence: this.formatPercent(this.value(pick, 'confidence_score')),
+      confidenceValue: this.numberValue(pick, 'confidence_score'),
+      risk: this.text(pick, 'risk_level'),
+      reason: this.text(pick, 'reason'),
+      evidence: this.selectionEvidence(this.objectValue(pick, 'evidence_summary'))
+    };
   }
 
   private selectionEvidence(source: Record<string, unknown>): Array<{ label: string; value: string }> {

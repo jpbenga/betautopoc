@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -33,6 +33,7 @@ class MatchAnalysisResult(StrictBaseModel):
     status: str = Field(pattern="^(success|failed)$")
     analysis: MatchAnalysis
     error: str | None = None
+    qualitative_trace: dict[str, Any] = Field(default_factory=dict)
     llm_usage: dict[str, int] = Field(default_factory=dict)
     token_usage: dict[str, int] = Field(default_factory=dict)
     estimated_cost_usd: float | None = None

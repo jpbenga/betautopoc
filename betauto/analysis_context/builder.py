@@ -10,7 +10,7 @@ import requests
 from betauto.api_clients.errors import ExternalApiError
 
 from .api_football_client import ApiFootballClient
-from .models import AnalysisContext, MatchContext, QuantitativeContext
+from .models import AnalysisContext, MatchContext, QualitativeContext, QuantitativeContext
 from .normalizer import (
     normalize_fixture,
     normalize_head_to_head,
@@ -37,6 +37,7 @@ class AnalysisContextBuilder:
         season: int | None = None,
         bookmaker_id: int | None = None,
         bookmaker_name: str | None = None,
+        use_qualitative_context: bool = True,
         log_callback: Callable[[str], None] | None = None,
     ) -> None:
         load_dotenv()
@@ -50,6 +51,7 @@ class AnalysisContextBuilder:
             bookmaker_id if bookmaker_id is not None else int(os.getenv("API_FOOTBALL_BOOKMAKER_ID", "16"))
         )
         self.bookmaker_name = bookmaker_name or os.getenv("API_FOOTBALL_BOOKMAKER_NAME", "Unibet")
+        self.use_qualitative_context = use_qualitative_context
         self.log_callback = log_callback
 
         self.client = ApiFootballClient(api_key=self.api_key, base_url=self.base_url)
@@ -63,6 +65,15 @@ class AnalysisContextBuilder:
             if item.get("league_id") == league_id:
                 return item
         return {"league_id": league_id, "competition_name": f"League {league_id}", "country": None}
+
+    def _qualitative_context(self, league_id: int) -> QualitativeContext:
+        if self.use_qualitative_context:
+            return empty_qualitative_context(league_id)
+        return QualitativeContext(
+            available=False,
+            collection_status="not_collected",
+            source_notes=["Qualitative context disabled by strategy."],
+        )
 
     def _safe_call(self, fn: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
         try:
@@ -113,6 +124,10 @@ class AnalysisContextBuilder:
             "fixtures_in_context_count": 0,
             "matches_skipped_count": 0,
             "matches_skipped_reasons": [],
+            "qualitative_context_enabled": self.use_qualitative_context,
+            "qualitative_media_directory_matches_count": 0,
+            "qualitative_preferred_media_entries_count": 0,
+            "qualitative_signals_matches_count": 0,
         }
         active_league_ids = set(self.league_ids)
         fixtures_by_league: dict[int, list[dict[str, Any]]] = {league_id: [] for league_id in self.league_ids}
@@ -230,6 +245,13 @@ class AnalysisContextBuilder:
                 if not odds_ready:
                     quantitative_notes.append("No odds available for the configured bookmaker.")
 
+                qualitative_context = self._qualitative_context(league_id)
+                if qualitative_context.preferred_media:
+                    trace["qualitative_media_directory_matches_count"] += 1
+                    trace["qualitative_preferred_media_entries_count"] += len(qualitative_context.preferred_media)
+                if qualitative_context.signals:
+                    trace["qualitative_signals_matches_count"] += 1
+
                 match = MatchContext(
                     fixture_id=fixture_id,
                     kickoff_time=fixture_data.get("kickoff_time", ""),
@@ -244,7 +266,7 @@ class AnalysisContextBuilder:
                     fixture_statistics=fixture_stats_raw.get("response", []),
                     fixture_events=fixture_events_raw.get("response", []),
                     quantitative_summary=QuantitativeContext(available=odds_ready, notes=quantitative_notes),
-                    qualitative_context=empty_qualitative_context(league_id),
+                    qualitative_context=qualitative_context,
                     analysis_readiness=readiness,
                 )
                 matches.append(match)
@@ -257,7 +279,11 @@ class AnalysisContextBuilder:
         context = AnalysisContext(
             generated_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
             target_date=target_date,
-            source={"api_football": True, "qualitative_sources": False},
+            source={
+                "api_football": True,
+                "qualitative_sources": False,
+                "qualitative_media_directory": self.use_qualitative_context,
+            },
             league={
                 "id": self.league_ids[0] if self.league_ids else None,
                 "name": "multiple" if len(self.league_ids) > 1 else self._league_meta(self.league_ids[0]).get("competition_name"),

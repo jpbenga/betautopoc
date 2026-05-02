@@ -50,6 +50,70 @@ def _build_event_label(match_context: dict[str, Any]) -> str:
     return f"{home} vs {away}"
 
 
+def _qualitative_trace(match_context: dict[str, Any]) -> dict[str, Any]:
+    context = match_context.get("qualitative_context") if isinstance(match_context, dict) else {}
+    if not isinstance(context, dict):
+        context = {}
+
+    preferred_media = context.get("preferred_media") if isinstance(context.get("preferred_media"), list) else []
+    consulted_sources = (
+        context.get("consulted_sources") if isinstance(context.get("consulted_sources"), list) else []
+    )
+    signals = context.get("signals") if isinstance(context.get("signals"), list) else []
+    collection_status = str(context.get("collection_status") or "not_collected")
+
+    return {
+        "available": bool(context.get("available")),
+        "collection_status": collection_status,
+        "preferred_media_count": len(preferred_media),
+        "preferred_media": [
+            {
+                "source_id": source.get("source_id"),
+                "media_name": source.get("media_name"),
+                "priority_rank": source.get("priority_rank"),
+                "language": source.get("language"),
+            }
+            for source in preferred_media
+            if isinstance(source, dict)
+        ],
+        "consulted_sources_count": len(consulted_sources),
+        "consulted_sources": [
+            {
+                "source_id": source.get("source_id"),
+                "media_name": source.get("media_name"),
+                "url": source.get("url"),
+                "published_at": source.get("published_at"),
+                "language": source.get("language"),
+            }
+            for source in consulted_sources
+            if isinstance(source, dict)
+        ],
+        "signals_count": len(signals),
+        "signals": [
+            {
+                "signal_id": signal.get("signal_id"),
+                "category": signal.get("category"),
+                "summary": signal.get("summary"),
+                "impact": signal.get("impact"),
+                "confidence": signal.get("confidence"),
+                "team_scope": signal.get("team_scope"),
+                "source_ids": signal.get("source_ids") if isinstance(signal.get("source_ids"), list) else [],
+                "evidence": signal.get("evidence") if isinstance(signal.get("evidence"), list) else [],
+            }
+            for signal in signals
+            if isinstance(signal, dict)
+        ],
+        "used_as_evidence": bool(consulted_sources or signals),
+        "usage_note": (
+            "preferred_media_directory_only"
+            if preferred_media and collection_status == "not_collected" and not consulted_sources and not signals
+            else "qualitative_signals_available"
+            if consulted_sources or signals
+            else "no_qualitative_context"
+        ),
+    }
+
+
 def _limit_list(value: Any, limit: int = 8) -> list[Any]:
     if not isinstance(value, list):
         return []
@@ -115,6 +179,7 @@ def _minimal_fallback(
         status="failed",
         analysis=analysis,
         error=error,
+        qualitative_trace=_qualitative_trace(match_context),
         duration_seconds=duration_seconds,
         retry_count=retry_count,
         prompt_size_chars=prompt_size_chars,
@@ -182,13 +247,18 @@ def analyze_match(
         instructions = _build_analysis_instructions(prompt_template, strategy_cfg)
         input_text = _build_analysis_input(match_context)
         prompt_size_chars = len(instructions) + len(input_text)
+        qualitative_trace = _qualitative_trace(match_context)
 
         fixture_id = match_context.get("fixture_id", "unknown")
         logger.info(
-            "[analysis] fixture_id=%s prompt_size_chars=%s strategy_applied=%s",
+            "[analysis] fixture_id=%s prompt_size_chars=%s strategy_applied=%s "
+            "qualitative_status=%s preferred_media=%s qualitative_signals=%s",
             fixture_id,
             prompt_size_chars,
             strategy_cfg is not None,
+            qualitative_trace.get("collection_status"),
+            qualitative_trace.get("preferred_media_count"),
+            qualitative_trace.get("signals_count"),
         )
 
         model_name = getattr(llm, "analysis_model", None) or "gpt-4.1-mini"
@@ -268,6 +338,7 @@ def analyze_match(
         return MatchAnalysisResult(
             status="success",
             analysis=validated,
+            qualitative_trace=qualitative_trace,
             llm_usage=usage_dict,
             token_usage=usage_dict,
             duration_seconds=duration_seconds,

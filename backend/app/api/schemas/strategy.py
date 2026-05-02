@@ -86,7 +86,10 @@ class StrategyApplyResponse(ContractBaseModel):
     filtered_candidate_count: int = 0
     rejected_candidate_count: int = 0
     picks_count: int = 0
+    variants_count: int = 0
+    selected_variant_id: str | None = None
     estimated_combo_odds: float | None = None
     selection_status: str | None = None
+    selection_reason: str | None = None
     notes: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)

@@ -10,6 +10,7 @@ from backend.app.api.schemas.ticket import (
     TicketDetail,
     TicketPick,
     TicketSummary,
+    TicketVariant,
 )
 from backend.app.core.paths import REPO_ROOT
 from betauto.runtime_mode import ensure_latest_allowed
@@ -165,6 +166,79 @@ def _pick(payload: dict[str, Any]) -> TicketPick:
     )
 
 
+def _raw_selected_picks(selection: dict[str, Any]) -> list[dict[str, Any]]:
+    picks = selection.get("picks") if isinstance(selection.get("picks"), list) else []
+    if picks:
+        return [pick for pick in picks if isinstance(pick, dict)]
+
+    selected_variant_id = str(selection.get("selected_variant_id") or "")
+    variants = selection.get("variants") if isinstance(selection.get("variants"), list) else []
+    for variant in variants:
+        if not isinstance(variant, dict):
+            continue
+        if selected_variant_id and str(variant.get("variant_id") or "") != selected_variant_id:
+            continue
+        variant_picks = variant.get("picks") if isinstance(variant.get("picks"), list) else []
+        return [pick for pick in variant_picks if isinstance(pick, dict)]
+
+    return []
+
+
+def _selection_variants(selection: dict[str, Any]) -> list[TicketVariant]:
+    raw_variants = selection.get("variants") if isinstance(selection.get("variants"), list) else []
+    selected_variant_id = str(selection.get("selected_variant_id") or "")
+    variants: list[TicketVariant] = []
+
+    for index, raw_variant in enumerate(raw_variants[:3], start=1):
+        if not isinstance(raw_variant, dict):
+            continue
+        variant_id = str(raw_variant.get("variant_id") or f"variant_{index:03d}")
+        raw_picks = raw_variant.get("picks") if isinstance(raw_variant.get("picks"), list) else []
+        variants.append(
+            TicketVariant(
+                variant_id=variant_id,
+                label=str(raw_variant.get("label") or f"Variant {index}"),
+                picks=[_pick(pick) for pick in raw_picks if isinstance(pick, dict)],
+                estimated_combo_odds=raw_variant.get("estimated_combo_odds"),
+                combo_in_target_range=raw_variant.get("combo_in_target_range"),
+                global_confidence_score=raw_variant.get("global_confidence_score"),
+                combo_risk_level=raw_variant.get("combo_risk_level"),
+                strategy_fit_score=raw_variant.get("strategy_fit_score"),
+                reason=raw_variant.get("reason"),
+                tradeoffs=[str(item) for item in raw_variant.get("tradeoffs", []) if item is not None]
+                if isinstance(raw_variant.get("tradeoffs"), list)
+                else [],
+                selected=variant_id == selected_variant_id,
+            )
+        )
+
+    if not variants:
+        selected_picks = _raw_selected_picks(selection)
+        if selected_picks:
+            selected_variant_id = selected_variant_id or "variant_001"
+            variants.append(
+                TicketVariant(
+                    variant_id=selected_variant_id,
+                    label="Best ticket",
+                    picks=[_pick(pick) for pick in selected_picks],
+                    estimated_combo_odds=selection.get("estimated_combo_odds"),
+                    combo_in_target_range=selection.get("combo_in_target_range"),
+                    global_confidence_score=selection.get("global_confidence_score"),
+                    combo_risk_level=selection.get("combo_risk_level"),
+                    strategy_fit_score=None,
+                    reason=selection.get("selection_reason"),
+                    tradeoffs=[],
+                    selected=True,
+                )
+            )
+
+    if variants and not any(variant.selected for variant in variants):
+        first = variants[0]
+        first.selected = True
+
+    return variants
+
+
 def _summary(
     run_dir: Path,
     run_summary: dict[str, Any],
@@ -178,7 +252,11 @@ def _summary(
     data_source_mode: str = "run_artifacts",
 ) -> TicketSummary:
     run_id = str(run_summary.get("run_id") or run_dir.name)
-    picks = selection.get("picks") if isinstance(selection.get("picks"), list) else []
+    picks = _raw_selected_picks(selection)
+    variants = _selection_variants(selection)
+    selected_variant_id = str(selection.get("selected_variant_id") or "")
+    if not selected_variant_id:
+        selected_variant_id = next((variant.variant_id for variant in variants if variant.selected), None)
     notes = selection.get("notes") if isinstance(selection.get("notes"), list) else []
     errors = selection.get("errors") if isinstance(selection.get("errors"), list) else []
     competitions = sorted(
@@ -199,6 +277,8 @@ def _summary(
         combo_risk_level=selection.get("combo_risk_level"),
         combo_in_target_range=selection.get("combo_in_target_range"),
         picks_count=len(picks),
+        variants_count=len(variants),
+        selected_variant_id=selected_variant_id,
         notes_count=len(notes),
         errors_count=len(errors),
         competitions=competitions,
@@ -270,7 +350,7 @@ def _detail_from_artifacts(
     summary: TicketSummary,
     application: dict[str, Any] | None = None,
 ) -> TicketDetail:
-    raw_picks = selection.get("picks") if isinstance(selection.get("picks"), list) else []
+    raw_picks = _raw_selected_picks(selection)
     notes = [str(note) for note in selection.get("notes", []) if note is not None]
     errors = [str(error) for error in selection.get("errors", []) if error is not None]
     metadata = {
@@ -298,6 +378,8 @@ def _detail_from_artifacts(
     return TicketDetail(
         **summary.model_dump(),
         picks=[_pick(pick) for pick in raw_picks if isinstance(pick, dict)],
+        variants=_selection_variants(selection),
+        selection_reason=selection.get("selection_reason"),
         notes=notes,
         errors=errors,
         selection_config=selection.get("selection_config") if isinstance(selection.get("selection_config"), dict) else {},
@@ -344,4 +426,12 @@ def get_ticket_audit_log(ticket_id: str) -> TicketAuditLog | None:
             code="selection_file",
         )
     )
+    if ticket.variants_count:
+        entries.append(
+            TicketAuditEntry(
+                level="info",
+                message=f"Variants generated: {ticket.variants_count}; selected={ticket.selected_variant_id or 'unknown'}",
+                code="selection_variants",
+            )
+        )
     return TicketAuditLog(ticket_id=ticket.ticket_id, run_id=ticket.run_id, entries=entries, metadata=ticket.metadata)

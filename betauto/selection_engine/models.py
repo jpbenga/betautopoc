@@ -63,12 +63,28 @@ class RejectedCandidate(StrictBaseModel):
     reason: str
 
 
+class SelectionVariant(StrictBaseModel):
+    variant_id: str
+    label: str
+    picks: list[SelectedPick] = Field(default_factory=list)
+    estimated_combo_odds: float | None = None
+    combo_in_target_range: bool = False
+    global_confidence_score: int | None = Field(default=None, ge=0, le=100)
+    combo_risk_level: Literal["low", "medium", "high"] | None = None
+    strategy_fit_score: int = Field(default=0, ge=0, le=100)
+    reason: str
+    tradeoffs: list[str] = Field(default_factory=list)
+
+
 class SelectionResult(StrictBaseModel):
     generated_at: str
     status: Literal["completed", "partial", "failed"]
     selection_config: SelectionConfig
     input_file: str
     picks: list[SelectedPick] = Field(default_factory=list)
+    variants: list[SelectionVariant] = Field(default_factory=list)
+    selected_variant_id: str | None = None
+    selection_reason: str | None = None
     estimated_combo_odds: float | None = None
     combo_in_target_range: bool = False
     global_confidence_score: int | None = Field(default=None, ge=0, le=100)

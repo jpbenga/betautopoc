@@ -71,6 +71,7 @@ def main() -> None:
             season=season,
             bookmaker_id=bookmaker_id,
             bookmaker_name=bookmaker_name,
+            use_qualitative_context=resolved_strategy.use_qualitative_context,
         )
         payload = builder.build(target_date=target_date)
 

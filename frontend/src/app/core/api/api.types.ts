@@ -258,6 +258,20 @@ export interface TicketPick {
   source_match_analysis_id?: string | null;
 }
 
+export interface TicketVariant {
+  variant_id: string;
+  label: string;
+  picks: TicketPick[];
+  estimated_combo_odds?: number | null;
+  combo_in_target_range?: boolean | null;
+  global_confidence_score?: number | null;
+  combo_risk_level?: string | null;
+  strategy_fit_score?: number | null;
+  reason?: string | null;
+  tradeoffs: string[];
+  selected: boolean;
+}
+
 export interface TicketSummary {
   ticket_id: string;
   run_id: string;
@@ -269,6 +283,8 @@ export interface TicketSummary {
   combo_risk_level?: string | null;
   combo_in_target_range?: boolean | null;
   picks_count: number;
+  variants_count: number;
+  selected_variant_id?: string | null;
   notes_count: number;
   errors_count: number;
   competitions: string[];
@@ -280,6 +296,8 @@ export interface TicketSummary {
 
 export interface TicketDetail extends TicketSummary {
   picks: TicketPick[];
+  variants: TicketVariant[];
+  selection_reason?: string | null;
   notes: string[];
   errors: string[];
   selection_config: Record<string, unknown>;
@@ -762,8 +780,11 @@ export interface StrategyApplyResponse {
   filtered_candidate_count: number;
   rejected_candidate_count: number;
   picks_count: number;
+  variants_count: number;
+  selected_variant_id?: string | null;
   estimated_combo_odds?: number | null;
   selection_status?: string | null;
+  selection_reason?: string | null;
   notes: string[];
   errors: string[];
 }

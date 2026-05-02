@@ -4,9 +4,12 @@ import json
 import logging
 import os
 import time
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable
+
+from betauto.analysis_context.qualitative_researcher import collect_qualitative_context, should_collect_qualitative_context
 
 from .match_analyzer import analyze_match
 
@@ -33,6 +36,10 @@ class BatchRunStats:
     total_output_tokens: int = 0
     total_tokens: int = 0
     estimated_cost_usd: float = 0.0
+    qualitative_research_count: int = 0
+    qualitative_research_failed_count: int = 0
+    qualitative_signals_count: int = 0
+    qualitative_sources_count: int = 0
     per_match_status: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -129,7 +136,28 @@ def run_analysis_batch_with_stats(
             partial_callback(results, stats.to_dict())
         match_start = time.perf_counter()
 
-        analysis_result = analyze_match(match, llm, strategy_cfg=strategy_cfg, log_callback=log_callback)
+        match_for_analysis = deepcopy(match)
+        qualitative_context = match_for_analysis.get("qualitative_context")
+        if should_collect_qualitative_context(match_for_analysis, strategy_cfg):
+            if log_callback:
+                log_callback(f"[qualitative] {index}/{len(matches)} — {label} — recherche média en cours")
+            qualitative_context = collect_qualitative_context(match_for_analysis, llm, strategy_cfg=strategy_cfg)
+            match_for_analysis["qualitative_context"] = qualitative_context
+            stats.qualitative_research_count += 1
+            if isinstance(qualitative_context, dict):
+                if qualitative_context.get("collection_status") == "failed":
+                    stats.qualitative_research_failed_count += 1
+                stats.qualitative_sources_count += len(qualitative_context.get("consulted_sources") or [])
+                stats.qualitative_signals_count += len(qualitative_context.get("signals") or [])
+                if log_callback:
+                    log_callback(
+                        "[qualitative] "
+                        f"{label} — status={qualitative_context.get('collection_status')} "
+                        f"sources={len(qualitative_context.get('consulted_sources') or [])} "
+                        f"signals={len(qualitative_context.get('signals') or [])}"
+                    )
+
+        analysis_result = analyze_match(match_for_analysis, llm, strategy_cfg=strategy_cfg, log_callback=log_callback)
         results.append(analysis_result)
         stats.matches_analyzed_count = len(results)
 
@@ -175,6 +203,15 @@ def run_analysis_batch_with_stats(
                 "duration_seconds": match_elapsed,
                 "retry_count": retry_count,
                 "prompt_size_chars": prompt_size_chars,
+                "qualitative_collection_status": (qualitative_context or {}).get("collection_status")
+                if isinstance(qualitative_context, dict)
+                else None,
+                "qualitative_sources_count": len((qualitative_context or {}).get("consulted_sources") or [])
+                if isinstance(qualitative_context, dict)
+                else 0,
+                "qualitative_signals_count": len((qualitative_context or {}).get("signals") or [])
+                if isinstance(qualitative_context, dict)
+                else 0,
             }
         )
         logger.info(
