@@ -630,7 +630,7 @@
       "season_mode": "calendar_year",
       "tier": 1,
       "priority": 60,
-      "enabled": false,
+      "enabled": true,
       "agent_profile": "football_finland_veikkausliga",
       "strategy_profile": "default_football_balanced",
       "notes": "verified_manual_user_confirmed_id"
@@ -860,5 +860,5 @@
       "notes": "verified_manual_user_confirmed_id"
     }
   ],
-  "updated_at": "2026-05-01T21:28:11.799080+00:00"
+  "updated_at": "2026-05-03T23:36:20.356047+00:00"
 }
